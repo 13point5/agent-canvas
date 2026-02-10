@@ -7,10 +7,13 @@
   ],
   "scripts": {
     "dev": "concurrently --kill-others-on-fail -n server,web -c blue,green \"bun run --filter @agent-canvas/server dev\" \"bun run --filter web dev\"",
-    "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build && bun run --filter web build",
+    "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build && bun run --filter web build && bun run --filter agent-canvas build",
+    "build:link": "bun run build && bun run bundle:web && cd apps/cli && bun link",
+    "bundle:web": "rm -rf apps/cli/web && cp -r apps/web/dist apps/cli/web",
     "format": "biome check --write . && prettier --write .",
     "cli": "bun apps/cli/src/index.ts",
-    "clean": "rm -rf packages/shared/dist packages/server/dist apps/web/dist node_modules bun.lock"
+    "cli:prod": "bun run bundle:web && bun apps/cli/src/index.ts",
+    "clean": "rm -rf packages/shared/dist packages/server/dist apps/web/dist apps/cli/dist apps/cli/web node_modules bun.lock"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
