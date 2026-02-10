@@ -7,7 +7,13 @@ import { fileURLToPath } from "node:url";
 import { readLockfile, removeLockfile } from "@agent-canvas/server";
 import { Command } from "commander";
 import open from "open";
-import { checkHealth, ServerNotRunningError } from "./api-client";
+import {
+  checkHealth,
+  createBoard,
+  listBoards,
+  ServerNotRunningError,
+  updateBoard,
+} from "./api-client";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -214,6 +220,89 @@ program
     } else {
       removeLockfile();
       console.log("Agent Canvas server stopped.");
+    }
+  });
+
+// ─── boards ────────────────────────────────────────
+
+const boards = program
+  .command("boards")
+  .description("Manage boards");
+
+boards
+  .command("list")
+  .description("List all boards")
+  .option("--json", "Output machine-readable JSON")
+  .action(async (options: { json?: boolean }) => {
+    try {
+      const result = await listBoards();
+
+      if (options.json) {
+        console.log(JSON.stringify(result));
+      } else if (result.length === 0) {
+        console.log("No boards found.");
+      } else {
+        for (const board of result) {
+          console.log(`${board.name}`);
+          console.log(`  ID:         ${board.id}`);
+          console.log(`  Created at: ${board.createdAt}`);
+          console.log(`  Updated at: ${board.updatedAt}`);
+          console.log();
+        }
+      }
+    } catch (error) {
+      if (error instanceof ServerNotRunningError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+boards
+  .command("create")
+  .description("Create a new board")
+  .argument("<name>", "Name for the new board")
+  .option("--json", "Output machine-readable JSON")
+  .action(async (name: string, options: { json?: boolean }) => {
+    try {
+      const board = await createBoard(name);
+
+      if (options.json) {
+        console.log(JSON.stringify(board));
+      } else {
+        console.log(`Created board: ${board.name} (${board.id})`);
+      }
+    } catch (error) {
+      if (error instanceof ServerNotRunningError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+boards
+  .command("rename")
+  .description("Rename an existing board")
+  .argument("<name>", "New name for the board")
+  .requiredOption("--id <id>", "Board ID to rename")
+  .option("--json", "Output machine-readable JSON")
+  .action(async (name: string, options: { id: string; json?: boolean }) => {
+    try {
+      const board = await updateBoard(options.id, name);
+
+      if (options.json) {
+        console.log(JSON.stringify(board));
+      } else {
+        console.log(`Renamed board ${options.id} to: ${board.name}`);
+      }
+    } catch (error) {
+      if (error instanceof ServerNotRunningError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
     }
   });
 
