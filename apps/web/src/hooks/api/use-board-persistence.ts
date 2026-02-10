@@ -1,18 +1,32 @@
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { Editor, TLStoreSnapshot } from "tldraw";
 import { getSnapshot, loadSnapshot } from "tldraw";
 import { boardsApi, boardsMutations } from "@/api/client";
+import { useEditorStore } from "@/stores/editor-store";
 
 export function useBoardPersistence(boardId: string) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editorRef = useRef<Editor | null>(null);
 
   const saveSnapshotMutation = useMutation({
     mutationFn: boardsMutations.saveSnapshot,
   });
 
+  // Register/unregister the visible editor with the store
+  useEffect(() => {
+    return () => {
+      if (editorRef.current) {
+        useEditorStore.getState().unsetVisibleEditor(boardId);
+      }
+    };
+  }, [boardId]);
+
   const handleMount = useCallback(
     (editor: Editor) => {
+      editorRef.current = editor;
+      useEditorStore.getState().setVisibleEditor(boardId, editor);
+
       // Load existing snapshot
       boardsApi.getSnapshot(boardId).then(({ snapshot }) => {
         if (snapshot) {

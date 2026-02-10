@@ -11,6 +11,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
 import { emitBoardEvent } from "@/lib/events";
+import { createPendingRequest } from "@/lib/pending-requests";
 import {
   ensureDir,
   getBoardDir,
@@ -20,6 +21,7 @@ import {
   removeDir,
   writeJSON,
 } from "@/lib/storage";
+import { getClientCount, sendToClients } from "@/lib/ws";
 
 const boards = new Hono();
 
@@ -160,5 +162,95 @@ boards.put(
     return c.json({ success: true });
   },
 );
+
+// Get shapes from a board (via WebSocket relay to browser)
+boards.get("/:id/shapes", async (c) => {
+  const id = c.req.param("id");
+
+  const metadata = await readJSON<BoardMetadata>(
+    join(getBoardDir(id), "metadata.json"),
+  );
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error:
+          "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
+    );
+  }
+
+  const requestId = randomUUID();
+
+  sendToClients({
+    type: "get-shapes:request",
+    requestId,
+    boardId: id,
+  });
+
+  try {
+    const shapes = await createPendingRequest<unknown[]>(requestId, id);
+    return c.json({ boardId: id, shapes });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json(
+        { error: "Request timed out waiting for browser response" },
+        504,
+      );
+    }
+    return c.json({ error: message }, 500);
+  }
+});
+
+// Create shapes on a board (via WebSocket relay to browser)
+boards.post("/:id/shapes", async (c) => {
+  const id = c.req.param("id");
+
+  const metadata = await readJSON<BoardMetadata>(
+    join(getBoardDir(id), "metadata.json"),
+  );
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error:
+          "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
+    );
+  }
+
+  const body = await c.req.json<{ shapes: unknown[] }>();
+  const requestId = randomUUID();
+
+  sendToClients({
+    type: "create-shapes:request",
+    requestId,
+    boardId: id,
+    shapes: body.shapes,
+  });
+
+  try {
+    const createdIds = await createPendingRequest<string[]>(requestId, id);
+    return c.json({ boardId: id, createdIds });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json(
+        { error: "Request timed out waiting for browser response" },
+        504,
+      );
+    }
+    return c.json({ error: message }, 500);
+  }
+});
 
 export { boards };

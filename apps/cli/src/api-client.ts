@@ -1,5 +1,9 @@
 import { readLockfile } from "@agent-canvas/server";
-import type { BoardMetadata } from "@agent-canvas/shared";
+import type {
+  BoardMetadata,
+  CreateShapesApiResponse,
+  GetShapesApiResponse,
+} from "@agent-canvas/shared";
 import axios, { AxiosError } from "axios";
 
 // ---------------------------------
@@ -145,6 +149,42 @@ export async function checkHealth(): Promise<HealthResponse> {
   try {
     const client = createClient();
     const response = await client.get<HealthResponse>("/api/health");
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+// ---------------------------------
+// Shapes API Functions
+// ---------------------------------
+
+export async function getBoardShapes(
+  id: string,
+): Promise<GetShapesApiResponse> {
+  try {
+    const client = createClient();
+    const response = await client.get<GetShapesApiResponse>(
+      `/api/boards/${id}/shapes`,
+    );
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function createBoardShapes(
+  id: string,
+  shapes: unknown[],
+): Promise<CreateShapesApiResponse> {
+  try {
+    const client = createClient();
+    const response = await client.post<CreateShapesApiResponse>(
+      `/api/boards/${id}/shapes`,
+      { shapes },
+    );
 
     return response.data;
   } catch (error) {

@@ -1,6 +1,13 @@
+import type {
+  BoardEvent,
+  CreateShapesRequest,
+  CreateShapesResponse,
+  GetShapesRequest,
+  GetShapesResponse,
+} from "@agent-canvas/shared";
 import type { ServerWebSocket } from "bun";
-import type { BoardEvent } from "@agent-canvas/shared";
 import { boardEvents } from "./events";
+import { resolvePendingRequest } from "./pending-requests";
 
 const clients = new Set<ServerWebSocket>();
 
@@ -23,6 +30,13 @@ function broadcast(event: BoardEvent) {
   }
 }
 
+export function sendToClients(message: GetShapesRequest | CreateShapesRequest) {
+  const data = JSON.stringify(message);
+  for (const ws of clients) {
+    ws.send(data);
+  }
+}
+
 // Forward board events to all connected WebSocket clients
 boardEvents.on("board-event", broadcast);
 
@@ -33,7 +47,19 @@ export const websocketHandler = {
   close(ws: ServerWebSocket) {
     removeClient(ws);
   },
-  message() {
-    // No inbound message handling needed
+  message(_ws: ServerWebSocket, message: string | Buffer) {
+    try {
+      const data = JSON.parse(
+        typeof message === "string" ? message : message.toString(),
+      ) as GetShapesResponse | CreateShapesResponse;
+
+      if (data.type === "get-shapes:response") {
+        resolvePendingRequest(data.requestId, data.shapes, data.error);
+      } else if (data.type === "create-shapes:response") {
+        resolvePendingRequest(data.requestId, data.createdIds, data.error);
+      }
+    } catch {
+      // Ignore malformed messages
+    }
   },
 };

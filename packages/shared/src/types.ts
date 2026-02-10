@@ -15,3 +15,34 @@ export type BoardEvent =
   | { type: "board:created"; board: BoardMetadata }
   | { type: "board:updated"; board: BoardMetadata }
   | { type: "board:deleted"; boardId: string };
+
+// Server → Client requests
+export type GetShapesRequest = {
+  type: "get-shapes:request";
+  requestId: string;
+  boardId: string;
+};
+export type CreateShapesRequest = {
+  type: "create-shapes:request";
+  requestId: string;
+  boardId: string;
+  shapes: unknown[];
+};
+
+// Client → Server responses
+export type GetShapesResponse = {
+  type: "get-shapes:response";
+  requestId: string;
+  shapes: unknown[] | null;
+  error?: string;
+};
+export type CreateShapesResponse = {
+  type: "create-shapes:response";
+  requestId: string;
+  createdIds: string[] | null;
+  error?: string;
+};
+
+// API response types
+export type GetShapesApiResponse = { boardId: string; shapes: unknown[] };
+export type CreateShapesApiResponse = { boardId: string; createdIds: string[] };

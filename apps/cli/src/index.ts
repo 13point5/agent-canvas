@@ -8,8 +8,11 @@ import { readLockfile, removeLockfile } from "@agent-canvas/server";
 import { Command } from "commander";
 import open from "open";
 import {
+  ApiError,
   checkHealth,
   createBoard,
+  createBoardShapes,
+  getBoardShapes,
   listBoards,
   ServerNotRunningError,
   updateBoard,
@@ -225,9 +228,7 @@ program
 
 // ─── boards ────────────────────────────────────────
 
-const boards = program
-  .command("boards")
-  .description("Manage boards");
+const boards = program.command("boards").description("Manage boards");
 
 boards
   .command("list")
@@ -299,6 +300,59 @@ boards
       }
     } catch (error) {
       if (error instanceof ServerNotRunningError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+// ─── shapes ───────────────────────────────────────
+
+const shapes = program
+  .command("shapes")
+  .description("Read and write shapes on a board");
+
+shapes
+  .command("get")
+  .description("Get all shapes from a board")
+  .requiredOption("--board <id>", "Board ID")
+  .action(async (options: { board: string }) => {
+    try {
+      const result = await getBoardShapes(options.board);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      if (error instanceof ServerNotRunningError || error instanceof ApiError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+shapes
+  .command("create")
+  .description("Create shapes on a board")
+  .requiredOption("--board <id>", "Board ID")
+  .requiredOption("--shapes <json>", "JSON array of shape objects")
+  .action(async (options: { board: string; shapes: string }) => {
+    try {
+      let shapesArray: unknown[];
+      try {
+        shapesArray = JSON.parse(options.shapes);
+        if (!Array.isArray(shapesArray)) {
+          console.error("--shapes must be a JSON array");
+          process.exit(1);
+        }
+      } catch {
+        console.error("--shapes must be valid JSON");
+        process.exit(1);
+      }
+
+      const result = await createBoardShapes(options.board, shapesArray);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      if (error instanceof ServerNotRunningError || error instanceof ApiError) {
         console.error(error.message);
         process.exit(1);
       }
