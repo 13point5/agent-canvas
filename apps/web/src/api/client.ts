@@ -1,4 +1,9 @@
-import type { BoardMetadata, CreateBoardInput, UpdateBoardInput } from "@agent-canvas/shared";
+import type {
+  BoardMetadata,
+  CreateBoardInput,
+  Snapshot,
+  UpdateBoardInput,
+} from "@agent-canvas/shared";
 import axios from "axios";
 
 const api = axios.create({
@@ -11,6 +16,9 @@ export const boardsApi = {
   list: () => api.get<BoardMetadata[]>("/boards").then((r) => r.data),
 
   get: (id: string) => api.get<BoardMetadata>(`/boards/${id}`).then((r) => r.data),
+
+  getSnapshot: (id: string) =>
+    api.get<{ snapshot: Snapshot | null }>(`/boards/${id}/snapshot`).then((r) => r.data),
 };
 
 // Mutation functions (for useMutation)
@@ -21,4 +29,7 @@ export const boardsMutations = {
     api.patch<BoardMetadata>(`/boards/${id}`, data).then((r) => r.data),
 
   delete: (id: string) => api.delete<{ success: boolean }>(`/boards/${id}`).then((r) => r.data),
+
+  saveSnapshot: ({ id, snapshot }: { id: string; snapshot: Snapshot }) =>
+    api.put<{ success: boolean }>(`/boards/${id}/snapshot`, snapshot).then((r) => r.data),
 };

@@ -2,6 +2,7 @@ import { Copy01Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { BoardCanvas } from "@/components/board-canvas";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useBoard } from "@/hooks/api/use-boards";
@@ -28,9 +29,13 @@ export function BoardPage() {
         </Button>
       </header>
       <main className="flex-1 overflow-hidden">
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          Canvas coming soon
-        </div>
+        {board ? (
+          <BoardCanvas boardId={board.id} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            Board not found
+          </div>
+        )}
       </main>
     </>
   );

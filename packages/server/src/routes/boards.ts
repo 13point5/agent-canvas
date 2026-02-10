@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
-import { type BoardMetadata, createBoardSchema, updateBoardSchema } from "@agent-canvas/shared";
+import {
+  type BoardMetadata,
+  createBoardSchema,
+  type Snapshot,
+  snapshotSchema,
+  updateBoardSchema,
+} from "@agent-canvas/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
@@ -104,6 +110,35 @@ boards.delete("/:id", async (c) => {
   await removeDir(boardDir);
 
   emitBoardEvent({ type: "board:deleted", boardId: id });
+
+  return c.json({ success: true });
+});
+
+// Get snapshot
+boards.get("/:id/snapshot", async (c) => {
+  const id = c.req.param("id");
+  const snapshot = await readJSON<Snapshot>(join(getBoardDir(id), "snapshot.json"));
+
+  return c.json({ snapshot });
+});
+
+// Save snapshot
+boards.put("/:id/snapshot", zValidator("json", snapshotSchema as any), async (c) => {
+  const id = c.req.param("id");
+  const snapshot = c.req.valid("json");
+
+  const boardDir = getBoardDir(id);
+  const metadataPath = join(boardDir, "metadata.json");
+  const metadata = await readJSON<BoardMetadata>(metadataPath);
+
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  await writeJSON(join(boardDir, "snapshot.json"), snapshot);
+
+  metadata.updatedAt = new Date().toISOString();
+  await writeJSON(metadataPath, metadata);
 
   return c.json({ success: true });
 });

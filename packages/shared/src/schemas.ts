@@ -14,3 +14,8 @@ export const createBoardSchema = z.object({
 export const updateBoardSchema = z.object({
   name: z.string().min(1).optional(),
 });
+
+export const snapshotSchema = z.object({
+  document: z.unknown(),
+  session: z.unknown().optional(),
+});
