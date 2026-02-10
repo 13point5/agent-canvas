@@ -1,4 +1,4 @@
-import type { BoardMetadata, CreateBoardInput } from "@agent-canvas/shared";
+import type { BoardMetadata, CreateBoardInput, UpdateBoardInput } from "@agent-canvas/shared";
 import axios from "axios";
 
 const api = axios.create({
@@ -16,4 +16,7 @@ export const boardsApi = {
 // Mutation functions (for useMutation)
 export const boardsMutations = {
   create: (data: CreateBoardInput) => api.post<BoardMetadata>("/boards", data).then((r) => r.data),
+
+  update: ({ id, data }: { id: string; data: UpdateBoardInput }) =>
+    api.patch<BoardMetadata>(`/boards/${id}`, data).then((r) => r.data),
 };

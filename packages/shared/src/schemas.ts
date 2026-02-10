@@ -10,3 +10,7 @@ export const boardMetadataSchema = z.object({
 export const createBoardSchema = z.object({
   name: z.string().min(1),
 });
+
+export const updateBoardSchema = z.object({
+  name: z.string().min(1).optional(),
+});

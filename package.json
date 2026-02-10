@@ -1,7 +1,10 @@
 {
   "name": "agent-canvas-monorepo",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "concurrently --kill-others-on-fail -n server,web -c blue,green \"bun run --filter @agent-canvas/server dev\" \"bun run --filter web dev\"",
     "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build && bun run --filter web build",

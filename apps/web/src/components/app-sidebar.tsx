@@ -31,6 +31,13 @@ export function AppSidebar() {
     },
   });
 
+  const updateBoard = useMutation({
+    mutationFn: boardsMutations.update,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.boards });
+    },
+  });
+
   const handleCreateBoard = async () => {
     const now = new Date();
     const name =
@@ -39,6 +46,10 @@ export function AppSidebar() {
       now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
     const board = await createBoard.mutateAsync({ name });
     navigate(`/board/${board.id}`);
+  };
+
+  const handleRenameBoard = (id: string, newName: string) => {
+    updateBoard.mutate({ id, data: { name: newName } });
   };
 
   return (
@@ -70,6 +81,7 @@ export function AppSidebar() {
                   board={board}
                   isActive={boardId === board.id}
                   onNavigate={() => navigate(`/board/${board.id}`)}
+                  onRename={(newName) => handleRenameBoard(board.id, newName)}
                 />
               ))}
             </SidebarMenu>

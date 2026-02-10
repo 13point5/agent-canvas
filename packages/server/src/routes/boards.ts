@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
-import { type BoardMetadata, createBoardSchema } from "@agent-canvas/shared";
+import { type BoardMetadata, createBoardSchema, updateBoardSchema } from "@agent-canvas/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
@@ -43,6 +43,43 @@ boards.post("/", zValidator("json", createBoardSchema as any), async (c) => {
   emitBoardEvent({ type: "board:created", board: metadata });
 
   return c.json(metadata, 201);
+});
+
+// Get board metadata
+boards.get("/:id", async (c) => {
+  const id = c.req.param("id");
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
+
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  return c.json(metadata);
+});
+
+// Update board
+boards.patch("/:id", zValidator("json", updateBoardSchema as any), async (c) => {
+  const id = c.req.param("id");
+  const updates = c.req.valid("json");
+
+  const metadataPath = join(getBoardDir(id), "metadata.json");
+  const metadata = await readJSON<BoardMetadata>(metadataPath);
+
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  const updated: BoardMetadata = {
+    ...metadata,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await writeJSON(metadataPath, updated);
+
+  emitBoardEvent({ type: "board:updated", board: updated });
+
+  return c.json(updated);
 });
 
 export { boards };
