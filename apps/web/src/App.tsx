@@ -2,9 +2,12 @@ import { Route, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/board";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBoards } from "@/hooks/api/use-boards";
+import { useWebSocket } from "@/hooks/api/use-websocket";
 import { BoardPage, HomePage } from "@/pages";
 
 export function App() {
+  useWebSocket();
+
   const { isLoading } = useBoards();
 
   if (isLoading) {

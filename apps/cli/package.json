@@ -1,0 +1,33 @@
+{
+  "name": "agent-canvas",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "CLI tool for Agent Canvas",
+  "bin": {
+    "agent-canvas": "./bin/run.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin",
+    "web"
+  ],
+  "scripts": {
+    "dev": "bun src/index.ts",
+    "build": "tsc",
+    "prepack": "bun run build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@agent-canvas/server": "workspace:*",
+    "@agent-canvas/shared": "workspace:*",
+    "axios": "^1.7.9",
+    "commander": "^13.1.0",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.3"
+  }
+}

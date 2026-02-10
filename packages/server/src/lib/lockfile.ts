@@ -14,7 +14,9 @@ export function readLockfile(): LockfileData | null {
   try {
     if (!existsSync(LOCKFILE_PATH)) return null;
 
-    const data = JSON.parse(readFileSync(LOCKFILE_PATH, "utf-8")) as LockfileData;
+    const data = JSON.parse(
+      readFileSync(LOCKFILE_PATH, "utf-8"),
+    ) as LockfileData;
 
     // Check if process is still running
     try {

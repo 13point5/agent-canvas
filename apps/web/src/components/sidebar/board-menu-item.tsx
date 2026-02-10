@@ -1,4 +1,8 @@
-import { Delete02Icon, MoreVerticalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import {
+  Delete02Icon,
+  MoreVerticalIcon,
+  PencilEdit01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,7 +54,10 @@ export function BoardMenuItem({
             <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
             Rename
           </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
             <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
             Delete
           </DropdownMenuItem>
@@ -66,7 +73,10 @@ export function BoardMenuItem({
       )}
 
       {showDeleteDialog && (
-        <DeleteBoardDialog onOpenChange={setShowDeleteDialog} onConfirm={onDelete} />
+        <DeleteBoardDialog
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={onDelete}
+        />
       )}
     </SidebarMenuItem>
   );

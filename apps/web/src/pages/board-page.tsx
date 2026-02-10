@@ -24,8 +24,16 @@ export function BoardPage() {
       <header className="flex h-12 shrink-0 items-center gap-2 border-b px-2">
         <SidebarTrigger />
         <span className="font-medium">{board?.name ?? "Board"}</span>
-        <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={handleCopyId}>
-          <HugeiconsIcon icon={copied ? Tick01Icon : Copy01Icon} strokeWidth={2} />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="ml-auto"
+          onClick={handleCopyId}
+        >
+          <HugeiconsIcon
+            icon={copied ? Tick01Icon : Copy01Icon}
+            strokeWidth={2}
+          />
         </Button>
       </header>
       <main className="flex-1 overflow-hidden">

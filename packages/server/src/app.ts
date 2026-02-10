@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 
+import { getClientCount } from "@/lib/ws";
 import { boards } from "@/routes/boards";
 
 export function createApp(webDir?: string) {
@@ -9,6 +10,11 @@ export function createApp(webDir?: string) {
 
   // Enable CORS for development
   app.use("/api/*", cors());
+
+  // Health check with WebSocket client count
+  app.get("/api/health", (c) =>
+    c.json({ status: "ok", clients: getClientCount() }),
+  );
 
   // API routes
   app.route("/api/boards", boards);

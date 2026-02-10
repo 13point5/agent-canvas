@@ -29,12 +29,16 @@ boards.get("/", async (c) => {
   const ids = await listDirs(getBoardsDir());
 
   const results = await Promise.all(
-    ids.map((id) => readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"))),
+    ids.map((id) =>
+      readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json")),
+    ),
   );
   const allBoards = results.filter((m): m is BoardMetadata => m !== null);
 
   // Sort by createdAt descending (newest first)
-  allBoards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  allBoards.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
   return c.json(allBoards);
 });
@@ -62,7 +66,9 @@ boards.post("/", zValidator("json", createBoardSchema as any), async (c) => {
 // Get board metadata
 boards.get("/:id", async (c) => {
   const id = c.req.param("id");
-  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
+  const metadata = await readJSON<BoardMetadata>(
+    join(getBoardDir(id), "metadata.json"),
+  );
 
   if (!metadata) {
     return c.json({ error: "Board not found" }, 404);
@@ -72,36 +78,42 @@ boards.get("/:id", async (c) => {
 });
 
 // Update board
-boards.patch("/:id", zValidator("json", updateBoardSchema as any), async (c) => {
-  const id = c.req.param("id");
-  const updates = c.req.valid("json");
+boards.patch(
+  "/:id",
+  zValidator("json", updateBoardSchema as any),
+  async (c) => {
+    const id = c.req.param("id");
+    const updates = c.req.valid("json");
 
-  const metadataPath = join(getBoardDir(id), "metadata.json");
-  const metadata = await readJSON<BoardMetadata>(metadataPath);
+    const metadataPath = join(getBoardDir(id), "metadata.json");
+    const metadata = await readJSON<BoardMetadata>(metadataPath);
 
-  if (!metadata) {
-    return c.json({ error: "Board not found" }, 404);
-  }
+    if (!metadata) {
+      return c.json({ error: "Board not found" }, 404);
+    }
 
-  const updated: BoardMetadata = {
-    ...metadata,
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
+    const updated: BoardMetadata = {
+      ...metadata,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
 
-  await writeJSON(metadataPath, updated);
+    await writeJSON(metadataPath, updated);
 
-  emitBoardEvent({ type: "board:updated", board: updated });
+    emitBoardEvent({ type: "board:updated", board: updated });
 
-  return c.json(updated);
-});
+    return c.json(updated);
+  },
+);
 
 // Delete board
 boards.delete("/:id", async (c) => {
   const id = c.req.param("id");
   const boardDir = getBoardDir(id);
 
-  const metadata = await readJSON<BoardMetadata>(join(boardDir, "metadata.json"));
+  const metadata = await readJSON<BoardMetadata>(
+    join(boardDir, "metadata.json"),
+  );
 
   if (!metadata) {
     return c.json({ error: "Board not found" }, 404);
@@ -117,30 +129,36 @@ boards.delete("/:id", async (c) => {
 // Get snapshot
 boards.get("/:id/snapshot", async (c) => {
   const id = c.req.param("id");
-  const snapshot = await readJSON<Snapshot>(join(getBoardDir(id), "snapshot.json"));
+  const snapshot = await readJSON<Snapshot>(
+    join(getBoardDir(id), "snapshot.json"),
+  );
 
   return c.json({ snapshot });
 });
 
 // Save snapshot
-boards.put("/:id/snapshot", zValidator("json", snapshotSchema as any), async (c) => {
-  const id = c.req.param("id");
-  const snapshot = c.req.valid("json");
+boards.put(
+  "/:id/snapshot",
+  zValidator("json", snapshotSchema as any),
+  async (c) => {
+    const id = c.req.param("id");
+    const snapshot = c.req.valid("json");
 
-  const boardDir = getBoardDir(id);
-  const metadataPath = join(boardDir, "metadata.json");
-  const metadata = await readJSON<BoardMetadata>(metadataPath);
+    const boardDir = getBoardDir(id);
+    const metadataPath = join(boardDir, "metadata.json");
+    const metadata = await readJSON<BoardMetadata>(metadataPath);
 
-  if (!metadata) {
-    return c.json({ error: "Board not found" }, 404);
-  }
+    if (!metadata) {
+      return c.json({ error: "Board not found" }, 404);
+    }
 
-  await writeJSON(join(boardDir, "snapshot.json"), snapshot);
+    await writeJSON(join(boardDir, "snapshot.json"), snapshot);
 
-  metadata.updatedAt = new Date().toISOString();
-  await writeJSON(metadataPath, metadata);
+    metadata.updatedAt = new Date().toISOString();
+    await writeJSON(metadataPath, metadata);
 
-  return c.json({ success: true });
-});
+    return c.json({ success: true });
+  },
+);
 
 export { boards };

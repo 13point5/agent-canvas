@@ -16,7 +16,11 @@ interface RenameBoardDialogProps {
   onConfirm: (newName: string) => void;
 }
 
-export function RenameBoardDialog({ onOpenChange, boardName, onConfirm }: RenameBoardDialogProps) {
+export function RenameBoardDialog({
+  onOpenChange,
+  boardName,
+  onConfirm,
+}: RenameBoardDialogProps) {
   const [name, setName] = useState(boardName);
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
@@ -33,7 +37,9 @@ export function RenameBoardDialog({ onOpenChange, boardName, onConfirm }: Rename
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Rename Board</DialogTitle>
-            <DialogDescription>Enter a new name for this board.</DialogDescription>
+            <DialogDescription>
+              Enter a new name for this board.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
@@ -44,7 +50,11 @@ export function RenameBoardDialog({ onOpenChange, boardName, onConfirm }: Rename
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={!name.trim()}>
