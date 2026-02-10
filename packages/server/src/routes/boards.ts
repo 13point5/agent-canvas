@@ -5,7 +5,15 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
 import { emitBoardEvent } from "@/lib/events";
-import { ensureDir, getBoardDir, getBoardsDir, listDirs, readJSON, writeJSON } from "@/lib/storage";
+import {
+  ensureDir,
+  getBoardDir,
+  getBoardsDir,
+  listDirs,
+  readJSON,
+  removeDir,
+  writeJSON,
+} from "@/lib/storage";
 
 const boards = new Hono();
 
@@ -80,6 +88,24 @@ boards.patch("/:id", zValidator("json", updateBoardSchema as any), async (c) => 
   emitBoardEvent({ type: "board:updated", board: updated });
 
   return c.json(updated);
+});
+
+// Delete board
+boards.delete("/:id", async (c) => {
+  const id = c.req.param("id");
+  const boardDir = getBoardDir(id);
+
+  const metadata = await readJSON<BoardMetadata>(join(boardDir, "metadata.json"));
+
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  await removeDir(boardDir);
+
+  emitBoardEvent({ type: "board:deleted", boardId: id });
+
+  return c.json({ success: true });
 });
 
 export { boards };

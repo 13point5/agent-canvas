@@ -1,4 +1,4 @@
-import { MoreVerticalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, MoreVerticalIcon, PencilEdit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { DeleteBoardDialog } from "./dialogs/delete-board-dialog";
 import { RenameBoardDialog } from "./dialogs/rename-board-dialog";
 
 interface BoardMenuItemProps {
@@ -16,10 +17,18 @@ interface BoardMenuItemProps {
   isActive: boolean;
   onNavigate: () => void;
   onRename: (newName: string) => void;
+  onDelete: () => void;
 }
 
-export function BoardMenuItem({ board, isActive, onNavigate, onRename }: BoardMenuItemProps) {
+export function BoardMenuItem({
+  board,
+  isActive,
+  onNavigate,
+  onRename,
+  onDelete,
+}: BoardMenuItemProps) {
   const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   return (
     <SidebarMenuItem className="group/item">
@@ -41,6 +50,10 @@ export function BoardMenuItem({ board, isActive, onNavigate, onRename }: BoardMe
             <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
             Rename
           </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+            Delete
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -50,6 +63,10 @@ export function BoardMenuItem({ board, isActive, onNavigate, onRename }: BoardMe
           boardName={board.name}
           onConfirm={onRename}
         />
+      )}
+
+      {showDeleteDialog && (
+        <DeleteBoardDialog onOpenChange={setShowDeleteDialog} onConfirm={onDelete} />
       )}
     </SidebarMenuItem>
   );

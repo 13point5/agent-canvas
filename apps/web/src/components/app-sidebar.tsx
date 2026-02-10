@@ -38,6 +38,21 @@ export function AppSidebar() {
     },
   });
 
+  const deleteBoard = useMutation({
+    mutationFn: boardsMutations.delete,
+    onSuccess: async (_, deletedId) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.boards });
+      if (deletedId === boardId) {
+        const remainingBoards = boards.filter((b) => b.id !== deletedId);
+        if (remainingBoards.length > 0) {
+          navigate(`/board/${remainingBoards[0].id}`);
+        } else {
+          navigate("/");
+        }
+      }
+    },
+  });
+
   const handleCreateBoard = async () => {
     const now = new Date();
     const name =
@@ -50,6 +65,10 @@ export function AppSidebar() {
 
   const handleRenameBoard = (id: string, newName: string) => {
     updateBoard.mutate({ id, data: { name: newName } });
+  };
+
+  const handleDeleteBoard = (id: string) => {
+    deleteBoard.mutate(id);
   };
 
   return (
@@ -82,6 +101,7 @@ export function AppSidebar() {
                   isActive={boardId === board.id}
                   onNavigate={() => navigate(`/board/${board.id}`)}
                   onRename={(newName) => handleRenameBoard(board.id, newName)}
+                  onDelete={() => handleDeleteBoard(board.id)}
                 />
               ))}
             </SidebarMenu>

@@ -19,4 +19,6 @@ export const boardsMutations = {
 
   update: ({ id, data }: { id: string; data: UpdateBoardInput }) =>
     api.patch<BoardMetadata>(`/boards/${id}`, data).then((r) => r.data),
+
+  delete: (id: string) => api.delete<{ success: boolean }>(`/boards/${id}`).then((r) => r.data),
 };
