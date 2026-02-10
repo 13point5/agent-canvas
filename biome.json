@@ -13,7 +13,21 @@
     "indentWidth": 2
   },
   "linter": {
-    "enabled": true
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noDocumentCookie": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "tailwindDirectives": true
+    }
   },
   "files": {
     "includes": ["packages/**", "apps/**"]

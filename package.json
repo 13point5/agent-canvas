@@ -1,13 +1,15 @@
 {
   "name": "agent-canvas-monorepo",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "bun run --filter @agent-canvas/server dev",
-    "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build",
-    "clean": "rm -rf packages/shared/dist packages/server/dist node_modules bun.lock"
+    "dev": "concurrently --kill-others-on-fail -n server,web -c blue,green \"bun run --filter @agent-canvas/server dev\" \"bun run --filter web dev\"",
+    "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build && bun run --filter web build",
+    "clean": "rm -rf packages/shared/dist packages/server/dist apps/web/dist node_modules bun.lock"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.14"
+    "@biomejs/biome": "^2.3.14",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.8.1"
   }
 }
