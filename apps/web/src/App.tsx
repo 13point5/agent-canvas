@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/board";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBoards } from "@/hooks/api/use-boards";
-import { HomePage } from "@/pages";
+import { BoardPage, HomePage } from "@/pages";
 
 export function App() {
   const { isLoading } = useBoards();
@@ -19,6 +19,7 @@ export function App() {
     <TooltipProvider>
       <Routes>
         <Route element={<AppLayout />}>
+          <Route path="/board/:boardId" element={<BoardPage />} />
           <Route path="*" element={<HomePage />} />
         </Route>
       </Routes>

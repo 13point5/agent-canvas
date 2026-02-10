@@ -6,3 +6,7 @@ export const boardMetadataSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
+
+export const createBoardSchema = z.object({
+  name: z.string().min(1),
+});

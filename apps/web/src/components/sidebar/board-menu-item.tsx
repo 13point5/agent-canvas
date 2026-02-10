@@ -6,11 +6,7 @@ interface BoardMenuItemProps {
   onNavigate: () => void;
 }
 
-export function BoardMenuItem({
-  board,
-  isActive,
-  onNavigate,
-}: BoardMenuItemProps) {
+export function BoardMenuItem({ board, isActive, onNavigate }: BoardMenuItemProps) {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton isActive={isActive} onClick={onNavigate}>

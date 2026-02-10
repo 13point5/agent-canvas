@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "concurrently --kill-others-on-fail -n server,web -c blue,green \"bun run --filter @agent-canvas/server dev\" \"bun run --filter web dev\"",
     "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build && bun run --filter web build",
+    "format": "biome check --write . && prettier --write .",
     "clean": "rm -rf packages/shared/dist packages/server/dist apps/web/dist node_modules bun.lock"
   },
   "devDependencies": {
