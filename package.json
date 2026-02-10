@@ -1,0 +1,13 @@
+{
+  "name": "agent-canvas-monorepo",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "bun run --filter @agent-canvas/server dev",
+    "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build",
+    "clean": "rm -rf packages/shared/dist packages/server/dist node_modules bun.lock"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.14"
+  }
+}

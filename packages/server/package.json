@@ -1,0 +1,27 @@
+{
+  "name": "@agent-canvas/server",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "tsc",
+    "start": "bun src/index.ts"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
+    "@agent-canvas/shared": "workspace:*",
+    "hono": "^4.6.16"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.3"
+  }
+}
