@@ -56,7 +56,11 @@ export const websocketHandler = {
       if (data.type === "get-shapes:response") {
         resolvePendingRequest(data.requestId, data.shapes, data.error);
       } else if (data.type === "create-shapes:response") {
-        resolvePendingRequest(data.requestId, data.createdIds, data.error);
+        resolvePendingRequest(
+        data.requestId,
+        { createdIds: data.createdIds, idMap: data.idMap },
+        data.error,
+      );
       }
     } catch {
       // Ignore malformed messages

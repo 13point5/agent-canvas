@@ -40,9 +40,14 @@ export type CreateShapesResponse = {
   type: "create-shapes:response";
   requestId: string;
   createdIds: string[] | null;
+  idMap?: Record<string, string>;
   error?: string;
 };
 
 // API response types
 export type GetShapesApiResponse = { boardId: string; shapes: unknown[] };
-export type CreateShapesApiResponse = { boardId: string; createdIds: string[] };
+export type CreateShapesApiResponse = {
+  boardId: string;
+  createdIds: string[];
+  idMap?: Record<string, string>;
+};

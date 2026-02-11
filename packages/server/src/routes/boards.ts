@@ -239,8 +239,15 @@ boards.post("/:id/shapes", async (c) => {
   });
 
   try {
-    const createdIds = await createPendingRequest<string[]>(requestId, id);
-    return c.json({ boardId: id, createdIds });
+    const result = await createPendingRequest<{
+      createdIds: string[];
+      idMap?: Record<string, string>;
+    }>(requestId, id);
+    return c.json({
+      boardId: id,
+      createdIds: result.createdIds,
+      idMap: result.idMap,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     if (message === "TIMEOUT") {
