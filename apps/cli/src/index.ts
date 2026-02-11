@@ -12,10 +12,12 @@ import {
   checkHealth,
   createBoard,
   createBoardShapes,
+  deleteBoardShapes,
   getBoardShapes,
   listBoards,
   ServerNotRunningError,
   updateBoard,
+  updateBoardShapes,
 } from "./api-client";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -350,6 +352,69 @@ shapes
       }
 
       const result = await createBoardShapes(options.board, shapesArray);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      if (error instanceof ServerNotRunningError || error instanceof ApiError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+shapes
+  .command("update")
+  .description("Update shapes on a board")
+  .requiredOption("--board <id>", "Board ID")
+  .requiredOption(
+    "--shapes <json>",
+    "JSON array of shape update objects (each needs id and type)",
+  )
+  .action(async (options: { board: string; shapes: string }) => {
+    try {
+      let shapesArray: unknown[];
+      try {
+        shapesArray = JSON.parse(options.shapes);
+        if (!Array.isArray(shapesArray)) {
+          console.error("--shapes must be a JSON array");
+          process.exit(1);
+        }
+      } catch {
+        console.error("--shapes must be valid JSON");
+        process.exit(1);
+      }
+
+      const result = await updateBoardShapes(options.board, shapesArray);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      if (error instanceof ServerNotRunningError || error instanceof ApiError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+shapes
+  .command("delete")
+  .description("Delete shapes from a board")
+  .requiredOption("--board <id>", "Board ID")
+  .requiredOption("--ids <json>", "JSON array of shape IDs to delete")
+  .action(async (options: { board: string; ids: string }) => {
+    try {
+      let idsArray: string[];
+      try {
+        idsArray = JSON.parse(options.ids);
+        if (!Array.isArray(idsArray)) {
+          console.error("--ids must be a JSON array");
+          process.exit(1);
+        }
+      } catch {
+        console.error("--ids must be valid JSON");
+        process.exit(1);
+      }
+
+      const result = await deleteBoardShapes(options.board, idsArray);
       console.log(JSON.stringify(result, null, 2));
     } catch (error) {
       if (error instanceof ServerNotRunningError || error instanceof ApiError) {

@@ -2,8 +2,12 @@ import type {
   BoardEvent,
   CreateShapesRequest,
   CreateShapesResponse,
+  DeleteShapesRequest,
+  DeleteShapesResponse,
   GetShapesRequest,
   GetShapesResponse,
+  UpdateShapesRequest,
+  UpdateShapesResponse,
 } from "@agent-canvas/shared";
 import type { ServerWebSocket } from "bun";
 import { boardEvents } from "./events";
@@ -30,7 +34,7 @@ function broadcast(event: BoardEvent) {
   }
 }
 
-export function sendToClients(message: GetShapesRequest | CreateShapesRequest) {
+export function sendToClients(message: GetShapesRequest | CreateShapesRequest | UpdateShapesRequest | DeleteShapesRequest) {
   const data = JSON.stringify(message);
   for (const ws of clients) {
     ws.send(data);
@@ -51,7 +55,7 @@ export const websocketHandler = {
     try {
       const data = JSON.parse(
         typeof message === "string" ? message : message.toString(),
-      ) as GetShapesResponse | CreateShapesResponse;
+      ) as GetShapesResponse | CreateShapesResponse | UpdateShapesResponse | DeleteShapesResponse;
 
       if (data.type === "get-shapes:response") {
         resolvePendingRequest(data.requestId, data.shapes, data.error);
@@ -61,6 +65,18 @@ export const websocketHandler = {
         { createdIds: data.createdIds, idMap: data.idMap },
         data.error,
       );
+      } else if (data.type === "update-shapes:response") {
+        resolvePendingRequest(
+          data.requestId,
+          { updatedIds: data.updatedIds },
+          data.error,
+        );
+      } else if (data.type === "delete-shapes:response") {
+        resolvePendingRequest(
+          data.requestId,
+          { deletedIds: data.deletedIds },
+          data.error,
+        );
       }
     } catch {
       // Ignore malformed messages

@@ -5,9 +5,11 @@ import {
   type BoardMetadata,
   createBoardSchema,
   createShapesBodySchema,
+  deleteShapesBodySchema,
   type Snapshot,
   snapshotSchema,
   updateBoardSchema,
+  updateShapesBodySchema,
 } from "@agent-canvas/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
@@ -306,6 +308,106 @@ boards.post(
       idMap: result.idMap,
       ...(Object.keys(assetPaths).length > 0 ? { assetPaths } : {}),
     });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json(
+        { error: "Request timed out waiting for browser response" },
+        504,
+      );
+    }
+    return c.json({ error: message }, 500);
+  }
+  },
+);
+
+// Update shapes on a board (via WebSocket relay to browser)
+boards.patch(
+  "/:id/shapes",
+  zValidator("json", updateShapesBodySchema as any),
+  async (c) => {
+  const id = c.req.param("id");
+
+  const metadata = await readJSON<BoardMetadata>(
+    join(getBoardDir(id), "metadata.json"),
+  );
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error:
+          "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
+    );
+  }
+
+  const { shapes } = c.req.valid("json");
+  const requestId = randomUUID();
+
+  sendToClients({
+    type: "update-shapes:request",
+    requestId,
+    boardId: id,
+    shapes,
+  });
+
+  try {
+    const result = await createPendingRequest<{ updatedIds: string[] }>(requestId, id);
+    return c.json({ boardId: id, updatedIds: result.updatedIds });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json(
+        { error: "Request timed out waiting for browser response" },
+        504,
+      );
+    }
+    return c.json({ error: message }, 500);
+  }
+  },
+);
+
+// Delete shapes on a board (via WebSocket relay to browser)
+boards.delete(
+  "/:id/shapes",
+  zValidator("json", deleteShapesBodySchema as any),
+  async (c) => {
+  const id = c.req.param("id");
+
+  const metadata = await readJSON<BoardMetadata>(
+    join(getBoardDir(id), "metadata.json"),
+  );
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error:
+          "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
+    );
+  }
+
+  const { ids } = c.req.valid("json");
+  const requestId = randomUUID();
+
+  sendToClients({
+    type: "delete-shapes:request",
+    requestId,
+    boardId: id,
+    ids,
+  });
+
+  try {
+    const result = await createPendingRequest<{ deletedIds: string[] }>(requestId, id);
+    return c.json({ boardId: id, deletedIds: result.deletedIds });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     if (message === "TIMEOUT") {
