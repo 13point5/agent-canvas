@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
 
 export function getDataDir(): string {
   return join(homedir(), ".agent-canvas");
@@ -46,4 +46,32 @@ export async function listDirs(path: string): Promise<string[]> {
 
 export async function removeDir(path: string): Promise<void> {
   await rm(path, { recursive: true, force: true });
+}
+
+export function getBoardAssetsDir(boardId: string): string {
+  return join(getBoardDir(boardId), "assets");
+}
+
+export async function copyToBoardAssets(
+  localPath: string,
+  boardId: string,
+): Promise<{ filename: string; fullPath: string }> {
+  const assetsDir = getBoardAssetsDir(boardId);
+  await ensureDir(assetsDir);
+
+  const originalName = basename(localPath);
+  const ext = extname(originalName);
+  const stem = originalName.slice(0, -ext.length || undefined);
+
+  let filename = originalName;
+  let destPath = join(assetsDir, filename);
+  let counter = 1;
+  while (existsSync(destPath)) {
+    filename = `${stem}-${counter}${ext}`;
+    destPath = join(assetsDir, filename);
+    counter++;
+  }
+
+  await copyFile(localPath, destPath);
+  return { filename, fullPath: destPath };
 }

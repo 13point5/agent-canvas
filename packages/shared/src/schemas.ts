@@ -185,6 +185,22 @@ const frameShapeSchema = z.object({
   props: framePropsSchema,
 }).strict();
 
+// ── Image shape ─────────────────────────────────────────────────────
+
+const imagePropsSchema = z.object({
+  w: z.number().optional(),
+  h: z.number().optional(),
+}).strict();
+
+const imageShapeSchema = z.object({
+  type: z.literal("image"),
+  x: z.number(),
+  y: z.number(),
+  tempId: z.string().optional(),
+  src: z.string(),
+  props: imagePropsSchema.optional(),
+}).strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -193,6 +209,7 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   arrowShapeSchema,
   noteShapeSchema,
   frameShapeSchema,
+  imageShapeSchema,
 ]);
 
 export const createShapesBodySchema = z.object({

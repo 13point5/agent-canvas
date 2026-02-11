@@ -54,4 +54,5 @@ export type CreateShapesApiResponse = {
   boardId: string;
   createdIds: string[];
   idMap?: Record<string, string>;
+  assetPaths?: Record<string, string>;
 };

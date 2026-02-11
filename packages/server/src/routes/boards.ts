@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { basename, join } from "node:path";
 import {
   type BoardMetadata,
   createBoardSchema,
@@ -10,10 +11,12 @@ import {
 } from "@agent-canvas/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
+import { imageSizeFromFile } from "image-size/fromFile";
 
 import { emitBoardEvent } from "@/lib/events";
 import { createPendingRequest } from "@/lib/pending-requests";
 import {
+  copyToBoardAssets,
   ensureDir,
   getBoardDir,
   getBoardsDir,
@@ -235,11 +238,61 @@ boards.post(
   const { shapes } = c.req.valid("json");
   const requestId = randomUUID();
 
+  // Process image shapes: copy files to board assets, detect dimensions
+  const assetPaths: Record<string, string> = {};
+  const processedShapes = [];
+
+  for (const shape of shapes) {
+    if (shape.type !== "image") {
+      processedShapes.push(shape);
+      continue;
+    }
+
+    const imgShape = shape as { type: "image"; x: number; y: number; src: string; tempId?: string; props?: { w?: number; h?: number } };
+
+    if (!existsSync(imgShape.src)) {
+      return c.json({ error: `Image file not found: ${imgShape.src}` }, 400);
+    }
+
+    const { filename, fullPath } = await copyToBoardAssets(imgShape.src, id);
+
+    let w = imgShape.props?.w;
+    let h = imgShape.props?.h;
+    if (w === undefined || h === undefined) {
+      try {
+        const dimensions = await imageSizeFromFile(fullPath);
+        w = w ?? dimensions.width ?? 400;
+        h = h ?? dimensions.height ?? 300;
+      } catch {
+        w = w ?? 400;
+        h = h ?? 300;
+      }
+    }
+
+    const ext = filename.split(".").pop()?.toLowerCase();
+    const mimeMap: Record<string, string> = {
+      png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg",
+      gif: "image/gif", webp: "image/webp", svg: "image/svg+xml",
+    };
+    const mimeType = (ext && mimeMap[ext]) ?? "image/png";
+
+    const assetUrl = `/api/boards/${id}/assets/${filename}`;
+    assetPaths[basename(imgShape.src)] = assetUrl;
+
+    processedShapes.push({
+      ...imgShape,
+      src: assetUrl,
+      props: { ...imgShape.props, w, h },
+      name: filename,
+      mimeType,
+    });
+  }
+
   sendToClients({
     type: "create-shapes:request",
     requestId,
     boardId: id,
-    shapes,
+    shapes: processedShapes,
   });
 
   try {
@@ -251,6 +304,7 @@ boards.post(
       boardId: id,
       createdIds: result.createdIds,
       idMap: result.idMap,
+      ...(Object.keys(assetPaths).length > 0 ? { assetPaths } : {}),
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";

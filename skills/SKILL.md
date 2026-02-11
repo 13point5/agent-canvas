@@ -232,6 +232,39 @@ agent-canvas shapes create --board <board-id> --shapes '[
 ]'
 ```
 
+### Images
+
+Place images on the canvas from local file paths. The server copies the file to board-scoped storage and serves it by URL — snapshots stay small.
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {"type": "image", "x": 100, "y": 100, "src": "/path/to/screenshot.png"}
+]'
+```
+
+Dimensions are auto-detected from the file. Override with explicit `w`/`h`:
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {"type": "image", "x": 100, "y": 100, "src": "/path/to/photo.jpg", "props": {"w": 600, "h": 400}}
+]'
+```
+
+Image fields:
+- `src` — absolute path to a local image file (png, jpg, jpeg, gif, webp, svg)
+- `props.w`, `props.h` — optional width/height override (auto-detected if omitted)
+
+Response includes `assetPaths` mapping original filenames to served URLs:
+```json
+{
+  "boardId": "...",
+  "createdIds": ["shape:abc123"],
+  "assetPaths": {"screenshot.png": "/api/boards/<id>/assets/screenshot.png"}
+}
+```
+
+Images are stored at `~/.agent-canvas/boards/<boardId>/assets/`. Duplicate filenames are auto-deduplicated (e.g. `screenshot-1.png`).
+
 ## Workflow Pattern
 
 1. Create a board or list existing boards to get a board ID

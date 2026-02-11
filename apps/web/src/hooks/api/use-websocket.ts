@@ -6,6 +6,7 @@ import type {
 } from "@agent-canvas/shared";
 import { useEffect } from "react";
 import {
+  AssetRecordType,
   type Editor,
   type TLShape,
   type TLShapeId,
@@ -113,6 +114,7 @@ export function useWebSocket() {
           input: Record<string, unknown>;
           realId: string;
           isArrow: boolean;
+          isImage: boolean;
         }> = [];
 
         for (const rawShape of inputShapes) {
@@ -126,6 +128,7 @@ export function useWebSocket() {
           const isArrow =
             shape.type === "arrow" &&
             (shape.fromId !== undefined || shape.toId !== undefined);
+          const isImage = shape.type === "image";
 
           if (isArrow) {
             arrowMeta.push({
@@ -139,19 +142,19 @@ export function useWebSocket() {
             });
           }
 
-          shapesWithIds.push({ input: shape, realId, isArrow });
+          shapesWithIds.push({ input: shape, realId, isArrow, isImage });
         }
 
         // Step b: Prepare shapes for TLDraw
         const preparedShapes: Record<string, unknown>[] = [];
 
-        // Non-arrow shapes first, then arrows (so targets exist when bindings are created)
+        // Non-arrow shapes first (including images), then arrows (so targets exist when bindings are created)
         const sorted = [
           ...shapesWithIds.filter((s) => !s.isArrow),
           ...shapesWithIds.filter((s) => s.isArrow),
         ];
 
-        for (const { input, realId, isArrow } of sorted) {
+        for (const { input, realId, isArrow, isImage } of sorted) {
           // Strip custom fields
           const stripped = { ...input };
           delete stripped.tempId;
@@ -171,7 +174,40 @@ export function useWebSocket() {
             delete props.text;
           }
 
-          if (isArrow) {
+          if (isImage) {
+            const assetId = AssetRecordType.createId();
+            const imgProps = input.props as Record<string, unknown> | undefined;
+            const w = (imgProps?.w as number) ?? 400;
+            const h = (imgProps?.h as number) ?? 300;
+
+            editor.createAssets([{
+              id: assetId,
+              type: "image",
+              typeName: "asset",
+              props: {
+                name: (input.name as string) ?? "image",
+                src: input.src as string,
+                w,
+                h,
+                mimeType: (input.mimeType as string) ?? "image/png",
+                isAnimated: (input.mimeType as string) === "image/gif",
+              },
+              meta: {},
+            }]);
+
+            // Strip image-specific fields from shape
+            delete stripped.src;
+            delete stripped.name;
+            delete stripped.mimeType;
+
+            preparedShapes.push({
+              type: "image",
+              id: realId,
+              x: input.x as number,
+              y: input.y as number,
+              props: { assetId, w, h },
+            });
+          } else if (isArrow) {
             // Compute arrow position and start/end points
             const x1 = (input.x1 as number) ?? 0;
             const y1 = (input.y1 as number) ?? 0;
