@@ -3,6 +3,7 @@ import { join } from "node:path";
 import {
   type BoardMetadata,
   createBoardSchema,
+  createShapesBodySchema,
   type Snapshot,
   snapshotSchema,
   updateBoardSchema,
@@ -208,7 +209,10 @@ boards.get("/:id/shapes", async (c) => {
 });
 
 // Create shapes on a board (via WebSocket relay to browser)
-boards.post("/:id/shapes", async (c) => {
+boards.post(
+  "/:id/shapes",
+  zValidator("json", createShapesBodySchema as any),
+  async (c) => {
   const id = c.req.param("id");
 
   const metadata = await readJSON<BoardMetadata>(
@@ -228,14 +232,14 @@ boards.post("/:id/shapes", async (c) => {
     );
   }
 
-  const body = await c.req.json<{ shapes: unknown[] }>();
+  const { shapes } = c.req.valid("json");
   const requestId = randomUUID();
 
   sendToClients({
     type: "create-shapes:request",
     requestId,
     boardId: id,
-    shapes: body.shapes,
+    shapes,
   });
 
   try {
@@ -258,6 +262,7 @@ boards.post("/:id/shapes", async (c) => {
     }
     return c.json({ error: message }, 500);
   }
-});
+  },
+);
 
 export { boards };

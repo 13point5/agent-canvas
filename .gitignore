@@ -3,3 +3,5 @@ dist
 bun.lock
 .DS_Store
 apps/cli/web
+
+tests/*.txt
