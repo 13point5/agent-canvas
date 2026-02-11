@@ -12,6 +12,7 @@ import {
   type VecLike,
   createShapeId,
   getSnapshot,
+  toRichText,
 } from "tldraw";
 import { boardsMutations } from "@/api/client";
 import { queryClient, queryKeys } from "@/api/queryClient";
@@ -160,6 +161,15 @@ export function useWebSocket() {
           delete stripped.y1;
           delete stripped.x2;
           delete stripped.y2;
+
+          // Convert props.text (string) → props.richText for convenience
+          const props = stripped.props as
+            | Record<string, unknown>
+            | undefined;
+          if (props && typeof props.text === "string") {
+            props.richText = toRichText(props.text as string);
+            delete props.text;
+          }
 
           if (isArrow) {
             // Compute arrow position and start/end points
@@ -341,3 +351,4 @@ function calculateArrowBindingAnchor(
     ? clampedNormalizedAnchor
     : { x: 0.5, y: 0.5 };
 }
+

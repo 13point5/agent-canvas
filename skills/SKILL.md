@@ -43,15 +43,74 @@ Pass a JSON array of shape objects. Each shape follows TLDraw's shape format.
 agent-canvas shapes create --board <board-id> --shapes '<json-array>'
 ```
 
-## Text in Shapes (richText)
+## Text in Shapes
 
-TLDraw v4 uses `richText` (not `text`) for all shape text content. The format is a ProseMirror doc:
+Use `"text"` in `props` for plain text. The browser auto-converts it to TLDraw's `richText` format.
+
+For rich formatting, use `richText` directly (ProseMirror/TipTap doc structure). Both `text` and `richText` work on `geo`, `text`, and `note` shapes.
+
+### Rich Text Formatting
+
+Inline marks — apply to text nodes within a paragraph:
 
 ```json
-{"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Your text"}]}]}
+{"type": "text", "text": "bold", "marks": [{"type": "bold"}]}
+{"type": "text", "text": "italic", "marks": [{"type": "italic"}]}
+{"type": "text", "text": "bold+italic", "marks": [{"type": "bold"}, {"type": "italic"}]}
+{"type": "text", "text": "strikethrough", "marks": [{"type": "strike"}]}
+{"type": "text", "text": "code", "marks": [{"type": "code"}]}
+{"type": "text", "text": "highlighted", "marks": [{"type": "highlight"}]}
+{"type": "text", "text": "link text", "marks": [{"type": "link", "attrs": {"href": "https://example.com"}}]}
 ```
 
-Use `richText` in `props` for `geo`, `text`, and `note` shapes.
+Combine marks within a paragraph:
+```json
+{"props": {"richText": {"type": "doc", "content": [
+  {"type": "paragraph", "content": [
+    {"type": "text", "text": "Normal "},
+    {"type": "text", "text": "bold", "marks": [{"type": "bold"}]},
+    {"type": "text", "text": " and "},
+    {"type": "text", "text": "code", "marks": [{"type": "code"}]}
+  ]}
+]}}}
+```
+
+Block-level structures — bullet lists and ordered lists:
+
+```json
+{"props": {"richText": {"type": "doc", "content": [
+  {"type": "bulletList", "content": [
+    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "First"}]}]},
+    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Second"}]}]}
+  ]}
+]}}}
+```
+
+```json
+{"props": {"richText": {"type": "doc", "content": [
+  {"type": "orderedList", "content": [
+    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Step 1"}]}]},
+    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Step 2"}]}]}
+  ]}
+]}}}
+```
+
+### Headings
+
+TLDraw does not visually differentiate heading levels — all headings render at the same size. To create visually distinct headings, use separate text shapes with different `size` values:
+
+- H1: `"size": "xl"`
+- H2: `"size": "l"`
+- H3: `"size": "m"`
+
+You can combine this with bold for emphasis:
+```json
+{"type": "text", "x": 100, "y": 100, "props": {"richText": {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Section Title", "marks": [{"type": "bold"}]}]}]}, "size": "xl"}}
+```
+
+### Not Supported
+
+`blockquote`, `codeBlock`, and `horizontalRule` are disabled in TLDraw's rich text.
 
 ### Basic Shapes (geo)
 
@@ -65,7 +124,7 @@ agent-canvas shapes create --board <board-id> --shapes '[
 With text label:
 ```bash
 agent-canvas shapes create --board <board-id> --shapes '[
-  {"type": "geo", "x": 100, "y": 100, "props": {"w": 200, "h": 100, "geo": "rectangle", "richText": {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hello"}]}]}, "align": "middle", "verticalAlign": "middle"}}
+  {"type": "geo", "x": 100, "y": 100, "props": {"w": 200, "h": 100, "geo": "rectangle", "text": "Hello", "align": "middle", "verticalAlign": "middle"}}
 ]'
 ```
 
@@ -77,11 +136,13 @@ Optional styling props: `color` (`black`, `red`, `green`, `blue`, etc.), `fill` 
 
 ```bash
 agent-canvas shapes create --board <board-id> --shapes '[
-  {"type": "text", "x": 100, "y": 300, "props": {"richText": {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hello World"}]}]}, "size": "m"}}
+  {"type": "text", "x": 100, "y": 300, "props": {"text": "Hello World", "size": "m"}},
+  {"type": "text", "x": 100, "y": 400, "props": {"text": "Fixed width", "size": "m", "w": 300, "autoSize": false}},
+  {"type": "text", "x": 100, "y": 500, "props": {"text": "Monospace", "font": "mono", "size": "m"}}
 ]'
 ```
 
-Size options: `s`, `m`, `l`, `xl`.
+Text props: `size` (`s`, `m`, `l`, `xl`), `font` (`draw`, `sans`, `serif`, `mono`), `textAlign` (`start`, `middle`, `end`), `color`, `autoSize` (default `true`), `w` (width, used when `autoSize` is `false`).
 
 ### Temp IDs and Cross-Referencing
 
@@ -139,11 +200,11 @@ The arrow will be bound to both shapes, so dragging a shape moves the arrow with
 
 ```bash
 agent-canvas shapes create --board <board-id> --shapes '[
-  {"tempId": "start", "type": "geo", "x": 300, "y": 50, "props": {"w": 200, "h": 80, "geo": "ellipse", "richText": {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Start"}]}]}, "align": "middle", "verticalAlign": "middle"}},
-  {"tempId": "process", "type": "geo", "x": 300, "y": 250, "props": {"w": 200, "h": 80, "geo": "rectangle", "richText": {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Process"}]}]}, "align": "middle", "verticalAlign": "middle"}},
-  {"tempId": "decision", "type": "geo", "x": 300, "y": 450, "props": {"w": 200, "h": 100, "geo": "diamond", "richText": {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Condition?"}]}]}, "align": "middle", "verticalAlign": "middle"}},
-  {"tempId": "end-yes", "type": "geo", "x": 100, "y": 650, "props": {"w": 160, "h": 80, "geo": "ellipse", "richText": {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Yes"}]}]}, "align": "middle", "verticalAlign": "middle", "color": "green", "fill": "solid"}},
-  {"tempId": "end-no", "type": "geo", "x": 500, "y": 650, "props": {"w": 160, "h": 80, "geo": "ellipse", "richText": {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"No"}]}]}, "align": "middle", "verticalAlign": "middle", "color": "red", "fill": "solid"}},
+  {"tempId": "start", "type": "geo", "x": 300, "y": 50, "props": {"w": 200, "h": 80, "geo": "ellipse", "text": "Start", "align": "middle", "verticalAlign": "middle"}},
+  {"tempId": "process", "type": "geo", "x": 300, "y": 250, "props": {"w": 200, "h": 80, "geo": "rectangle", "text": "Process", "align": "middle", "verticalAlign": "middle"}},
+  {"tempId": "decision", "type": "geo", "x": 300, "y": 450, "props": {"w": 200, "h": 100, "geo": "diamond", "text": "Condition?", "align": "middle", "verticalAlign": "middle"}},
+  {"tempId": "end-yes", "type": "geo", "x": 100, "y": 650, "props": {"w": 160, "h": 80, "geo": "ellipse", "text": "Yes", "align": "middle", "verticalAlign": "middle", "color": "green", "fill": "solid"}},
+  {"tempId": "end-no", "type": "geo", "x": 500, "y": 650, "props": {"w": 160, "h": 80, "geo": "ellipse", "text": "No", "align": "middle", "verticalAlign": "middle", "color": "red", "fill": "solid"}},
   {"tempId": "a1", "type": "arrow", "fromId": "start", "toId": "process", "x1": 400, "y1": 130, "x2": 400, "y2": 250},
   {"tempId": "a2", "type": "arrow", "fromId": "process", "toId": "decision", "x1": 400, "y1": 330, "x2": 400, "y2": 450},
   {"tempId": "a3", "type": "arrow", "fromId": "decision", "toId": "end-yes", "x1": 300, "y1": 500, "x2": 180, "y2": 650},
