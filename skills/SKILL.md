@@ -10,8 +10,9 @@ Agent Canvas lets you create and manipulate shapes on a TLDraw whiteboard from t
 
 ## Prerequisites
 
-1. Server must be running: `agent-canvas open` or `bun run dev`
-2. Board must be open in a browser tab
+1. Check if the server is already running: `agent-canvas status`
+2. If not running, start it: `agent-canvas open` (use `--headless` to skip opening the browser)
+3. Board must be open in a browser tab
 
 ## Commands
 
