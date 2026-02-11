@@ -266,9 +266,58 @@ Response includes `assetPaths` mapping original filenames to served URLs:
 
 Images are stored at `~/.agent-canvas/boards/<boardId>/assets/`. Duplicate filenames are auto-deduplicated (e.g. `screenshot-1.png`).
 
+## Updating Shapes
+
+Update existing shapes by passing an array of update objects. Each update object requires `id` (the real TLDraw shape ID from a create response or `shapes get`) and `type`. All other fields are optional — only the fields you provide are updated.
+
+```bash
+agent-canvas shapes update --board <board-id> --shapes '[{"id": "shape:abc", "type": "geo", "props": {"color": "red"}}]'
+```
+
+You can update position (`x`, `y`), any props, or both. The `text` prop is auto-converted to `richText` just like in create.
+
+### Examples
+
+Change color:
+```bash
+agent-canvas shapes update --board <board-id> --shapes '[{"id": "shape:abc", "type": "geo", "props": {"color": "red"}}]'
+```
+
+Move a shape:
+```bash
+agent-canvas shapes update --board <board-id> --shapes '[{"id": "shape:abc", "type": "geo", "x": 500, "y": 200}]'
+```
+
+Update text:
+```bash
+agent-canvas shapes update --board <board-id> --shapes '[{"id": "shape:abc", "type": "note", "props": {"text": "New text"}}]'
+```
+
+Multiple updates in one call:
+```bash
+agent-canvas shapes update --board <board-id> --shapes '[
+  {"id": "shape:abc", "type": "geo", "props": {"color": "red", "fill": "solid"}},
+  {"id": "shape:def", "type": "text", "x": 300, "y": 400}
+]'
+```
+
+## Deleting Shapes
+
+Delete shapes by passing a JSON array of real TLDraw shape IDs.
+
+```bash
+agent-canvas shapes delete --board <board-id> --ids '["shape:abc", "shape:def"]'
+```
+
+- Pass real TLDraw shape IDs (from a create response `createdIds`/`idMap`, or from `shapes get`)
+- Arrow bindings are automatically cleaned up when connected shapes are deleted
+- Deletion is immediate and irreversible on the canvas
+
 ## Workflow Pattern
 
 1. Create a board or list existing boards to get a board ID
 2. Create shapes in batches using `tempId` for cross-referencing
 3. Use `idMap` from the response to reference shapes in subsequent calls
 4. Read shapes with `shapes get` to inspect current state
+5. Update shapes with `shapes update` to change position, props, or text
+6. Delete shapes with `shapes delete` when they are no longer needed

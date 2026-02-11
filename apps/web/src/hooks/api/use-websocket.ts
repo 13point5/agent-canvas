@@ -1,8 +1,12 @@
 import type {
   CreateShapesRequest,
   CreateShapesResponse,
+  DeleteShapesRequest,
+  DeleteShapesResponse,
   GetShapesRequest,
   GetShapesResponse,
+  UpdateShapesRequest,
+  UpdateShapesResponse,
 } from "@agent-canvas/shared";
 import { useEffect } from "react";
 import {
@@ -43,6 +47,16 @@ export function useWebSocket() {
 
           if (data.type === "create-shapes:request" && ws) {
             handleCreateShapesRequest(ws, data as CreateShapesRequest);
+            return;
+          }
+
+          if (data.type === "update-shapes:request" && ws) {
+            handleUpdateShapesRequest(ws, data as UpdateShapesRequest);
+            return;
+          }
+
+          if (data.type === "delete-shapes:request" && ws) {
+            handleDeleteShapesRequest(ws, data as DeleteShapesRequest);
             return;
           }
 
@@ -314,6 +328,78 @@ export function useWebSocket() {
           requestId,
           createdIds: null,
           error: e instanceof Error ? e.message : "Failed to create shapes",
+        };
+        ws.send(JSON.stringify(response));
+      }
+    }
+
+    async function handleUpdateShapesRequest(
+      ws: WebSocket,
+      request: UpdateShapesRequest,
+    ) {
+      const { requestId, boardId, shapes } = request;
+      try {
+        const editor = await useEditorStore.getState().loadBoard(boardId);
+
+        const updates = shapes.map((shape) => {
+          const { type, ...rest } = shape;
+          const props = rest.props as Record<string, unknown> | undefined;
+          if (props && typeof props.text === "string") {
+            props.richText = toRichText(props.text as string);
+            delete props.text;
+          }
+          return rest;
+        });
+
+        editor.updateShapes(
+          updates as Parameters<typeof editor.updateShapes>[0],
+        );
+
+        const snapshot = getSnapshot(editor.store);
+        await boardsMutations.saveSnapshot({ id: boardId, snapshot });
+
+        const response: UpdateShapesResponse = {
+          type: "update-shapes:response",
+          requestId,
+          updatedIds: shapes.map((s) => s.id),
+        };
+        ws.send(JSON.stringify(response));
+      } catch (e) {
+        const response: UpdateShapesResponse = {
+          type: "update-shapes:response",
+          requestId,
+          updatedIds: null,
+          error: e instanceof Error ? e.message : "Failed to update shapes",
+        };
+        ws.send(JSON.stringify(response));
+      }
+    }
+
+    async function handleDeleteShapesRequest(
+      ws: WebSocket,
+      request: DeleteShapesRequest,
+    ) {
+      const { requestId, boardId, ids } = request;
+      try {
+        const editor = await useEditorStore.getState().loadBoard(boardId);
+
+        editor.deleteShapes(ids as TLShapeId[]);
+
+        const snapshot = getSnapshot(editor.store);
+        await boardsMutations.saveSnapshot({ id: boardId, snapshot });
+
+        const response: DeleteShapesResponse = {
+          type: "delete-shapes:response",
+          requestId,
+          deletedIds: ids,
+        };
+        ws.send(JSON.stringify(response));
+      } catch (e) {
+        const response: DeleteShapesResponse = {
+          type: "delete-shapes:response",
+          requestId,
+          deletedIds: null,
+          error: e instanceof Error ? e.message : "Failed to delete shapes",
         };
         ws.send(JSON.stringify(response));
       }

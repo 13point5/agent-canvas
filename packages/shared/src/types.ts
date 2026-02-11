@@ -4,9 +4,12 @@ import type {
   boardMetadataSchema,
   createBoardSchema,
   createShapesBodySchema,
+  deleteShapesBodySchema,
   inputShapeSchema,
   snapshotSchema,
   updateBoardSchema,
+  updateShapeSchema,
+  updateShapesBodySchema,
 } from "./schemas";
 
 export type BoardMetadata = z.infer<typeof boardMetadataSchema>;
@@ -57,4 +60,47 @@ export type CreateShapesApiResponse = {
   createdIds: string[];
   idMap?: Record<string, string>;
   assetPaths?: Record<string, string>;
+};
+
+// ── Update shapes ────────────────────────────────────────────────────
+
+export type UpdateShape = z.infer<typeof updateShapeSchema>;
+export type UpdateShapesBody = z.infer<typeof updateShapesBodySchema>;
+
+export type UpdateShapesRequest = {
+  type: "update-shapes:request";
+  requestId: string;
+  boardId: string;
+  shapes: UpdateShape[];
+};
+export type UpdateShapesResponse = {
+  type: "update-shapes:response";
+  requestId: string;
+  updatedIds: string[] | null;
+  error?: string;
+};
+export type UpdateShapesApiResponse = {
+  boardId: string;
+  updatedIds: string[];
+};
+
+// ── Delete shapes ────────────────────────────────────────────────────
+
+export type DeleteShapesBody = z.infer<typeof deleteShapesBodySchema>;
+
+export type DeleteShapesRequest = {
+  type: "delete-shapes:request";
+  requestId: string;
+  boardId: string;
+  ids: string[];
+};
+export type DeleteShapesResponse = {
+  type: "delete-shapes:response";
+  requestId: string;
+  deletedIds: string[] | null;
+  error?: string;
+};
+export type DeleteShapesApiResponse = {
+  boardId: string;
+  deletedIds: string[];
 };

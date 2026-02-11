@@ -2,7 +2,9 @@ import { readLockfile } from "@agent-canvas/server";
 import type {
   BoardMetadata,
   CreateShapesApiResponse,
+  DeleteShapesApiResponse,
   GetShapesApiResponse,
+  UpdateShapesApiResponse,
 } from "@agent-canvas/shared";
 import axios, { AxiosError } from "axios";
 
@@ -184,6 +186,40 @@ export async function createBoardShapes(
     const response = await client.post<CreateShapesApiResponse>(
       `/api/boards/${id}/shapes`,
       { shapes },
+    );
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function updateBoardShapes(
+  id: string,
+  shapes: unknown[],
+): Promise<UpdateShapesApiResponse> {
+  try {
+    const client = createClient();
+    const response = await client.patch<UpdateShapesApiResponse>(
+      `/api/boards/${id}/shapes`,
+      { shapes },
+    );
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function deleteBoardShapes(
+  id: string,
+  ids: string[],
+): Promise<DeleteShapesApiResponse> {
+  try {
+    const client = createClient();
+    const response = await client.delete<DeleteShapesApiResponse>(
+      `/api/boards/${id}/shapes`,
+      { data: { ids } },
     );
 
     return response.data;

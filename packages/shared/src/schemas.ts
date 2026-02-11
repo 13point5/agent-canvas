@@ -234,6 +234,75 @@ export const createShapesBodySchema = z.object({
   shapes: z.array(inputShapeSchema).min(1),
 });
 
+// ── Update shape schemas (id required, everything else optional) ─────
+
+const geoUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("geo"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: geoPropsSchema.partial().optional(),
+}).strict();
+
+const textUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("text"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: textPropsSchema.partial().optional(),
+}).strict();
+
+const arrowUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("arrow"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: arrowPropsSchema.partial().optional(),
+}).strict();
+
+const noteUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("note"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: notePropsSchema.partial().optional(),
+}).strict();
+
+const frameUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("frame"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: framePropsSchema.partial().optional(),
+}).strict();
+
+const imageUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("image"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: imagePropsSchema.partial().optional(),
+}).strict();
+
+export const updateShapeSchema = z.discriminatedUnion("type", [
+  geoUpdateSchema,
+  textUpdateSchema,
+  arrowUpdateSchema,
+  noteUpdateSchema,
+  frameUpdateSchema,
+  imageUpdateSchema,
+]);
+
+export const updateShapesBodySchema = z.object({
+  shapes: z.array(updateShapeSchema).min(1),
+});
+
+// ── Delete shapes schema ─────────────────────────────────────────────
+
+export const deleteShapesBodySchema = z.object({
+  ids: z.array(z.string()).min(1),
+});
+
 export const appSettingsSchema = z.object({
   lastActiveBoardId: z.string().optional(),
   sidebarOpen: z.boolean().optional(),
