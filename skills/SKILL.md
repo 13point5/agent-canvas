@@ -130,7 +130,27 @@ agent-canvas shapes create --board <board-id> --shapes '[
 
 Supported `geo` values: `rectangle`, `ellipse`, `diamond`, `triangle`, `pentagon`, `hexagon`, `octagon`, `star`, `cloud`, `arrow-right`, `arrow-left`, `arrow-up`, `arrow-down`, `x-box`, `check-box`.
 
-Optional styling props: `color` (`black`, `red`, `green`, `blue`, etc.), `fill` (`none`, `solid`, `semi`, `pattern`), `size` (`s`, `m`, `l`, `xl`), `dash` (`draw`, `solid`, `dashed`, `dotted`).
+Optional styling props: `color` (`black`, `grey`, `light-violet`, `violet`, `blue`, `light-blue`, `yellow`, `orange`, `green`, `light-green`, `light-red`, `red`, `white`), `fill` (`none`, `solid`, `semi`, `pattern`, `fill`, `lined-fill`), `size` (`s`, `m`, `l`, `xl`), `dash` (`draw`, `solid`, `dashed`, `dotted`), `font` (`draw`, `sans`, `serif`, `mono`).
+
+#### Label Color
+
+Use `labelColor` to color the text label independently from the shape border/fill color. Available on `geo` and `note` shapes. Accepts the same color values as `color`.
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {"type": "geo", "x": 100, "y": 100, "props": {"w": 250, "h": 250, "geo": "rectangle", "color": "blue", "labelColor": "red", "text": "Red label on blue shape"}}
+]'
+```
+
+#### Scale
+
+Use `scale` to uniformly scale a shape (including its label). Available on `geo`, `text`, `note`, and `arrow` shapes.
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {"type": "geo", "x": 100, "y": 100, "props": {"w": 250, "h": 250, "geo": "rectangle", "scale": 2.5, "text": "Scaled up"}}
+]'
+```
 
 ### Text
 
