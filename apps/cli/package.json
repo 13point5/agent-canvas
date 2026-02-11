@@ -16,7 +16,7 @@
   "scripts": {
     "dev": "bun src/index.ts",
     "build": "tsc",
-    "prepack": "bun run build"
+    "prepack": "cd ../.. && bun run build && bun run bundle:web"
   },
   "license": "MIT",
   "dependencies": {
