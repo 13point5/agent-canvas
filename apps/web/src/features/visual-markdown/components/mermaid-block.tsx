@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { renderMermaid } from "beautiful-mermaid";
+import DOMPurify from "dompurify";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -39,8 +40,9 @@ export function MermaidBlock({ code, id, onPinToPanel }: MermaidBlockProps) {
     })
       .then((result) => {
         if (cancelled) return;
-        svgCache.set(code, result);
-        setSvg(result);
+        const sanitized = DOMPurify.sanitize(result, { USE_PROFILES: { svg: true, svgFilters: true } });
+        svgCache.set(code, sanitized);
+        setSvg(sanitized);
       })
       .catch((err) => {
         if (cancelled) return;
