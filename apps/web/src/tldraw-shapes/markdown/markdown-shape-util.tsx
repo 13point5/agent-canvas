@@ -1,13 +1,13 @@
 import { BaseBoxShapeUtil, HTMLContainer } from "tldraw";
-import type { VisualMarkdownShape } from "./visual-markdown-shape-props";
-import { visualMarkdownShapeProps } from "./visual-markdown-shape-props";
-import { VisualMarkdownViewer } from "./components/visual-markdown-viewer";
+import type { MarkdownShape } from "./markdown-shape-props";
+import { markdownShapeProps } from "./markdown-shape-props";
+import { MarkdownViewer } from "@/components/markdown/markdown-viewer";
 
-export class VisualMarkdownShapeUtil extends BaseBoxShapeUtil<VisualMarkdownShape> {
+export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
   static override type = "visual-markdown" as const;
-  static override props = visualMarkdownShapeProps;
+  static override props = markdownShapeProps;
 
-  override getDefaultProps(): VisualMarkdownShape["props"] {
+  override getDefaultProps(): MarkdownShape["props"] {
     return {
       w: 1200,
       h: 800,
@@ -24,7 +24,7 @@ export class VisualMarkdownShapeUtil extends BaseBoxShapeUtil<VisualMarkdownShap
     return true;
   }
 
-  override component(shape: VisualMarkdownShape) {
+  override component(shape: MarkdownShape) {
     const isEditing = this.editor.getEditingShapeId() === shape.id;
 
     return (
@@ -40,7 +40,7 @@ export class VisualMarkdownShapeUtil extends BaseBoxShapeUtil<VisualMarkdownShap
         onPointerMove={isEditing ? (e: React.PointerEvent) => { this.editor.markEventAsHandled(e); } : undefined}
         onPointerUp={isEditing ? (e: React.PointerEvent) => { this.editor.markEventAsHandled(e); } : undefined}
       >
-        <VisualMarkdownViewer
+        <MarkdownViewer
           name={shape.props.name}
           markdown={shape.props.markdown}
           width={shape.props.w}
@@ -51,7 +51,7 @@ export class VisualMarkdownShapeUtil extends BaseBoxShapeUtil<VisualMarkdownShap
     );
   }
 
-  override indicator(shape: VisualMarkdownShape) {
+  override indicator(shape: MarkdownShape) {
     return (
       <rect
         width={shape.props.w}

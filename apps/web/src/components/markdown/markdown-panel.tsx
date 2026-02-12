@@ -1,11 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useMemo, useRef } from "react";
+import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import type { ParsedMarkdown, MermaidBlock } from "../lib/types";
-import type { Components } from "react-markdown";
+
+import type { MermaidBlock, ParsedMarkdown } from "@/lib/parse-markdown";
+
 import { MermaidBlock as MermaidBlockComponent } from "./mermaid-block";
+
+const remarkPlugins = [remarkGfm, remarkMath];
+const rehypePlugins = [rehypeKatex];
 
 interface MarkdownPanelProps {
   markdown: string;
@@ -21,35 +26,40 @@ export function MarkdownPanel({
   onPinDiagram,
 }: MarkdownPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const mermaidCounterRef = useRef(0);
 
-  // Reset counter before each render
-  mermaidCounterRef.current = 0;
+  // Map mermaid code content → block for direct lookup (no counter needed)
+  const mermaidByCode = useMemo(
+    () => new Map(mermaidBlocks.map((b) => [b.code, b])),
+    [mermaidBlocks],
+  );
 
-  // Build section ID mapping: heading text -> section id
-  const sectionMap = useRef(new Map<string, string>());
-  useEffect(() => {
-    sectionMap.current.clear();
+  // Derived mapping: heading text -> section id
+  const sectionMap = useMemo(() => {
+    const map = new Map<string, string>();
     for (const section of parsed.sections) {
-      sectionMap.current.set(section.title, section.id);
+      map.set(section.title, section.id);
     }
+    return map;
   }, [parsed]);
 
   const components: Components = {
+    // Our `code` component handles its own wrapping — skip the default <pre>
+    pre: ({ children }) => <>{children}</>,
+
     h1: ({ children, ...props }) =>
-      renderHeading("h1", children, props, parsed, sectionMap.current),
+      renderHeading("h1", children, props, sectionMap),
     h2: ({ children, ...props }) =>
-      renderHeading("h2", children, props, parsed, sectionMap.current),
+      renderHeading("h2", children, props, sectionMap),
     h3: ({ children, ...props }) =>
-      renderHeading("h3", children, props, parsed, sectionMap.current),
+      renderHeading("h3", children, props, sectionMap),
 
     code: ({ className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className ?? "");
       const lang = match?.[1];
 
       if (lang === "mermaid") {
-        const index = mermaidCounterRef.current++;
-        const block = mermaidBlocks[index];
+        const raw = extractText(children).trim();
+        const block = mermaidByCode.get(raw);
         if (!block) return null;
         return (
           <MermaidBlockComponent
@@ -85,10 +95,7 @@ export function MarkdownPanel({
     // Style other markdown elements
     table: ({ children, ...props }) => (
       <div className="my-3 overflow-auto">
-        <table
-          className="w-full border-collapse text-sm"
-          {...props}
-        >
+        <table className="w-full border-collapse text-sm" {...props}>
           {children}
         </table>
       </div>
@@ -142,8 +149,8 @@ export function MarkdownPanel({
     <div ref={scrollRef} className="h-full overflow-auto px-4 py-3">
       <div className="prose-sm max-w-prose mx-auto text-foreground">
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeKatex]}
+          remarkPlugins={remarkPlugins}
+          rehypePlugins={rehypePlugins}
           components={components}
         >
           {markdown}
@@ -157,8 +164,7 @@ function renderHeading(
   Tag: "h1" | "h2" | "h3",
   children: React.ReactNode,
   props: Record<string, unknown>,
-  _parsed: ParsedMarkdown,
-  sectionMap: Map<string, string>
+  sectionMap: Map<string, string>,
 ) {
   const text = extractText(children);
   const sectionId = sectionMap.get(text);
@@ -186,7 +192,9 @@ function extractText(node: React.ReactNode): string {
   if (!node) return "";
   if (Array.isArray(node)) return node.map(extractText).join("");
   if (typeof node === "object" && "props" in node) {
-    return extractText((node as { props: { children?: React.ReactNode } }).props.children);
+    return extractText(
+      (node as { props: { children?: React.ReactNode } }).props.children,
+    );
   }
   return "";
 }

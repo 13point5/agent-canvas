@@ -1,13 +1,13 @@
+import { Markdown as MarkdownIcon } from "@react-symbols/icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Panel, Group, Separator } from "react-resizable-panels";
-import { parseMarkdown } from "../lib/parse-markdown";
-import { MarkdownPanel } from "./markdown-panel";
-import { DiagramsPanel } from "./diagrams-panel";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import { Button } from "@/components/ui/button";
-import { Markdown as MarkdownIcon } from "@react-symbols/icons";
+import { parseMarkdown } from "@/lib/parse-markdown";
+import { DiagramsPanel } from "./diagrams-panel";
+import { MarkdownPanel } from "./markdown-panel";
 
-interface VisualMarkdownViewerProps {
+interface MarkdownViewerProps {
   name: string;
   markdown: string;
   width: number;
@@ -15,13 +15,13 @@ interface VisualMarkdownViewerProps {
   isEditing: boolean;
 }
 
-export function VisualMarkdownViewer({
+export function MarkdownViewer({
   name,
   markdown,
   width,
   height,
   isEditing,
-}: VisualMarkdownViewerProps) {
+}: MarkdownViewerProps) {
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
 
   const [pinnedDiagramIds, setPinnedDiagramIds] = useState<string[]>([]);
@@ -111,9 +111,12 @@ export function VisualMarkdownViewer({
       size="icon-xs"
       title={showSidePanel ? "Hide side panel" : "Show side panel"}
       onClick={() => setShowSidePanel((v) => !v)}
-      className={showSidePanel ? "bg-accent text-foreground" : "text-muted-foreground"}
+      className={
+        showSidePanel ? "bg-accent text-foreground" : "text-muted-foreground"
+      }
     >
       <svg
+        aria-hidden="true"
         width="14"
         height="14"
         viewBox="0 0 16 16"
@@ -136,12 +139,12 @@ export function VisualMarkdownViewer({
         <div style={{ width, height }} />
         {createPortal(
           <div
-            className="fixed inset-0 z-[9999] flex flex-col bg-background select-text cursor-auto"
+            className="fixed inset-0 z-9999 flex flex-col bg-background select-text cursor-auto"
             style={{ pointerEvents: "all" }}
           >
             <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 shrink-0">
               <span className="text-sm font-medium text-foreground truncate">
-                {name || "Visual Markdown"}
+                {name || "Markdown"}
               </span>
               <div className="flex items-center gap-1">
                 {sidePanelToggleButton}
@@ -153,6 +156,7 @@ export function VisualMarkdownViewer({
                   className="text-muted-foreground"
                 >
                   <svg
+                    aria-hidden="true"
                     width="14"
                     height="14"
                     viewBox="0 0 16 16"
@@ -170,7 +174,7 @@ export function VisualMarkdownViewer({
             </div>
             {panelLayout}
           </div>,
-          document.body
+          document.body,
         )}
       </>
     );
@@ -181,7 +185,7 @@ export function VisualMarkdownViewer({
       <div className="flex items-center gap-1.5 truncate">
         <MarkdownIcon className="size-5 shrink-0" />
         <span className="text-sm font-medium text-foreground truncate">
-          {name || "Visual Markdown"}
+          {name || "Markdown"}
         </span>
       </div>
       <div className="flex items-center gap-1">
@@ -197,6 +201,7 @@ export function VisualMarkdownViewer({
           className="text-muted-foreground"
         >
           <svg
+            aria-hidden="true"
             width="14"
             height="14"
             viewBox="0 0 16 16"

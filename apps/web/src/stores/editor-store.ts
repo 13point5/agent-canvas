@@ -4,9 +4,9 @@ import type { Editor, TLStoreSnapshot } from "tldraw";
 import { loadSnapshot, Tldraw } from "tldraw";
 import { create } from "zustand";
 import { boardsApi } from "@/api/client";
-import { VisualMarkdownShapeUtil } from "@/features/visual-markdown";
+import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 
-const customShapeUtils = [VisualMarkdownShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil];
 
 const MAX_CACHED_EDITORS = 10;
 
