@@ -8,8 +8,8 @@ Comprehensive review of the `visual-markdown` feature covering React performance
 
 | Severity     | Count | Key Issues |
 |--------------|-------|------------|
-| **Critical** | 1     | Non-deterministic module-level `idCounter` in parser |
-| **High**     | 3     | Unbounded SVG cache, XSS via `dangerouslySetInnerHTML`, path traversal gaps in `/api/files` |
+| **Critical** | ~~1~~ 0 | ~~Non-deterministic module-level `idCounter` in parser~~ FIXED |
+| **High**     | ~~3~~ 1 | ~~Unbounded SVG cache~~ FIXED, ~~XSS via `dangerouslySetInnerHTML`~~ FIXED, path traversal gaps in `/api/files` |
 | **Medium**   | 5     | `components` object not memoized, `sectionMap` timing, plugin arrays recreated, heavy bundle not lazy-loaded, fragile mermaid counter |
 | **Low**      | 7     | DRY violations (SVG icons), unused props, redundant props, type assertions, hardcoded theme, component size, regex not hoisted |
 
@@ -17,7 +17,7 @@ Comprehensive review of the `visual-markdown` feature covering React performance
 
 ## Critical
 
-### 1. Non-deterministic module-level `idCounter`
+### 1. ~~Non-deterministic module-level `idCounter`~~ FIXED
 
 **File:** `lib/parse-markdown.ts:3-6`
 
@@ -60,7 +60,7 @@ export function parseMarkdown(raw: string): ParsedMarkdown {
 
 ## High
 
-### 2. Unbounded `svgCache` with unstable keys
+### 2. ~~Unbounded `svgCache` with unstable keys~~ FIXED
 
 **File:** `components/mermaid-block.tsx:13`
 
@@ -85,7 +85,7 @@ if (svgCache.has(code)) {
 svgCache.set(code, result);
 ```
 
-### 3. XSS via `dangerouslySetInnerHTML`
+### 3. ~~XSS via `dangerouslySetInnerHTML`~~ FIXED
 
 **File:** `components/mermaid-block.tsx:70, 128`
 
@@ -409,9 +409,9 @@ const LANGUAGE_REGEX = /language-(\w+)/;
 
 ## Priority Actions
 
-1. **Fix `idCounter`** — switch to index-based IDs scoped per call (Critical, causes cascading bugs)
-2. **Re-key `svgCache` by `code`** — fixes memory leak and stale cache hits (High)
-3. **Sanitize SVG output** — add DOMPurify before `dangerouslySetInnerHTML` (High)
+1. ~~**Fix `idCounter`** — switch to index-based IDs scoped per call (Critical, causes cascading bugs)~~ FIXED
+2. ~~**Re-key `svgCache` by `code`** — fixes memory leak and stale cache hits (High)~~ FIXED
+3. ~~**Sanitize SVG output** — add DOMPurify before `dangerouslySetInnerHTML` (High)~~ FIXED
 4. **Harden `/api/files`** — use `realpath`, add deny-list, validate query params (High)
 5. **Memoize `components` object** — biggest single render perf win (Medium)
 6. **Replace `sectionMap` `useRef+useEffect` with `useMemo`** — fixes stale-render bug (Medium)
