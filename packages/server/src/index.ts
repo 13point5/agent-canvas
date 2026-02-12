@@ -1,5 +1,7 @@
+import { readFile, writeFile } from "node:fs/promises";
 import { createApp } from "@/app";
 import { removeLockfile, writeLockfile } from "@/lib/lockfile";
+import { getBoardsDir, listDirs } from "@/lib/storage";
 import { websocketHandler } from "@/lib/ws";
 
 export { createApp } from "@/app";
@@ -12,10 +14,33 @@ export {
 } from "@/lib/lockfile";
 export { websocketHandler } from "@/lib/ws";
 
+/** Migrate old "visual-markdown" shape types to "markdown" in all board snapshots. */
+async function migrateSnapshots() {
+  const boardsDir = getBoardsDir();
+  const boardIds = await listDirs(boardsDir);
+
+  for (const id of boardIds) {
+    const snapshotPath = `${boardsDir}/${id}/snapshot.json`;
+    try {
+      const raw = await readFile(snapshotPath, "utf-8");
+      if (raw.includes("visual-markdown")) {
+        const migrated = raw.replaceAll("visual-markdown", "markdown");
+        await writeFile(snapshotPath, migrated);
+        console.log(`Migrated snapshot for board ${id}: visual-markdown → markdown`);
+      }
+    } catch {
+      // Snapshot doesn't exist or is unreadable — skip
+    }
+  }
+}
+
 // Only start server when run directly (not imported)
 const isMain = import.meta.main;
 
 if (isMain) {
+  // Run data migrations before starting the server
+  await migrateSnapshots();
+
   const app = createApp("./web");
   const port = Number(process.env.PORT) || 3456;
 

@@ -76,7 +76,7 @@ export function MarkdownDialogOverlay() {
     const w = 1200;
     const h = 800;
     editor.createShape({
-      type: "visual-markdown",
+      type: "markdown",
       x: center.x - w / 2,
       y: center.y - h / 2,
       props: { w, h, name, markdown: resolvedMarkdown },

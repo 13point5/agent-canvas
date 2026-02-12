@@ -110,7 +110,46 @@ export function useWebSocket() {
     ) {
       const { requestId, boardId, shapes: inputShapes } = request;
       try {
-        const editor = await useEditorStore.getState().loadBoard(boardId);
+        let editor = await useEditorStore.getState().loadBoard(boardId);
+
+        // Diagnostic: log registered shape utils
+        console.log(
+          "[ws] createShapes: registered shape utils:",
+          Object.keys(editor.shapeUtils),
+        );
+
+        // Check all requested shape types are available in this editor
+        const requestedTypes = new Set(
+          inputShapes.map((s: Record<string, unknown>) => s.type as string),
+        );
+        const missingTypes = [...requestedTypes].filter(
+          (t) => !editor.shapeUtils[t],
+        );
+
+        if (missingTypes.length > 0) {
+          // Try force-reloading the editor to pick up any newly registered shape utils
+          console.warn(
+            "[ws] createShapes: missing shape utils:",
+            missingTypes,
+            "— forcing fresh editor",
+          );
+          editor = await useEditorStore.getState().loadBoard(boardId, true);
+
+          // Re-check after reload
+          const stillMissing = missingTypes.filter(
+            (t) => !editor.shapeUtils[t],
+          );
+          if (stillMissing.length > 0) {
+            // This client can't handle these shape types — silently skip
+            // so another connected client can handle the request
+            console.warn(
+              "[ws] createShapes: still missing after reload:",
+              stillMissing,
+              "— skipping request",
+            );
+            return;
+          }
+        }
 
         // Step a: Build temp→real ID mapping and extract arrow metadata
         const idMap: Record<string, string> = {};

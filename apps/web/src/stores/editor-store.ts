@@ -30,7 +30,7 @@ interface EditorStore {
   setVisibleEditor: (boardId: string, editor: Editor) => void;
   unsetVisibleEditor: (boardId: string) => void;
   getEditor: (boardId: string) => Editor | undefined;
-  loadBoard: (boardId: string) => Promise<Editor>;
+  loadBoard: (boardId: string, forceNew?: boolean) => Promise<Editor>;
   cleanupEditor: (boardId: string) => void;
   evictOldest: () => void;
 }
@@ -116,9 +116,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     get().cleanupEditor(oldest.boardId);
   },
 
-  loadBoard: async (boardId) => {
-    const existing = get().getEditor(boardId);
-    if (existing) return existing;
+  loadBoard: async (boardId, forceNew) => {
+    if (!forceNew) {
+      const existing = get().getEditor(boardId);
+      if (existing) return existing;
+    } else {
+      // Evict the cached editor before creating a fresh one
+      get().cleanupEditor(boardId);
+    }
 
     const container = document.createElement("div");
     container.style.cssText =
