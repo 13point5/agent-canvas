@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Panel, Group, Separator } from "react-resizable-panels";
-import type { Editor, TLShapeId } from "tldraw";
 import { parseMarkdown } from "../lib/parse-markdown";
 import { MarkdownPanel } from "./markdown-panel";
 import { DiagramsPanel } from "./diagrams-panel";
@@ -13,8 +12,6 @@ interface VisualMarkdownViewerProps {
   markdown: string;
   width: number;
   height: number;
-  shapeId: TLShapeId;
-  editor: Editor;
   isEditing: boolean;
 }
 
@@ -23,8 +20,6 @@ export function VisualMarkdownViewer({
   markdown,
   width,
   height,
-  shapeId,
-  editor,
   isEditing,
 }: VisualMarkdownViewerProps) {
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);

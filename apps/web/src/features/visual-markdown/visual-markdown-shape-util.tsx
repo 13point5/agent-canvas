@@ -1,4 +1,4 @@
-import { BaseBoxShapeUtil, HTMLContainer, useEditor } from "tldraw";
+import { BaseBoxShapeUtil, HTMLContainer } from "tldraw";
 import type { VisualMarkdownShape } from "./visual-markdown-shape-props";
 import { visualMarkdownShapeProps } from "./visual-markdown-shape-props";
 import { VisualMarkdownViewer } from "./components/visual-markdown-viewer";
@@ -40,7 +40,13 @@ export class VisualMarkdownShapeUtil extends BaseBoxShapeUtil<VisualMarkdownShap
         onPointerMove={isEditing ? (e: React.PointerEvent) => { this.editor.markEventAsHandled(e); } : undefined}
         onPointerUp={isEditing ? (e: React.PointerEvent) => { this.editor.markEventAsHandled(e); } : undefined}
       >
-        <VisualMarkdownShapeContent shape={shape} isEditing={isEditing} />
+        <VisualMarkdownViewer
+          name={shape.props.name}
+          markdown={shape.props.markdown}
+          width={shape.props.w}
+          height={shape.props.h}
+          isEditing={isEditing}
+        />
       </HTMLContainer>
     );
   }
@@ -55,26 +61,4 @@ export class VisualMarkdownShapeUtil extends BaseBoxShapeUtil<VisualMarkdownShap
       />
     );
   }
-}
-
-function VisualMarkdownShapeContent({
-  shape,
-  isEditing,
-}: {
-  shape: VisualMarkdownShape;
-  isEditing: boolean;
-}) {
-  const editor = useEditor();
-
-  return (
-    <VisualMarkdownViewer
-      name={shape.props.name}
-      markdown={shape.props.markdown}
-      width={shape.props.w}
-      height={shape.props.h}
-      shapeId={shape.id}
-      editor={editor}
-      isEditing={isEditing}
-    />
-  );
 }
