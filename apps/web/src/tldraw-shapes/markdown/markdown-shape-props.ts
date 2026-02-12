@@ -1,10 +1,10 @@
 import { type RecordProps, T, type TLShape } from "tldraw";
 
-const VISUAL_MARKDOWN_SHAPE_TYPE = "visual-markdown" as const;
+const MARKDOWN_SHAPE_TYPE = "visual-markdown" as const;
 
 declare module "tldraw" {
   interface TLGlobalShapePropsMap {
-    [VISUAL_MARKDOWN_SHAPE_TYPE]: {
+    [MARKDOWN_SHAPE_TYPE]: {
       w: number;
       h: number;
       name: string;
@@ -13,9 +13,9 @@ declare module "tldraw" {
   }
 }
 
-export type VisualMarkdownShape = TLShape<typeof VISUAL_MARKDOWN_SHAPE_TYPE>;
+export type MarkdownShape = TLShape<typeof MARKDOWN_SHAPE_TYPE>;
 
-export const visualMarkdownShapeProps: RecordProps<VisualMarkdownShape> = {
+export const markdownShapeProps: RecordProps<MarkdownShape> = {
   w: T.number,
   h: T.number,
   name: T.string,

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { MermaidBlock as MermaidBlockComponent } from "./mermaid-block";
-import type { MermaidBlock } from "../lib/types";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { MermaidBlock } from "@/lib/parse-markdown";
+import { MermaidBlock as MermaidBlockComponent } from "./mermaid-block";
 
 interface DiagramsPanelProps {
   pinnedIds: string[];
@@ -15,21 +15,19 @@ export function DiagramsPanel({
   onUnpin,
 }: DiagramsPanelProps) {
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [prevLastPinned, setPrevLastPinned] = useState<string | undefined>();
 
-  // Auto-expand the most recently pinned (last in array)
+  // Auto-expand the most recently pinned diagram (React-recommended
+  // pattern for adjusting state when props change during render)
   const lastPinned = pinnedIds[pinnedIds.length - 1];
-  useEffect(() => {
-    if (lastPinned) {
-      setCollapsedIds((prev) => {
-        if (prev.has(lastPinned)) {
-          const next = new Set(prev);
-          next.delete(lastPinned);
-          return next;
-        }
-        return prev;
-      });
+  if (lastPinned !== prevLastPinned) {
+    setPrevLastPinned(lastPinned);
+    if (lastPinned && collapsedIds.has(lastPinned)) {
+      const next = new Set(collapsedIds);
+      next.delete(lastPinned);
+      setCollapsedIds(next);
     }
-  }, [lastPinned]);
+  }
 
   const blockMap = new Map(allBlocks.map((b) => [b.id, b]));
   const pinnedBlocks = pinnedIds
@@ -63,11 +61,13 @@ export function DiagramsPanel({
 
         return (
           <div key={block.id} className="border-b border-border last:border-b-0">
-            <div
-              className="flex items-center gap-2 px-3 py-1 bg-secondary/30 hover:bg-accent/40 transition-colors cursor-pointer select-none"
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-1 bg-secondary/30 hover:bg-accent/40 transition-colors cursor-pointer select-none"
               onClick={() => toggleCollapse(block.id)}
             >
               <svg
+                aria-hidden="true"
                 className={`h-3 w-3 shrink-0 transition-transform text-muted-foreground ${
                   isCollapsed ? "" : "rotate-90"
                 }`}
@@ -92,6 +92,7 @@ export function DiagramsPanel({
                 }}
               >
                 <svg
+                  aria-hidden="true"
                   width="12"
                   height="12"
                   viewBox="0 0 16 16"
@@ -105,11 +106,11 @@ export function DiagramsPanel({
                   <line x1="12" y1="4" x2="4" y2="12" />
                 </svg>
               </Button>
-            </div>
+            </button>
 
             {!isCollapsed && (
               <div className="p-3">
-                <MermaidBlockComponent id={block.id} code={block.code} />
+                <MermaidBlockComponent id={block.id} code={block.code} compact={false} />
               </div>
             )}
           </div>

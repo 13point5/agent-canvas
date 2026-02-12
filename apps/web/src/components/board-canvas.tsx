@@ -1,8 +1,8 @@
 import { Tldraw } from "tldraw";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
-import { VisualMarkdownShapeUtil } from "@/features/visual-markdown";
+import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 
-const customShapeUtils = [VisualMarkdownShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil];
 
 interface BoardCanvasProps {
   boardId: string;
