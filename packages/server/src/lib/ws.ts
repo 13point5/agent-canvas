@@ -12,6 +12,9 @@ import type {
 import type { ServerWebSocket } from "bun";
 import { boardEvents } from "./events";
 import { resolvePendingRequest } from "./pending-requests";
+import { makeOrLoadRoom } from "./rooms";
+
+// ── Event broadcast clients (existing /ws connections) ──────────────
 
 const clients = new Set<ServerWebSocket>();
 
@@ -34,7 +37,13 @@ function broadcast(event: BoardEvent) {
   }
 }
 
-export function sendToClients(message: GetShapesRequest | CreateShapesRequest | UpdateShapesRequest | DeleteShapesRequest) {
+export function sendToClients(
+  message:
+    | GetShapesRequest
+    | CreateShapesRequest
+    | UpdateShapesRequest
+    | DeleteShapesRequest,
+) {
   const data = JSON.stringify(message);
   for (const ws of clients) {
     ws.send(data);
@@ -55,16 +64,20 @@ export const websocketHandler = {
     try {
       const data = JSON.parse(
         typeof message === "string" ? message : message.toString(),
-      ) as GetShapesResponse | CreateShapesResponse | UpdateShapesResponse | DeleteShapesResponse;
+      ) as
+        | GetShapesResponse
+        | CreateShapesResponse
+        | UpdateShapesResponse
+        | DeleteShapesResponse;
 
       if (data.type === "get-shapes:response") {
         resolvePendingRequest(data.requestId, data.shapes, data.error);
       } else if (data.type === "create-shapes:response") {
         resolvePendingRequest(
-        data.requestId,
-        { createdIds: data.createdIds, idMap: data.idMap },
-        data.error,
-      );
+          data.requestId,
+          { createdIds: data.createdIds, idMap: data.idMap },
+          data.error,
+        );
       } else if (data.type === "update-shapes:response") {
         resolvePendingRequest(
           data.requestId,
@@ -81,5 +94,40 @@ export const websocketHandler = {
     } catch {
       // Ignore malformed messages
     }
+  },
+};
+
+// ── Sync WebSocket handler (new /ws/sync/:roomId connections) ───────
+
+// Bun WebSockets don't have per-socket event listeners like ws/fastify.
+// Instead we use ws.data to store the sessionId + roomId, and route
+// messages in the global handler.
+
+export interface SyncSocketData {
+  kind: "sync";
+  sessionId: string;
+  roomId: string;
+}
+
+export const syncWebsocketHandler = {
+  open(ws: ServerWebSocket<SyncSocketData>) {
+    const { roomId, sessionId } = ws.data;
+    console.log(`[sync] Client connected: ${sessionId} to room ${roomId}`);
+    const room = makeOrLoadRoom(roomId);
+    room.handleSocketConnect({ sessionId, socket: ws as any });
+  },
+  close(ws: ServerWebSocket<SyncSocketData>) {
+    const { roomId, sessionId } = ws.data;
+    console.log(`[sync] Client closing: ${sessionId} from room ${roomId}`);
+    const room = makeOrLoadRoom(roomId);
+    room.handleSocketClose(sessionId);
+  },
+  message(
+    ws: ServerWebSocket<SyncSocketData>,
+    message: string | Buffer,
+  ) {
+    const { roomId, sessionId } = ws.data;
+    const room = makeOrLoadRoom(roomId);
+    room.handleSocketMessage(sessionId, message);
   },
 };
