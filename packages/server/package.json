@@ -18,10 +18,15 @@
   "dependencies": {
     "@agent-canvas/shared": "workspace:*",
     "@hono/zod-validator": "^0.7.6",
+    "@tldraw/editor": "^4.3.1",
+    "@tldraw/sync-core": "^4.3.1",
+    "@tldraw/tlschema": "^4.3.1",
+    "better-sqlite3": "^11.8.1",
     "hono": "^4.6.16",
     "image-size": "^2.0.2"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
     "@types/bun": "latest",
     "typescript": "^5.7.3"
   }

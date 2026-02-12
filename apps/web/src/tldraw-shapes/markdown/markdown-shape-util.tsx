@@ -4,7 +4,7 @@ import { markdownShapeProps } from "./markdown-shape-props";
 import { MarkdownViewer } from "@/components/markdown/markdown-viewer";
 
 export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
-  static override type = "visual-markdown" as const;
+  static override type = "markdown" as const;
   static override props = markdownShapeProps;
 
   override getDefaultProps(): MarkdownShape["props"] {

@@ -1,6 +1,6 @@
 import { type RecordProps, T, type TLShape } from "tldraw";
 
-const MARKDOWN_SHAPE_TYPE = "visual-markdown" as const;
+const MARKDOWN_SHAPE_TYPE = "markdown" as const;
 
 declare module "tldraw" {
   interface TLGlobalShapePropsMap {
