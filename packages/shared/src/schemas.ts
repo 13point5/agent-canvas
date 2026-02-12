@@ -233,3 +233,8 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
 export const createShapesBodySchema = z.object({
   shapes: z.array(inputShapeSchema).min(1),
 });
+
+export const appSettingsSchema = z.object({
+  lastActiveBoardId: z.string().optional(),
+  sidebarOpen: z.boolean().optional(),
+});

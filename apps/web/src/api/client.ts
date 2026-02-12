@@ -1,4 +1,5 @@
 import type {
+  AppSettings,
   BoardMetadata,
   CreateBoardInput,
   Snapshot,
@@ -22,6 +23,16 @@ export const boardsApi = {
     api
       .get<{ snapshot: Snapshot | null }>(`/boards/${id}/snapshot`)
       .then((r) => r.data),
+};
+
+// Settings
+export const settingsApi = {
+  get: () => api.get<AppSettings>("/settings").then((r) => r.data),
+};
+
+export const settingsMutations = {
+  update: (data: Partial<AppSettings>) =>
+    api.patch<AppSettings>("/settings", data).then((r) => r.data),
 };
 
 // Mutation functions (for useMutation)

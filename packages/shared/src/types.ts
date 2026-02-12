@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type {
+  appSettingsSchema,
   boardMetadataSchema,
   createBoardSchema,
   createShapesBodySchema,
@@ -14,6 +15,7 @@ export type UpdateBoardInput = z.infer<typeof updateBoardSchema>;
 export type Snapshot = z.infer<typeof snapshotSchema>;
 export type InputShape = z.infer<typeof inputShapeSchema>;
 export type CreateShapesBody = z.infer<typeof createShapesBodySchema>;
+export type AppSettings = z.infer<typeof appSettingsSchema>;
 
 export type BoardEvent =
   | { type: "board:created"; board: BoardMetadata }

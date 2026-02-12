@@ -1,12 +1,19 @@
 import { Navigate } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useBoards } from "@/hooks/api/use-boards";
+import { useSettings } from "@/hooks/api/use-settings";
 
 export function HomePage() {
   const { data: boards = [] } = useBoards();
+  const { data: settings } = useSettings();
 
   if (boards.length > 0) {
-    return <Navigate to={`/board/${boards[0].id}`} replace />;
+    const lastId = settings?.lastActiveBoardId;
+    const target =
+      lastId && boards.some((b) => b.id === lastId)
+        ? lastId
+        : boards[0].id;
+    return <Navigate to={`/board/${target}`} replace />;
   }
 
   return (
