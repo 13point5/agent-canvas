@@ -201,6 +201,23 @@ const imageShapeSchema = z.object({
   props: imagePropsSchema.optional(),
 }).strict();
 
+// ── Visual Markdown shape ────────────────────────────────────────────
+
+const visualMarkdownPropsSchema = z.object({
+  w: z.number().optional(),
+  h: z.number().optional(),
+  name: z.string().optional(),
+  markdown: z.string(),
+}).strict();
+
+const visualMarkdownShapeSchema = z.object({
+  type: z.literal("visual-markdown"),
+  x: z.number(),
+  y: z.number(),
+  tempId: z.string().optional(),
+  props: visualMarkdownPropsSchema,
+}).strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -210,6 +227,7 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   noteShapeSchema,
   frameShapeSchema,
   imageShapeSchema,
+  visualMarkdownShapeSchema,
 ]);
 
 export const createShapesBodySchema = z.object({
