@@ -9,7 +9,7 @@ Comprehensive review of the `visual-markdown` feature covering React performance
 | Severity     | Count | Key Issues |
 |--------------|-------|------------|
 | **Critical** | ~~1~~ 0 | ~~Non-deterministic module-level `idCounter` in parser~~ FIXED |
-| **High**     | ~~3~~ 1 | ~~Unbounded SVG cache~~ FIXED, ~~XSS via `dangerouslySetInnerHTML`~~ FIXED, path traversal gaps in `/api/files` |
+| **High**     | ~~3~~ 0 | ~~Unbounded SVG cache~~ FIXED, ~~XSS via `dangerouslySetInnerHTML`~~ FIXED, ~~path traversal gaps in `/api/files`~~ REMOVED |
 | **Medium**   | 5     | `components` object not memoized, `sectionMap` timing, plugin arrays recreated, heavy bundle not lazy-loaded, fragile mermaid counter |
 | **Low**      | 7     | DRY violations (SVG icons), unused props, redundant props, type assertions, hardcoded theme, component size, regex not hoisted |
 
@@ -105,42 +105,9 @@ svgCache.set(code, sanitized);
 setSvg(sanitized);
 ```
 
-### 4. Path traversal gaps in `/api/files`
+### 4. ~~Path traversal gaps in `/api/files`~~ REMOVED
 
-**File:** `packages/server/src/app.ts:36-42`
-
-```ts
-const cwd = process.cwd();
-const resolved = resolve(cwd, path);
-const rel = relative(cwd, resolved);
-if (rel.startsWith("..") || resolve(resolved) !== resolved.replace(/\/$/, "")) {
-  return c.json({ error: "Invalid path" }, 400);
-}
-```
-
-**Problems:**
-1. The second condition (`resolve(resolved) !== resolved.replace(...)`) is a **no-op** — `resolve()` is idempotent on absolute paths
-2. **Symlinks** within CWD can point outside it; `relative()` doesn't resolve symlinks but `Bun.file()` follows them
-3. No deny-list for sensitive files (`.env`, `.git/config`, `secrets.json`)
-4. No file size limit — large files could cause memory pressure
-5. `parseInt` on `startLine`/`endLine` (lines 56-57) returns `NaN` for non-numeric input without error
-
-**Fix:**
-
-```ts
-import { realpath } from "node:fs/promises";
-
-const realResolved = await realpath(resolved);
-if (!realResolved.startsWith(cwd + "/")) {
-  return c.json({ error: "Invalid path" }, 400);
-}
-
-// Deny sensitive files
-const DENIED = [".env", ".git/", "secrets"];
-if (DENIED.some((d) => rel.includes(d))) {
-  return c.json({ error: "Access denied" }, 403);
-}
-```
+Endpoint and all related code (`LANG_MAP`, imports) deleted — feature no longer needed.
 
 ---
 
@@ -412,6 +379,6 @@ const LANGUAGE_REGEX = /language-(\w+)/;
 1. ~~**Fix `idCounter`** — switch to index-based IDs scoped per call (Critical, causes cascading bugs)~~ FIXED
 2. ~~**Re-key `svgCache` by `code`** — fixes memory leak and stale cache hits (High)~~ FIXED
 3. ~~**Sanitize SVG output** — add DOMPurify before `dangerouslySetInnerHTML` (High)~~ FIXED
-4. **Harden `/api/files`** — use `realpath`, add deny-list, validate query params (High)
+4. ~~**Harden `/api/files`** — endpoint removed entirely (High)~~ REMOVED
 5. **Memoize `components` object** — biggest single render perf win (Medium)
 6. **Replace `sectionMap` `useRef+useEffect` with `useMemo`** — fixes stale-render bug (Medium)
