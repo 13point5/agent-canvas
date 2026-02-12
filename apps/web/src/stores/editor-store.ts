@@ -4,6 +4,9 @@ import type { Editor, TLStoreSnapshot } from "tldraw";
 import { loadSnapshot, Tldraw } from "tldraw";
 import { create } from "zustand";
 import { boardsApi } from "@/api/client";
+import { VisualMarkdownShapeUtil } from "@/features/visual-markdown";
+
+const customShapeUtils = [VisualMarkdownShapeUtil];
 
 const MAX_CACHED_EDITORS = 10;
 
@@ -147,7 +150,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
           });
       };
 
-      root.render(createElement(Tldraw, { onMount: handleMount }));
+      root.render(createElement(Tldraw, { onMount: handleMount, shapeUtils: customShapeUtils }));
     });
   },
 }));
