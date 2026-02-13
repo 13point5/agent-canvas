@@ -30,6 +30,6 @@
     }
   },
   "files": {
-    "includes": ["packages/**", "apps/**"]
+    "includes": ["packages/*/src/**", "apps/*/src/**"]
   }
 }
