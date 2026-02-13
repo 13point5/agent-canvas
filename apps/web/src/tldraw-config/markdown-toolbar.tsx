@@ -2,6 +2,7 @@ import {
   Cancel01Icon,
   File01Icon,
   FileUploadIcon,
+  GitCompareIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -23,12 +24,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { setOpenMarkdownDialog } from "@/tldraw-config/markdown-overrides";
+import {
+  setOpenCodeReviewDialog,
+  setOpenMarkdownDialog,
+} from "@/tldraw-config/markdown-overrides";
 
-/**
- * Rendered via tldraw's `components.InFrontOfTheCanvas` so it lives
- * inside the <Tldraw> tree and has access to `useEditor()`.
- */
 export function MarkdownDialogOverlay() {
   const editor = useEditor();
   const [open, setOpen] = useState(false);
@@ -65,7 +65,7 @@ export function MarkdownDialogOverlay() {
       };
       reader.readAsText(file);
     },
-    []
+    [],
   );
 
   const resolvedMarkdown = fileContent ?? markdown;
@@ -90,7 +90,7 @@ export function MarkdownDialogOverlay() {
       setOpen(value);
       if (!value) reset();
     },
-    [reset]
+    [reset],
   );
 
   return (
@@ -191,11 +191,161 @@ export function MarkdownDialogOverlay() {
   );
 }
 
+export function CodeReviewDialogOverlay() {
+  const editor = useEditor();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [mode, setMode] = useState<"diff" | "file">("diff");
+  const [fileName, setFileName] = useState("src/example.ts");
+  const [fileContents, setFileContents] = useState("");
+  const [patch, setPatch] = useState("");
+
+  useEffect(() => {
+    setOpenCodeReviewDialog(() => setOpen(true));
+    return () => {
+      setOpenCodeReviewDialog(null);
+    };
+  }, []);
+
+  const reset = useCallback(() => {
+    setName("");
+    setMode("diff");
+    setFileName("src/example.ts");
+    setFileContents("");
+    setPatch("");
+  }, []);
+
+  const handleCreate = useCallback(() => {
+    const hasContent = mode === "diff" ? patch.trim().length > 0 : fileContents.trim().length > 0;
+    if (!hasContent) return;
+
+    const center = editor.getViewportPageBounds().center;
+    const w = 1200;
+    const h = 800;
+
+    editor.createShape({
+      type: "visual-code-review",
+      x: center.x - w / 2,
+      y: center.y - h / 2,
+      props: {
+        w,
+        h,
+        name,
+        mode,
+        fileName,
+        fileContents,
+        patch,
+        comments: "[]",
+      },
+    });
+
+    setOpen(false);
+    reset();
+  }, [editor, fileContents, fileName, mode, name, patch, reset]);
+
+  const hasContent = mode === "diff" ? patch.trim().length > 0 : fileContents.trim().length > 0;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (!value) reset();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Code Review Shape</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="review-name">Shape name</Label>
+            <Input
+              id="review-name"
+              type="text"
+              placeholder="Optional"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={mode === "diff" ? "default" : "outline"}
+              onClick={() => setMode("diff")}
+            >
+              <HugeiconsIcon icon={GitCompareIcon} className="mr-1 size-4" />
+              Diff
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "file" ? "default" : "outline"}
+              onClick={() => setMode("file")}
+            >
+              <HugeiconsIcon icon={File01Icon} className="mr-1 size-4" />
+              File
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="review-file-name">File name</Label>
+            <Input
+              id="review-file-name"
+              type="text"
+              placeholder="src/example.ts"
+              value={fileName}
+              onChange={(event) => setFileName(event.target.value)}
+            />
+          </div>
+
+          {mode === "diff" ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="review-patch">Unified diff</Label>
+              <Textarea
+                id="review-patch"
+                rows={10}
+                className="font-mono"
+                placeholder="Paste unified diff (git patch)"
+                value={patch}
+                onChange={(event) => setPatch(event.target.value)}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="review-file">File contents</Label>
+              <Textarea
+                id="review-file"
+                rows={10}
+                className="font-mono"
+                placeholder="Paste file contents"
+                value={fileContents}
+                onChange={(event) => setFileContents(event.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button disabled={!hasContent} onClick={handleCreate}>
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CustomToolbar() {
   return (
     <DefaultToolbar>
       <DefaultToolbarContent />
       <ToolbarItem tool="markdown" />
+      <ToolbarItem tool="codeReview" />
     </DefaultToolbar>
   );
 }

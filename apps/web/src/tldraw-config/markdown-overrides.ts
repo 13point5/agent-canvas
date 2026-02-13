@@ -5,9 +5,14 @@ import type { TLUiOverrides } from "tldraw";
 // Module-level callback ref so the toolbar override can open the dialog
 // rendered inside the <Tldraw> tree.
 export let openMarkdownDialog: (() => void) | null = null;
+export let openCodeReviewDialog: (() => void) | null = null;
 
 export function setOpenMarkdownDialog(fn: (() => void) | null) {
   openMarkdownDialog = fn;
+}
+
+export function setOpenCodeReviewDialog(fn: (() => void) | null) {
+  openCodeReviewDialog = fn;
 }
 
 const markdownIcon = createElement(
@@ -24,6 +29,22 @@ const markdownIcon = createElement(
   createElement(Markdown, { width: 18, height: 18 })
 ) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
 
+const codeReviewIcon = createElement(
+  "div",
+  {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: 18,
+      height: 18,
+      fontSize: 12,
+      fontWeight: 700,
+    },
+  },
+  "Δ"
+) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
+
 export const markdownOverrides: TLUiOverrides = {
   tools(_editor, tools) {
     tools.markdown = {
@@ -34,11 +55,20 @@ export const markdownOverrides: TLUiOverrides = {
         openMarkdownDialog?.();
       },
     };
+    tools.codeReview = {
+      id: "codeReview",
+      icon: codeReviewIcon,
+      label: "tool.codeReview" as "tool.select",
+      onSelect() {
+        openCodeReviewDialog?.();
+      },
+    };
     return tools;
   },
   translations: {
     en: {
       "tool.markdown": "Markdown",
+      "tool.codeReview": "Code Review",
     },
   },
 };

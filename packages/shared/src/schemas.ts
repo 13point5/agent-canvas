@@ -218,6 +218,28 @@ const visualMarkdownShapeSchema = z.object({
   props: visualMarkdownPropsSchema,
 }).strict();
 
+
+// ── Visual Code Review shape ───────────────────────────────────────
+
+const visualCodeReviewPropsSchema = z.object({
+  w: z.number().optional(),
+  h: z.number().optional(),
+  name: z.string().optional(),
+  mode: z.enum(["file", "diff"]).optional(),
+  fileName: z.string().optional(),
+  fileContents: z.string().optional(),
+  patch: z.string().optional(),
+  comments: z.string().optional(),
+}).strict();
+
+const visualCodeReviewShapeSchema = z.object({
+  type: z.literal("visual-code-review"),
+  x: z.number(),
+  y: z.number(),
+  tempId: z.string().optional(),
+  props: visualCodeReviewPropsSchema,
+}).strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -228,6 +250,7 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   frameShapeSchema,
   imageShapeSchema,
   visualMarkdownShapeSchema,
+  visualCodeReviewShapeSchema,
 ]);
 
 export const createShapesBodySchema = z.object({
@@ -284,6 +307,15 @@ const imageUpdateSchema = z.object({
   props: imagePropsSchema.partial().optional(),
 }).strict();
 
+
+const visualCodeReviewUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("visual-code-review"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: visualCodeReviewPropsSchema.partial().optional(),
+}).strict();
+
 export const updateShapeSchema = z.discriminatedUnion("type", [
   geoUpdateSchema,
   textUpdateSchema,
@@ -291,6 +323,7 @@ export const updateShapeSchema = z.discriminatedUnion("type", [
   noteUpdateSchema,
   frameUpdateSchema,
   imageUpdateSchema,
+  visualCodeReviewUpdateSchema,
 ]);
 
 export const updateShapesBodySchema = z.object({
