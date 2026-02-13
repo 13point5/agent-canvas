@@ -9,8 +9,8 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
 
   override getDefaultProps(): MarkdownShape["props"] {
     return {
-      w: 1200,
-      h: 800,
+      w: 400,
+      h: 300,
       name: "",
       markdown: "",
     };
