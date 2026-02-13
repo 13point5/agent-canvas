@@ -128,3 +128,23 @@
     @apply font-sans;
   }
 }
+
+.tlui-toolbar {
+  left: 12px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+}
+
+.tlui-toolbar .tlui-buttons__horizontal {
+  display: flex;
+  flex-direction: column;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

@@ -1,8 +1,4 @@
-import {
-  Cancel01Icon,
-  File01Icon,
-  FileUploadIcon,
-} from "@hugeicons/core-free-icons";
+import { AtIcon, Cancel01Icon, File01Icon, FileUploadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -10,6 +6,8 @@ import {
   DefaultToolbarContent,
   ToolbarItem,
   useEditor,
+  useValue,
+  type TLShapeId,
 } from "tldraw";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useChatComposerStore } from "@/stores/chat-composer-store";
 import { setOpenMarkdownDialog } from "@/tldraw-config/markdown-overrides";
 
 /**
@@ -53,20 +52,17 @@ export function MarkdownDialogOverlay() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      setFileName(file.name);
-      setName(file.name.replace(/\.(md|markdown|txt)$/i, ""));
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFileContent(reader.result as string);
-      };
-      reader.readAsText(file);
-    },
-    []
-  );
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setName(file.name.replace(/\.(md|markdown|txt)$/i, ""));
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileContent(reader.result as string);
+    };
+    reader.readAsText(file);
+  }, []);
 
   const resolvedMarkdown = fileContent ?? markdown;
 
@@ -90,7 +86,7 @@ export function MarkdownDialogOverlay() {
       setOpen(value);
       if (!value) reset();
     },
-    [reset]
+    [reset],
   );
 
   return (
@@ -103,10 +99,7 @@ export function MarkdownDialogOverlay() {
         <div className="flex flex-col gap-4">
           {fileName ? (
             <div className="flex w-full items-center gap-3 rounded-lg border border-input bg-input/30 px-3 py-3">
-              <HugeiconsIcon
-                icon={File01Icon}
-                className="size-5 shrink-0 text-muted-foreground"
-              />
+              <HugeiconsIcon icon={File01Icon} className="size-5 shrink-0 text-muted-foreground" />
               <span className="flex-1 truncate text-sm">{fileName}</span>
               <Button
                 variant="ghost"
@@ -127,10 +120,7 @@ export function MarkdownDialogOverlay() {
               onClick={() => fileInputRef.current?.click()}
               className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-input px-3 py-3 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground cursor-pointer"
             >
-              <HugeiconsIcon
-                icon={FileUploadIcon}
-                className="size-5 shrink-0"
-              />
+              <HugeiconsIcon icon={FileUploadIcon} className="size-5 shrink-0" />
               <span>Upload .md file</span>
             </button>
           )}
@@ -197,5 +187,55 @@ export function CustomToolbar() {
       <DefaultToolbarContent />
       <ToolbarItem tool="markdown" />
     </DefaultToolbar>
+  );
+}
+
+export function SelectionMentionToolbar() {
+  const editor = useEditor();
+  const pushMention = useChatComposerStore((state) => state.pushMention);
+
+  const selected = useValue(
+    "selection-shapes",
+    () => {
+      const ids = editor.getSelectedShapeIds();
+      const bounds = editor.getSelectionPageBounds();
+      return {
+        ids,
+        bounds,
+      };
+    },
+    [editor],
+  );
+
+  if (!selected.bounds || selected.ids.length === 0) return null;
+
+  const viewportBounds = editor.getViewportPageBounds();
+  const top = selected.bounds.minY - viewportBounds.minY - 42;
+  const left = selected.bounds.midX - viewportBounds.minX;
+
+  const pushSelectedShapes = () => {
+    selected.ids.forEach((shapeId: TLShapeId) => {
+      const shape = editor.getShape(shapeId);
+      const label =
+        shape?.type === "visual-markdown" ? shape.props.name || "markdown" : shape?.type || "shape";
+      pushMention({
+        id: `shape:${shapeId}`,
+        type: "shape",
+        label,
+        ref: shapeId,
+      });
+    });
+  };
+
+  return (
+    <div
+      className="pointer-events-auto absolute z-40"
+      style={{ left, top, transform: "translateX(-50%)" }}
+    >
+      <Button type="button" size="sm" variant="secondary" onClick={pushSelectedShapes}>
+        <HugeiconsIcon icon={AtIcon} className="mr-1 size-4" />
+        Mention shape{selected.ids.length > 1 ? "s" : ""}
+      </Button>
+    </div>
   );
 }
