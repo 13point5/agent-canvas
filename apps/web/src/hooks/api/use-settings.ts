@@ -17,7 +17,9 @@ export function useUpdateSettings() {
     mutationFn: settingsMutations.update,
     onMutate: async (patch) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.settings });
-      const previous = queryClient.getQueryData<AppSettings>(queryKeys.settings);
+      const previous = queryClient.getQueryData<AppSettings>(
+        queryKeys.settings,
+      );
       queryClient.setQueryData<AppSettings>(queryKeys.settings, (old) => ({
         ...old,
         ...patch,

@@ -13,12 +13,14 @@
     "format": "biome check --write . && prettier --write .",
     "cli": "bun apps/cli/src/index.ts",
     "cli:prod": "bun run bundle:web && bun apps/cli/src/index.ts",
-    "clean": "rm -rf packages/shared/dist packages/server/dist apps/web/dist apps/cli/dist apps/cli/web node_modules bun.lock"
+    "clean": "rm -rf packages/shared/dist packages/server/dist apps/web/dist apps/cli/dist apps/cli/web node_modules bun.lock",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
     "@types/dompurify": "^3.2.0",
     "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
     "prettier": "^3.8.1"
   },
   "dependencies": {

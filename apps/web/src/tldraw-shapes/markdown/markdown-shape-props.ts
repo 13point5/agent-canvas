@@ -9,6 +9,7 @@ declare module "tldraw" {
       h: number;
       name: string;
       markdown: string;
+      filePath: string;
     };
   }
 }
@@ -20,4 +21,5 @@ export const markdownShapeProps: RecordProps<MarkdownShape> = {
   h: T.number,
   name: T.string,
   markdown: T.string,
+  filePath: T.string,
 };

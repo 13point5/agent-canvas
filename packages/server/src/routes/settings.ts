@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { appSettingsSchema, type AppSettings } from "@agent-canvas/shared";
+import { type AppSettings, appSettingsSchema } from "@agent-canvas/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 

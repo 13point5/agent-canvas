@@ -1,5 +1,5 @@
-import { createElement } from "react";
 import { Markdown } from "@react-symbols/icons";
+import { createElement } from "react";
 import type { TLUiOverrides } from "tldraw";
 
 // Module-level callback ref so the toolbar override can open the dialog
@@ -21,7 +21,7 @@ const markdownIcon = createElement(
       height: 18,
     },
   },
-  createElement(Markdown, { width: 18, height: 18 })
+  createElement(Markdown, { width: 18, height: 18 }),
 ) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
 
 export const markdownOverrides: TLUiOverrides = {

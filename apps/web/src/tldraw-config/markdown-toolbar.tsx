@@ -65,7 +65,7 @@ export function MarkdownDialogOverlay() {
       };
       reader.readAsText(file);
     },
-    []
+    [],
   );
 
   const resolvedMarkdown = fileContent ?? markdown;
@@ -73,13 +73,11 @@ export function MarkdownDialogOverlay() {
   const handleCreate = useCallback(() => {
     if (!resolvedMarkdown.trim()) return;
     const center = editor.getViewportPageBounds().center;
-    const w = 1200;
-    const h = 800;
     editor.createShape({
       type: "markdown",
-      x: center.x - w / 2,
-      y: center.y - h / 2,
-      props: { w, h, name, markdown: resolvedMarkdown },
+      x: center.x,
+      y: center.y,
+      props: { name, markdown: resolvedMarkdown, filePath: "" },
     });
     setOpen(false);
     reset();
@@ -90,7 +88,7 @@ export function MarkdownDialogOverlay() {
       setOpen(value);
       if (!value) reset();
     },
-    [reset]
+    [reset],
   );
 
   return (

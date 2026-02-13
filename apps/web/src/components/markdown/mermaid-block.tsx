@@ -54,7 +54,12 @@ interface MermaidBlockProps {
   compact?: boolean;
 }
 
-export function MermaidBlock({ code, id, onPinToPanel, compact = true }: MermaidBlockProps) {
+export function MermaidBlock({
+  code,
+  id,
+  onPinToPanel,
+  compact = true,
+}: MermaidBlockProps) {
   const cacheKey = `${getThemeFingerprint()}::${code}`;
   const [svg, setSvg] = useState<string | null>(svgCache.get(cacheKey) ?? null);
   const [error, setError] = useState<string | null>(null);
@@ -81,13 +86,17 @@ export function MermaidBlock({ code, id, onPinToPanel, compact = true }: Mermaid
     })
       .then((result) => {
         if (cancelled) return;
-        const sanitized = DOMPurify.sanitize(result, { USE_PROFILES: { svg: true, svgFilters: true } });
+        const sanitized = DOMPurify.sanitize(result, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+        });
         svgCache.set(cacheKey, sanitized);
         setSvg(sanitized);
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to render diagram");
+        setError(
+          err instanceof Error ? err.message : "Failed to render diagram",
+        );
       });
 
     return () => {
@@ -110,7 +119,9 @@ export function MermaidBlock({ code, id, onPinToPanel, compact = true }: Mermaid
   return (
     <>
       <div className="relative group overflow-hidden rounded-md border border-border bg-card">
-        <div className={`overflow-auto p-2 [&_svg]:w-full [&_svg]:h-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:my-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 ${compact ? "max-h-80" : ""}`}>
+        <div
+          className={`overflow-auto p-2 [&_svg]:w-full [&_svg]:h-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:my-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 ${compact ? "max-h-80" : ""}`}
+        >
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG sanitized by DOMPurify
             dangerouslySetInnerHTML={{ __html: svg }}

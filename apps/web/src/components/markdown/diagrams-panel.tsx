@@ -60,7 +60,10 @@ export function DiagramsPanel({
         const isCollapsed = collapsedIds.has(block.id);
 
         return (
-          <div key={block.id} className="border-b border-border last:border-b-0">
+          <div
+            key={block.id}
+            className="border-b border-border last:border-b-0"
+          >
             <button
               type="button"
               className="flex w-full items-center gap-2 px-3 py-1 bg-secondary/30 hover:bg-accent/40 transition-colors cursor-pointer select-none"
@@ -110,7 +113,11 @@ export function DiagramsPanel({
 
             {!isCollapsed && (
               <div className="p-3">
-                <MermaidBlockComponent id={block.id} code={block.code} compact={false} />
+                <MermaidBlockComponent
+                  id={block.id}
+                  code={block.code}
+                  compact={false}
+                />
               </div>
             )}
           </div>

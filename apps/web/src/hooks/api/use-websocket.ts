@@ -11,13 +11,13 @@ import type {
 import { useEffect } from "react";
 import {
   AssetRecordType,
+  createShapeId,
   type Editor,
+  getSnapshot,
   type TLShape,
   type TLShapeId,
-  type VecLike,
-  createShapeId,
-  getSnapshot,
   toRichText,
+  type VecLike,
 } from "tldraw";
 import { boardsMutations } from "@/api/client";
 import { queryClient, queryKeys } from "@/api/queryClient";
@@ -219,9 +219,7 @@ export function useWebSocket() {
           delete stripped.y2;
 
           // Convert props.text (string) → props.richText for convenience
-          const props = stripped.props as
-            | Record<string, unknown>
-            | undefined;
+          const props = stripped.props as Record<string, unknown> | undefined;
           if (props && typeof props.text === "string") {
             props.richText = toRichText(props.text as string);
             delete props.text;
@@ -233,20 +231,22 @@ export function useWebSocket() {
             const w = (imgProps?.w as number) ?? 400;
             const h = (imgProps?.h as number) ?? 300;
 
-            editor.createAssets([{
-              id: assetId,
-              type: "image",
-              typeName: "asset",
-              props: {
-                name: (input.name as string) ?? "image",
-                src: input.src as string,
-                w,
-                h,
-                mimeType: (input.mimeType as string) ?? "image/png",
-                isAnimated: (input.mimeType as string) === "image/gif",
+            editor.createAssets([
+              {
+                id: assetId,
+                type: "image",
+                typeName: "asset",
+                props: {
+                  name: (input.name as string) ?? "image",
+                  src: input.src as string,
+                  w,
+                  h,
+                  mimeType: (input.mimeType as string) ?? "image/png",
+                  isAnimated: (input.mimeType as string) === "image/gif",
+                },
+                meta: {},
               },
-              meta: {},
-            }]);
+            ]);
 
             // Strip image-specific fields from shape
             delete stripped.src;
@@ -269,8 +269,7 @@ export function useWebSocket() {
             const x = Math.min(x1, x2);
             const y = Math.min(y1, y2);
 
-            const props =
-              (stripped.props as Record<string, unknown>) ?? {};
+            const props = (stripped.props as Record<string, unknown>) ?? {};
             preparedShapes.push({
               ...stripped,
               id: realId,
@@ -320,9 +319,7 @@ export function useWebSocket() {
           }
           if (arrow.toTempId) {
             const toRealId = idMap[arrow.toTempId] as TLShapeId;
-            const toShape = toRealId
-              ? editor.getShape(toRealId)
-              : undefined;
+            const toShape = toRealId ? editor.getShape(toRealId) : undefined;
             if (toShape) {
               const anchor = calculateArrowBindingAnchor(editor, toShape, {
                 x: arrow.x2,
@@ -345,9 +342,7 @@ export function useWebSocket() {
         }
 
         // Step e: Save and respond
-        const createdIds = preparedShapes.map(
-          (s) => s.id as string,
-        );
+        const createdIds = preparedShapes.map((s) => s.id as string);
 
         const snapshot = getSnapshot(editor.store);
         await boardsMutations.saveSnapshot({ id: boardId, snapshot });
@@ -512,4 +507,3 @@ function calculateArrowBindingAnchor(
     ? clampedNormalizedAnchor
     : { x: 0.5, y: 0.5 };
 }
-

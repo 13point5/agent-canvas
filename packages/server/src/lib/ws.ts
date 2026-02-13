@@ -34,7 +34,13 @@ function broadcast(event: BoardEvent) {
   }
 }
 
-export function sendToClients(message: GetShapesRequest | CreateShapesRequest | UpdateShapesRequest | DeleteShapesRequest) {
+export function sendToClients(
+  message:
+    | GetShapesRequest
+    | CreateShapesRequest
+    | UpdateShapesRequest
+    | DeleteShapesRequest,
+) {
   const data = JSON.stringify(message);
   for (const ws of clients) {
     ws.send(data);
@@ -55,16 +61,20 @@ export const websocketHandler = {
     try {
       const data = JSON.parse(
         typeof message === "string" ? message : message.toString(),
-      ) as GetShapesResponse | CreateShapesResponse | UpdateShapesResponse | DeleteShapesResponse;
+      ) as
+        | GetShapesResponse
+        | CreateShapesResponse
+        | UpdateShapesResponse
+        | DeleteShapesResponse;
 
       if (data.type === "get-shapes:response") {
         resolvePendingRequest(data.requestId, data.shapes, data.error);
       } else if (data.type === "create-shapes:response") {
         resolvePendingRequest(
-        data.requestId,
-        { createdIds: data.createdIds, idMap: data.idMap },
-        data.error,
-      );
+          data.requestId,
+          { createdIds: data.createdIds, idMap: data.idMap },
+          data.error,
+        );
       } else if (data.type === "update-shapes:response") {
         resolvePendingRequest(
           data.requestId,

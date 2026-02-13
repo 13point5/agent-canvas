@@ -155,7 +155,12 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
           });
       };
 
-      root.render(createElement(Tldraw, { onMount: handleMount, shapeUtils: customShapeUtils }));
+      root.render(
+        createElement(Tldraw, {
+          onMount: handleMount,
+          shapeUtils: customShapeUtils,
+        }),
+      );
     });
   },
 }));

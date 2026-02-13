@@ -1,11 +1,25 @@
-import { BaseBoxShapeUtil, HTMLContainer } from "tldraw";
+import {
+  BaseBoxShapeUtil,
+  createShapePropsMigrationSequence,
+  HTMLContainer,
+} from "tldraw";
+import { MarkdownViewer } from "@/components/markdown/markdown-viewer";
 import type { MarkdownShape } from "./markdown-shape-props";
 import { markdownShapeProps } from "./markdown-shape-props";
-import { MarkdownViewer } from "@/components/markdown/markdown-viewer";
 
 export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
   static override type = "markdown" as const;
   static override props = markdownShapeProps;
+  static override migrations = createShapePropsMigrationSequence({
+    sequence: [
+      {
+        id: "com.tldraw.shape.markdown/1",
+        up(props: Record<string, unknown>) {
+          props.filePath = "";
+        },
+      },
+    ],
+  });
 
   override getDefaultProps(): MarkdownShape["props"] {
     return {
@@ -13,6 +27,7 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
       h: 300,
       name: "",
       markdown: "",
+      filePath: "",
     };
   }
 
@@ -36,9 +51,27 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
           overflow: "hidden",
           borderRadius: 8,
         }}
-        onPointerDown={isEditing ? (e: React.PointerEvent) => { this.editor.markEventAsHandled(e); } : undefined}
-        onPointerMove={isEditing ? (e: React.PointerEvent) => { this.editor.markEventAsHandled(e); } : undefined}
-        onPointerUp={isEditing ? (e: React.PointerEvent) => { this.editor.markEventAsHandled(e); } : undefined}
+        onPointerDown={
+          isEditing
+            ? (e: React.PointerEvent) => {
+                this.editor.markEventAsHandled(e);
+              }
+            : undefined
+        }
+        onPointerMove={
+          isEditing
+            ? (e: React.PointerEvent) => {
+                this.editor.markEventAsHandled(e);
+              }
+            : undefined
+        }
+        onPointerUp={
+          isEditing
+            ? (e: React.PointerEvent) => {
+                this.editor.markEventAsHandled(e);
+              }
+            : undefined
+        }
       >
         <MarkdownViewer
           name={shape.props.name}
@@ -52,13 +85,6 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
   }
 
   override indicator(shape: MarkdownShape) {
-    return (
-      <rect
-        width={shape.props.w}
-        height={shape.props.h}
-        rx={8}
-        ry={8}
-      />
-    );
+    return <rect width={shape.props.w} height={shape.props.h} rx={8} ry={8} />;
   }
 }
