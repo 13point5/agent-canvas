@@ -5,12 +5,7 @@
  * This script is spawned by the `open` command and runs detached.
  */
 
-import {
-  createApp,
-  removeLockfile,
-  websocketHandler,
-  writeLockfile,
-} from "@agent-canvas/server";
+import { createApp, removeLockfile, websocketHandler, writeLockfile } from "@agent-canvas/server";
 
 const DEFAULT_PORT = 3456;
 

@@ -78,10 +78,7 @@ export function useWebSocket() {
       };
     }
 
-    async function handleGetShapesRequest(
-      ws: WebSocket,
-      request: GetShapesRequest,
-    ) {
+    async function handleGetShapesRequest(ws: WebSocket, request: GetShapesRequest) {
       const { requestId, boardId } = request;
       try {
         const editor = await useEditorStore.getState().loadBoard(boardId);
@@ -104,27 +101,19 @@ export function useWebSocket() {
       }
     }
 
-    async function handleCreateShapesRequest(
-      ws: WebSocket,
-      request: CreateShapesRequest,
-    ) {
+    async function handleCreateShapesRequest(ws: WebSocket, request: CreateShapesRequest) {
       const { requestId, boardId, shapes: inputShapes } = request;
       try {
         let editor = await useEditorStore.getState().loadBoard(boardId);
 
         // Diagnostic: log registered shape utils
-        console.log(
-          "[ws] createShapes: registered shape utils:",
-          Object.keys(editor.shapeUtils),
-        );
+        console.log("[ws] createShapes: registered shape utils:", Object.keys(editor.shapeUtils));
 
         // Check all requested shape types are available in this editor
         const requestedTypes = new Set(
           inputShapes.map((s: Record<string, unknown>) => s.type as string),
         );
-        const missingTypes = [...requestedTypes].filter(
-          (t) => !editor.shapeUtils[t],
-        );
+        const missingTypes = [...requestedTypes].filter((t) => !editor.shapeUtils[t]);
 
         if (missingTypes.length > 0) {
           // Try force-reloading the editor to pick up any newly registered shape utils
@@ -136,9 +125,7 @@ export function useWebSocket() {
           editor = await useEditorStore.getState().loadBoard(boardId, true);
 
           // Re-check after reload
-          const stillMissing = missingTypes.filter(
-            (t) => !editor.shapeUtils[t],
-          );
+          const stillMissing = missingTypes.filter((t) => !editor.shapeUtils[t]);
           if (stillMissing.length > 0) {
             // This client can't handle these shape types — silently skip
             // so another connected client can handle the request
@@ -179,8 +166,7 @@ export function useWebSocket() {
           }
 
           const isArrow =
-            shape.type === "arrow" &&
-            (shape.fromId !== undefined || shape.toId !== undefined);
+            shape.type === "arrow" && (shape.fromId !== undefined || shape.toId !== undefined);
           const isImage = shape.type === "image";
 
           if (isArrow) {
@@ -287,17 +273,13 @@ export function useWebSocket() {
         }
 
         // Step c: Create shapes
-        editor.createShapes(
-          preparedShapes as Parameters<typeof editor.createShapes>[0],
-        );
+        editor.createShapes(preparedShapes as Parameters<typeof editor.createShapes>[0]);
 
         // Step d: Create bindings for arrows
         for (const arrow of arrowMeta) {
           if (arrow.fromTempId) {
             const fromRealId = idMap[arrow.fromTempId] as TLShapeId;
-            const fromShape = fromRealId
-              ? editor.getShape(fromRealId)
-              : undefined;
+            const fromShape = fromRealId ? editor.getShape(fromRealId) : undefined;
             if (fromShape) {
               const anchor = calculateArrowBindingAnchor(editor, fromShape, {
                 x: arrow.x1,
@@ -367,10 +349,7 @@ export function useWebSocket() {
       }
     }
 
-    async function handleUpdateShapesRequest(
-      ws: WebSocket,
-      request: UpdateShapesRequest,
-    ) {
+    async function handleUpdateShapesRequest(ws: WebSocket, request: UpdateShapesRequest) {
       const { requestId, boardId, shapes } = request;
       try {
         const editor = await useEditorStore.getState().loadBoard(boardId);
@@ -385,9 +364,7 @@ export function useWebSocket() {
           return rest;
         });
 
-        editor.updateShapes(
-          updates as Parameters<typeof editor.updateShapes>[0],
-        );
+        editor.updateShapes(updates as Parameters<typeof editor.updateShapes>[0]);
 
         const snapshot = getSnapshot(editor.store);
         await boardsMutations.saveSnapshot({ id: boardId, snapshot });
@@ -409,10 +386,7 @@ export function useWebSocket() {
       }
     }
 
-    async function handleDeleteShapesRequest(
-      ws: WebSocket,
-      request: DeleteShapesRequest,
-    ) {
+    async function handleDeleteShapesRequest(ws: WebSocket, request: DeleteShapesRequest) {
       const { requestId, boardId, ids } = request;
       try {
         const editor = await useEditorStore.getState().loadBoard(boardId);
@@ -465,15 +439,10 @@ function calculateArrowBindingAnchor(
   }
 
   const pageTransform = editor.getShapePageTransform(targetShape);
-  const targetShapeGeometryInPageSpace =
-    targetShapeGeometry.transform(pageTransform);
+  const targetShapeGeometryInPageSpace = targetShapeGeometry.transform(pageTransform);
 
   // If the target point is inside the shape, use it; otherwise use nearest point
-  const anchorPoint = targetShapeGeometryInPageSpace.hitTestPoint(
-    targetPoint,
-    0,
-    true,
-  )
+  const anchorPoint = targetShapeGeometryInPageSpace.hitTestPoint(targetPoint, 0, true)
     ? targetPoint
     : targetShapeGeometryInPageSpace.nearestPoint(targetPoint);
 
@@ -491,19 +460,11 @@ function calculateArrowBindingAnchor(
 
   // Validate clamped point is still within geometry
   const clampedAnchorInPageSpace = {
-    x:
-      targetShapePageBounds.x +
-      clampedNormalizedAnchor.x * targetShapePageBounds.w,
-    y:
-      targetShapePageBounds.y +
-      clampedNormalizedAnchor.y * targetShapePageBounds.h,
+    x: targetShapePageBounds.x + clampedNormalizedAnchor.x * targetShapePageBounds.w,
+    y: targetShapePageBounds.y + clampedNormalizedAnchor.y * targetShapePageBounds.h,
   };
 
-  return targetShapeGeometryInPageSpace.hitTestPoint(
-    clampedAnchorInPageSpace,
-    0,
-    true,
-  )
+  return targetShapeGeometryInPageSpace.hitTestPoint(clampedAnchorInPageSpace, 0, true)
     ? clampedNormalizedAnchor
     : { x: 0.5, y: 0.5 };
 }

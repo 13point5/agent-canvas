@@ -9,8 +9,7 @@ export function HomePage() {
 
   if (boards.length > 0) {
     const lastId = settings?.lastActiveBoardId;
-    const target =
-      lastId && boards.some((b) => b.id === lastId) ? lastId : boards[0].id;
+    const target = lastId && boards.some((b) => b.id === lastId) ? lastId : boards[0].id;
     return <Navigate to={`/board/${target}`} replace />;
   }
 

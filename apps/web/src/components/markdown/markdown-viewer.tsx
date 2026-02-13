@@ -15,13 +15,7 @@ interface MarkdownViewerProps {
   isEditing: boolean;
 }
 
-export function MarkdownViewer({
-  name,
-  markdown,
-  width,
-  height,
-  isEditing,
-}: MarkdownViewerProps) {
+export function MarkdownViewer({ name, markdown, width, height, isEditing }: MarkdownViewerProps) {
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
 
   const [pinnedDiagramIds, setPinnedDiagramIds] = useState<string[]>([]);
@@ -68,9 +62,7 @@ export function MarkdownViewer({
   const hasPinnedDiagrams = pinnedDiagramIds.length > 0;
   const showPanel = showSidePanel && hasPinnedDiagrams;
 
-  const borderClass = isEditing
-    ? "border border-chart-1"
-    : "border border-border";
+  const borderClass = isEditing ? "border border-chart-1" : "border border-border";
 
   const markdownPanel = (
     <MarkdownPanel
@@ -111,9 +103,7 @@ export function MarkdownViewer({
       size="icon-xs"
       title={showSidePanel ? "Hide side panel" : "Show side panel"}
       onClick={() => setShowSidePanel((v) => !v)}
-      className={
-        showSidePanel ? "bg-accent text-foreground" : "text-muted-foreground"
-      }
+      className={showSidePanel ? "bg-accent text-foreground" : "text-muted-foreground"}
     >
       <svg
         aria-hidden="true"
@@ -184,14 +174,10 @@ export function MarkdownViewer({
     <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-1.5 shrink-0">
       <div className="flex items-center gap-1.5 truncate">
         <MarkdownIcon className="size-5 shrink-0" />
-        <span className="text-sm font-medium text-foreground truncate">
-          {name || "Markdown"}
-        </span>
+        <span className="text-sm font-medium text-foreground truncate">{name || "Markdown"}</span>
       </div>
       <div className="flex items-center gap-1">
-        {isEditing && (
-          <span className="inline-flex size-2 shrink-0 rounded-full bg-chart-1" />
-        )}
+        {isEditing && <span className="inline-flex size-2 shrink-0 rounded-full bg-chart-1" />}
         {sidePanelToggleButton}
         <Button
           variant="ghost"

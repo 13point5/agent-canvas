@@ -112,10 +112,7 @@ export async function getBoard(id: string): Promise<BoardMetadata> {
   }
 }
 
-export async function updateBoard(
-  id: string,
-  name: string,
-): Promise<BoardMetadata> {
+export async function updateBoard(id: string, name: string): Promise<BoardMetadata> {
   try {
     const client = createClient();
     const response = await client.patch<BoardMetadata>(`/api/boards/${id}`, {
@@ -162,14 +159,10 @@ export async function checkHealth(): Promise<HealthResponse> {
 // Shapes API Functions
 // ---------------------------------
 
-export async function getBoardShapes(
-  id: string,
-): Promise<GetShapesApiResponse> {
+export async function getBoardShapes(id: string): Promise<GetShapesApiResponse> {
   try {
     const client = createClient();
-    const response = await client.get<GetShapesApiResponse>(
-      `/api/boards/${id}/shapes`,
-    );
+    const response = await client.get<GetShapesApiResponse>(`/api/boards/${id}/shapes`);
 
     return response.data;
   } catch (error) {
@@ -183,10 +176,9 @@ export async function createBoardShapes(
 ): Promise<CreateShapesApiResponse> {
   try {
     const client = createClient();
-    const response = await client.post<CreateShapesApiResponse>(
-      `/api/boards/${id}/shapes`,
-      { shapes },
-    );
+    const response = await client.post<CreateShapesApiResponse>(`/api/boards/${id}/shapes`, {
+      shapes,
+    });
 
     return response.data;
   } catch (error) {
@@ -200,10 +192,9 @@ export async function updateBoardShapes(
 ): Promise<UpdateShapesApiResponse> {
   try {
     const client = createClient();
-    const response = await client.patch<UpdateShapesApiResponse>(
-      `/api/boards/${id}/shapes`,
-      { shapes },
-    );
+    const response = await client.patch<UpdateShapesApiResponse>(`/api/boards/${id}/shapes`, {
+      shapes,
+    });
 
     return response.data;
   } catch (error) {
@@ -217,10 +208,9 @@ export async function deleteBoardShapes(
 ): Promise<DeleteShapesApiResponse> {
   try {
     const client = createClient();
-    const response = await client.delete<DeleteShapesApiResponse>(
-      `/api/boards/${id}/shapes`,
-      { data: { ids } },
-    );
+    const response = await client.delete<DeleteShapesApiResponse>(`/api/boards/${id}/shapes`, {
+      data: { ids },
+    });
 
     return response.data;
   } catch (error) {

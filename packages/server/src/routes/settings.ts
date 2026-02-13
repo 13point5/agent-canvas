@@ -18,16 +18,12 @@ settings.get("/", async (c) => {
 });
 
 // Update app settings (partial merge)
-settings.patch(
-  "/",
-  zValidator("json", appSettingsSchema.partial()),
-  async (c) => {
-    const patch = c.req.valid("json");
-    const existing = (await readJSON<AppSettings>(getSettingsPath())) ?? {};
-    const merged = { ...existing, ...patch };
-    await writeJSON(getSettingsPath(), merged);
-    return c.json(merged);
-  },
-);
+settings.patch("/", zValidator("json", appSettingsSchema.partial()), async (c) => {
+  const patch = c.req.valid("json");
+  const existing = (await readJSON<AppSettings>(getSettingsPath())) ?? {};
+  const merged = { ...existing, ...patch };
+  await writeJSON(getSettingsPath(), merged);
+  return c.json(merged);
+});
 
 export { settings };

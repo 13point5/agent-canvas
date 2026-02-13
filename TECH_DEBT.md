@@ -9,11 +9,13 @@ This affects snapshot file size over time — especially for base64 assets added
 Our CLI-added images use URL-based `src` so the snapshot impact is small (just the URL string), but the orphaned asset files on disk (`~/.agent-canvas/boards/<id>/assets/`) are never cleaned up either.
 
 **Options:**
+
 - Periodic cleanup: scan assets in snapshot, remove any not referenced by a shape
 - Hook into TLDraw's store listener to detect shape deletions and prune unreferenced assets
 - Add a CLI command (`agent-canvas boards cleanup <id>`) that removes orphaned assets from both the snapshot store and disk
 
 **Relevant code:**
+
 ```
 apps/web/src/hooks/api/use-websocket.ts  — asset creation (editor.createAssets)
 packages/server/src/lib/storage.ts       — disk storage (copyToBoardAssets)

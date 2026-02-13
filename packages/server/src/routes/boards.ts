@@ -38,16 +38,12 @@ boards.get("/", async (c) => {
   const ids = await listDirs(getBoardsDir());
 
   const results = await Promise.all(
-    ids.map((id) =>
-      readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json")),
-    ),
+    ids.map((id) => readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"))),
   );
   const allBoards = results.filter((m): m is BoardMetadata => m !== null);
 
   // Sort by createdAt descending (newest first)
-  allBoards.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  allBoards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return c.json(allBoards);
 });
@@ -75,9 +71,7 @@ boards.post("/", zValidator("json", createBoardSchema as any), async (c) => {
 // Get board metadata
 boards.get("/:id", async (c) => {
   const id = c.req.param("id");
-  const metadata = await readJSON<BoardMetadata>(
-    join(getBoardDir(id), "metadata.json"),
-  );
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
 
   if (!metadata) {
     return c.json({ error: "Board not found" }, 404);
@@ -87,42 +81,36 @@ boards.get("/:id", async (c) => {
 });
 
 // Update board
-boards.patch(
-  "/:id",
-  zValidator("json", updateBoardSchema as any),
-  async (c) => {
-    const id = c.req.param("id");
-    const updates = c.req.valid("json");
+boards.patch("/:id", zValidator("json", updateBoardSchema as any), async (c) => {
+  const id = c.req.param("id");
+  const updates = c.req.valid("json");
 
-    const metadataPath = join(getBoardDir(id), "metadata.json");
-    const metadata = await readJSON<BoardMetadata>(metadataPath);
+  const metadataPath = join(getBoardDir(id), "metadata.json");
+  const metadata = await readJSON<BoardMetadata>(metadataPath);
 
-    if (!metadata) {
-      return c.json({ error: "Board not found" }, 404);
-    }
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
 
-    const updated: BoardMetadata = {
-      ...metadata,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
+  const updated: BoardMetadata = {
+    ...metadata,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
 
-    await writeJSON(metadataPath, updated);
+  await writeJSON(metadataPath, updated);
 
-    emitBoardEvent({ type: "board:updated", board: updated });
+  emitBoardEvent({ type: "board:updated", board: updated });
 
-    return c.json(updated);
-  },
-);
+  return c.json(updated);
+});
 
 // Delete board
 boards.delete("/:id", async (c) => {
   const id = c.req.param("id");
   const boardDir = getBoardDir(id);
 
-  const metadata = await readJSON<BoardMetadata>(
-    join(boardDir, "metadata.json"),
-  );
+  const metadata = await readJSON<BoardMetadata>(join(boardDir, "metadata.json"));
 
   if (!metadata) {
     return c.json({ error: "Board not found" }, 404);
@@ -138,45 +126,37 @@ boards.delete("/:id", async (c) => {
 // Get snapshot
 boards.get("/:id/snapshot", async (c) => {
   const id = c.req.param("id");
-  const snapshot = await readJSON<Snapshot>(
-    join(getBoardDir(id), "snapshot.json"),
-  );
+  const snapshot = await readJSON<Snapshot>(join(getBoardDir(id), "snapshot.json"));
 
   return c.json({ snapshot });
 });
 
 // Save snapshot
-boards.put(
-  "/:id/snapshot",
-  zValidator("json", snapshotSchema as any),
-  async (c) => {
-    const id = c.req.param("id");
-    const snapshot = c.req.valid("json");
+boards.put("/:id/snapshot", zValidator("json", snapshotSchema as any), async (c) => {
+  const id = c.req.param("id");
+  const snapshot = c.req.valid("json");
 
-    const boardDir = getBoardDir(id);
-    const metadataPath = join(boardDir, "metadata.json");
-    const metadata = await readJSON<BoardMetadata>(metadataPath);
+  const boardDir = getBoardDir(id);
+  const metadataPath = join(boardDir, "metadata.json");
+  const metadata = await readJSON<BoardMetadata>(metadataPath);
 
-    if (!metadata) {
-      return c.json({ error: "Board not found" }, 404);
-    }
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
 
-    await writeJSON(join(boardDir, "snapshot.json"), snapshot);
+  await writeJSON(join(boardDir, "snapshot.json"), snapshot);
 
-    metadata.updatedAt = new Date().toISOString();
-    await writeJSON(metadataPath, metadata);
+  metadata.updatedAt = new Date().toISOString();
+  await writeJSON(metadataPath, metadata);
 
-    return c.json({ success: true });
-  },
-);
+  return c.json({ success: true });
+});
 
 // Get shapes from a board (via WebSocket relay to browser)
 boards.get("/:id/shapes", async (c) => {
   const id = c.req.param("id");
 
-  const metadata = await readJSON<BoardMetadata>(
-    join(getBoardDir(id), "metadata.json"),
-  );
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
   if (!metadata) {
     return c.json({ error: "Board not found" }, 404);
   }
@@ -184,8 +164,7 @@ boards.get("/:id/shapes", async (c) => {
   if (getClientCount() === 0) {
     return c.json(
       {
-        error:
-          "No browser clients connected. Open the board in a browser first.",
+        error: "No browser clients connected. Open the board in a browser first.",
       },
       503,
     );
@@ -205,266 +184,219 @@ boards.get("/:id/shapes", async (c) => {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     if (message === "TIMEOUT") {
-      return c.json(
-        { error: "Request timed out waiting for browser response" },
-        504,
-      );
+      return c.json({ error: "Request timed out waiting for browser response" }, 504);
     }
     return c.json({ error: message }, 500);
   }
 });
 
 // Create shapes on a board (via WebSocket relay to browser)
-boards.post(
-  "/:id/shapes",
-  zValidator("json", createShapesBodySchema as any),
-  async (c) => {
-    const id = c.req.param("id");
+boards.post("/:id/shapes", zValidator("json", createShapesBodySchema as any), async (c) => {
+  const id = c.req.param("id");
 
-    const metadata = await readJSON<BoardMetadata>(
-      join(getBoardDir(id), "metadata.json"),
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error: "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
     );
-    if (!metadata) {
-      return c.json({ error: "Board not found" }, 404);
-    }
+  }
 
-    if (getClientCount() === 0) {
-      return c.json(
-        {
-          error:
-            "No browser clients connected. Open the board in a browser first.",
-        },
-        503,
-      );
-    }
+  const { shapes } = c.req.valid("json");
+  const requestId = randomUUID();
 
-    const { shapes } = c.req.valid("json");
-    const requestId = randomUUID();
+  // Process image shapes: copy files to board assets, detect dimensions
+  const assetPaths: Record<string, string> = {};
+  const processedShapes = [];
 
-    // Process image shapes: copy files to board assets, detect dimensions
-    const assetPaths: Record<string, string> = {};
-    const processedShapes = [];
+  for (const shape of shapes) {
+    // Handle markdown shapes with filePath
+    if (shape.type === "markdown" && shape.props.filePath && !shape.props.markdown) {
+      const filePath = shape.props.filePath;
 
-    for (const shape of shapes) {
-      // Handle markdown shapes with filePath
-      if (
-        shape.type === "markdown" &&
-        shape.props.filePath &&
-        !shape.props.markdown
-      ) {
-        const filePath = shape.props.filePath;
-
-        if (!isAbsolute(filePath)) {
-          return c.json(
-            { error: `filePath must be absolute: ${filePath}` },
-            400,
-          );
-        }
-        if (!existsSync(filePath)) {
-          return c.json({ error: `File not found: ${filePath}` }, 400);
-        }
-
-        const content = await readFile(filePath, "utf-8");
-        const name =
-          shape.props.name || basename(filePath).replace(/\.[^.]+$/, "");
-        processedShapes.push({
-          ...shape,
-          props: { ...shape.props, markdown: content, name },
-        });
-        continue;
+      if (!isAbsolute(filePath)) {
+        return c.json({ error: `filePath must be absolute: ${filePath}` }, 400);
+      }
+      if (!existsSync(filePath)) {
+        return c.json({ error: `File not found: ${filePath}` }, 400);
       }
 
-      if (shape.type !== "image") {
-        processedShapes.push(shape);
-        continue;
-      }
-
-      const imgShape = shape as {
-        type: "image";
-        x: number;
-        y: number;
-        src: string;
-        tempId?: string;
-        props?: { w?: number; h?: number };
-      };
-
-      if (!existsSync(imgShape.src)) {
-        return c.json({ error: `Image file not found: ${imgShape.src}` }, 400);
-      }
-
-      const { filename, fullPath } = await copyToBoardAssets(imgShape.src, id);
-
-      let w = imgShape.props?.w;
-      let h = imgShape.props?.h;
-      if (w === undefined || h === undefined) {
-        try {
-          const dimensions = await imageSizeFromFile(fullPath);
-          w = w ?? dimensions.width ?? 400;
-          h = h ?? dimensions.height ?? 300;
-        } catch {
-          w = w ?? 400;
-          h = h ?? 300;
-        }
-      }
-
-      const ext = filename.split(".").pop()?.toLowerCase();
-      const mimeMap: Record<string, string> = {
-        png: "image/png",
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        gif: "image/gif",
-        webp: "image/webp",
-        svg: "image/svg+xml",
-      };
-      const mimeType = (ext && mimeMap[ext]) ?? "image/png";
-
-      const assetUrl = `/api/boards/${id}/assets/${filename}`;
-      assetPaths[basename(imgShape.src)] = assetUrl;
-
+      const content = await readFile(filePath, "utf-8");
+      const name = shape.props.name || basename(filePath).replace(/\.[^.]+$/, "");
       processedShapes.push({
-        ...imgShape,
-        src: assetUrl,
-        props: { ...imgShape.props, w, h },
-        name: filename,
-        mimeType,
+        ...shape,
+        props: { ...shape.props, markdown: content, name },
       });
+      continue;
     }
 
-    sendToClients({
-      type: "create-shapes:request",
-      requestId,
-      boardId: id,
-      shapes: processedShapes,
-    });
+    if (shape.type !== "image") {
+      processedShapes.push(shape);
+      continue;
+    }
 
-    try {
-      const result = await createPendingRequest<{
-        createdIds: string[];
-        idMap?: Record<string, string>;
-      }>(requestId, id);
-      return c.json({
-        boardId: id,
-        createdIds: result.createdIds,
-        idMap: result.idMap,
-        ...(Object.keys(assetPaths).length > 0 ? { assetPaths } : {}),
-      });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
-      if (message === "TIMEOUT") {
-        return c.json(
-          { error: "Request timed out waiting for browser response" },
-          504,
-        );
+    const imgShape = shape as {
+      type: "image";
+      x: number;
+      y: number;
+      src: string;
+      tempId?: string;
+      props?: { w?: number; h?: number };
+    };
+
+    if (!existsSync(imgShape.src)) {
+      return c.json({ error: `Image file not found: ${imgShape.src}` }, 400);
+    }
+
+    const { filename, fullPath } = await copyToBoardAssets(imgShape.src, id);
+
+    let w = imgShape.props?.w;
+    let h = imgShape.props?.h;
+    if (w === undefined || h === undefined) {
+      try {
+        const dimensions = await imageSizeFromFile(fullPath);
+        w = w ?? dimensions.width ?? 400;
+        h = h ?? dimensions.height ?? 300;
+      } catch {
+        w = w ?? 400;
+        h = h ?? 300;
       }
-      return c.json({ error: message }, 500);
     }
-  },
-);
+
+    const ext = filename.split(".").pop()?.toLowerCase();
+    const mimeMap: Record<string, string> = {
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      gif: "image/gif",
+      webp: "image/webp",
+      svg: "image/svg+xml",
+    };
+    const mimeType = (ext && mimeMap[ext]) ?? "image/png";
+
+    const assetUrl = `/api/boards/${id}/assets/${filename}`;
+    assetPaths[basename(imgShape.src)] = assetUrl;
+
+    processedShapes.push({
+      ...imgShape,
+      src: assetUrl,
+      props: { ...imgShape.props, w, h },
+      name: filename,
+      mimeType,
+    });
+  }
+
+  sendToClients({
+    type: "create-shapes:request",
+    requestId,
+    boardId: id,
+    shapes: processedShapes,
+  });
+
+  try {
+    const result = await createPendingRequest<{
+      createdIds: string[];
+      idMap?: Record<string, string>;
+    }>(requestId, id);
+    return c.json({
+      boardId: id,
+      createdIds: result.createdIds,
+      idMap: result.idMap,
+      ...(Object.keys(assetPaths).length > 0 ? { assetPaths } : {}),
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json({ error: "Request timed out waiting for browser response" }, 504);
+    }
+    return c.json({ error: message }, 500);
+  }
+});
 
 // Update shapes on a board (via WebSocket relay to browser)
-boards.patch(
-  "/:id/shapes",
-  zValidator("json", updateShapesBodySchema as any),
-  async (c) => {
-    const id = c.req.param("id");
+boards.patch("/:id/shapes", zValidator("json", updateShapesBodySchema as any), async (c) => {
+  const id = c.req.param("id");
 
-    const metadata = await readJSON<BoardMetadata>(
-      join(getBoardDir(id), "metadata.json"),
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error: "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
     );
-    if (!metadata) {
-      return c.json({ error: "Board not found" }, 404);
+  }
+
+  const { shapes } = c.req.valid("json");
+  const requestId = randomUUID();
+
+  sendToClients({
+    type: "update-shapes:request",
+    requestId,
+    boardId: id,
+    shapes,
+  });
+
+  try {
+    const result = await createPendingRequest<{ updatedIds: string[] }>(requestId, id);
+    return c.json({ boardId: id, updatedIds: result.updatedIds });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json({ error: "Request timed out waiting for browser response" }, 504);
     }
-
-    if (getClientCount() === 0) {
-      return c.json(
-        {
-          error:
-            "No browser clients connected. Open the board in a browser first.",
-        },
-        503,
-      );
-    }
-
-    const { shapes } = c.req.valid("json");
-    const requestId = randomUUID();
-
-    sendToClients({
-      type: "update-shapes:request",
-      requestId,
-      boardId: id,
-      shapes,
-    });
-
-    try {
-      const result = await createPendingRequest<{ updatedIds: string[] }>(
-        requestId,
-        id,
-      );
-      return c.json({ boardId: id, updatedIds: result.updatedIds });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
-      if (message === "TIMEOUT") {
-        return c.json(
-          { error: "Request timed out waiting for browser response" },
-          504,
-        );
-      }
-      return c.json({ error: message }, 500);
-    }
-  },
-);
+    return c.json({ error: message }, 500);
+  }
+});
 
 // Delete shapes on a board (via WebSocket relay to browser)
-boards.delete(
-  "/:id/shapes",
-  zValidator("json", deleteShapesBodySchema as any),
-  async (c) => {
-    const id = c.req.param("id");
+boards.delete("/:id/shapes", zValidator("json", deleteShapesBodySchema as any), async (c) => {
+  const id = c.req.param("id");
 
-    const metadata = await readJSON<BoardMetadata>(
-      join(getBoardDir(id), "metadata.json"),
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error: "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
     );
-    if (!metadata) {
-      return c.json({ error: "Board not found" }, 404);
+  }
+
+  const { ids } = c.req.valid("json");
+  const requestId = randomUUID();
+
+  sendToClients({
+    type: "delete-shapes:request",
+    requestId,
+    boardId: id,
+    ids,
+  });
+
+  try {
+    const result = await createPendingRequest<{ deletedIds: string[] }>(requestId, id);
+    return c.json({ boardId: id, deletedIds: result.deletedIds });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json({ error: "Request timed out waiting for browser response" }, 504);
     }
-
-    if (getClientCount() === 0) {
-      return c.json(
-        {
-          error:
-            "No browser clients connected. Open the board in a browser first.",
-        },
-        503,
-      );
-    }
-
-    const { ids } = c.req.valid("json");
-    const requestId = randomUUID();
-
-    sendToClients({
-      type: "delete-shapes:request",
-      requestId,
-      boardId: id,
-      ids,
-    });
-
-    try {
-      const result = await createPendingRequest<{ deletedIds: string[] }>(
-        requestId,
-        id,
-      );
-      return c.json({ boardId: id, deletedIds: result.deletedIds });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
-      if (message === "TIMEOUT") {
-        return c.json(
-          { error: "Request timed out waiting for browser response" },
-          504,
-        );
-      }
-      return c.json({ error: message }, 500);
-    }
-  },
-);
+    return c.json({ error: message }, 500);
+  }
+});
 
 export { boards };

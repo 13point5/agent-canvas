@@ -15,9 +15,7 @@ export function createApp(webDir?: string) {
   app.use("/api/*", cors());
 
   // Health check with WebSocket client count
-  app.get("/api/health", (c) =>
-    c.json({ status: "ok", clients: getClientCount() }),
-  );
+  app.get("/api/health", (c) => c.json({ status: "ok", clients: getClientCount() }));
 
   // Serve board assets (images)
   app.get("/api/boards/:boardId/assets/:filename", async (c) => {

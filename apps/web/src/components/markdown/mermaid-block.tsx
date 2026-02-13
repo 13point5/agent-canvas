@@ -3,12 +3,7 @@ import DOMPurify from "dompurify";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Module-level SVG cache (keyed by code + theme fingerprint)
@@ -16,9 +11,7 @@ const svgCache = new Map<string, string>();
 
 /** Read a resolved CSS color from the document root. */
 function getCssColor(varName: string): string {
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(varName)
-    .trim();
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
 }
 
 /** Build a theme fingerprint so cached SVGs invalidate on theme change. */
@@ -54,12 +47,7 @@ interface MermaidBlockProps {
   compact?: boolean;
 }
 
-export function MermaidBlock({
-  code,
-  id,
-  onPinToPanel,
-  compact = true,
-}: MermaidBlockProps) {
+export function MermaidBlock({ code, id, onPinToPanel, compact = true }: MermaidBlockProps) {
   const cacheKey = `${getThemeFingerprint()}::${code}`;
   const [svg, setSvg] = useState<string | null>(svgCache.get(cacheKey) ?? null);
   const [error, setError] = useState<string | null>(null);
@@ -94,9 +82,7 @@ export function MermaidBlock({
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(
-          err instanceof Error ? err.message : "Failed to render diagram",
-        );
+        setError(err instanceof Error ? err.message : "Failed to render diagram");
       });
 
     return () => {

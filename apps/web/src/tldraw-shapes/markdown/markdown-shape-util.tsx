@@ -1,8 +1,4 @@
-import {
-  BaseBoxShapeUtil,
-  createShapePropsMigrationSequence,
-  HTMLContainer,
-} from "tldraw";
+import { BaseBoxShapeUtil, createShapePropsMigrationSequence, HTMLContainer } from "tldraw";
 import { MarkdownViewer } from "@/components/markdown/markdown-viewer";
 import type { MarkdownShape } from "./markdown-shape-props";
 import { markdownShapeProps } from "./markdown-shape-props";

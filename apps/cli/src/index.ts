@@ -23,16 +23,11 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Load package.json for version
-const pkg = JSON.parse(
-  readFileSync(join(__dirname, "..", "package.json"), "utf-8"),
-);
+const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
 
 const program = new Command();
 
-program
-  .name("agent-canvas")
-  .description("A canvas for your coding agents")
-  .version(pkg.version);
+program.name("agent-canvas").description("A canvas for your coding agents").version(pkg.version);
 
 // ─── open ───────────────────────────────────────────
 
@@ -123,9 +118,7 @@ program
     } catch (error) {
       if (error instanceof ServerNotRunningError) {
         if (options.json) {
-          console.log(
-            JSON.stringify({ server: { running: false }, clients: 0 }),
-          );
+          console.log(JSON.stringify({ server: { running: false }, clients: 0 }));
         } else {
           console.log("Server: not running");
         }
@@ -180,9 +173,7 @@ program
 
     if (!isRunning()) {
       removeLockfile();
-      console.log(
-        "Agent Canvas server was not running (stale lockfile cleaned up).",
-      );
+      console.log("Agent Canvas server was not running (stale lockfile cleaned up).");
       return;
     }
 
@@ -219,9 +210,7 @@ program
 
     // Still running
     if (isRunning()) {
-      console.log(
-        `Server (PID ${pid}) did not stop. Try: agent-canvas close --force`,
-      );
+      console.log(`Server (PID ${pid}) did not stop. Try: agent-canvas close --force`);
     } else {
       removeLockfile();
       console.log("Agent Canvas server stopped.");
@@ -311,9 +300,7 @@ boards
 
 // ─── shapes ───────────────────────────────────────
 
-const shapes = program
-  .command("shapes")
-  .description("Read and write shapes on a board");
+const shapes = program.command("shapes").description("Read and write shapes on a board");
 
 shapes
   .command("get")
@@ -366,10 +353,7 @@ shapes
   .command("update")
   .description("Update shapes on a board")
   .requiredOption("--board <id>", "Board ID")
-  .requiredOption(
-    "--shapes <json>",
-    "JSON array of shape update objects (each needs id and type)",
-  )
+  .requiredOption("--shapes <json>", "JSON array of shape update objects (each needs id and type)")
   .action(async (options: { board: string; shapes: string }) => {
     try {
       let shapesArray: unknown[];

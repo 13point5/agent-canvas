@@ -45,12 +45,12 @@ During development, package managers resolve `workspace:*` to local packages via
 
 ### Approaches
 
-| Approach | How it works | Best for |
-|---|---|---|
-| **pnpm / bun publish** | Automatically replaces `workspace:*` with real versions at publish time | Monorepos using pnpm or bun |
-| **Changesets** | Manages versioning, changelogs, and inter-package dependency updates | Monorepos needing structured release flow |
-| **Bundle everything** | Inline workspace deps into the CLI's dist via tsup/esbuild, publish one package | Single-package CLIs that consume internal libs |
-| **Manual** | Replace `workspace:*` with `^x.y.z` before each publish | Small projects with infrequent releases |
+| Approach               | How it works                                                                    | Best for                                       |
+| ---------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **pnpm / bun publish** | Automatically replaces `workspace:*` with real versions at publish time         | Monorepos using pnpm or bun                    |
+| **Changesets**         | Manages versioning, changelogs, and inter-package dependency updates            | Monorepos needing structured release flow      |
+| **Bundle everything**  | Inline workspace deps into the CLI's dist via tsup/esbuild, publish one package | Single-package CLIs that consume internal libs |
+| **Manual**             | Replace `workspace:*` with `^x.y.z` before each publish                         | Small projects with infrequent releases        |
 
 ### Resources
 
@@ -67,6 +67,7 @@ During development, package managers resolve `workspace:*` to local packages via
 ### `bun publish`
 
 Bun has a built-in `publish` command that:
+
 - Automatically **strips `workspace:*` and `catalog:` protocols**, replacing them with resolved versions
 - Supports 2FA (web and legacy auth via `--auth-type`)
 - Reads `NPM_CONFIG_TOKEN` for CI/CD
@@ -76,9 +77,11 @@ Bun has a built-in `publish` command that:
 ### Bun Shebang
 
 If your CLI uses Bun-specific APIs (`Bun.serve`, `Bun.file`, etc.), use:
+
 ```
 #!/usr/bin/env bun
 ```
+
 Users will need Bun installed. For broader compatibility, target Node with `#!/usr/bin/env node`.
 
 ### Resources
@@ -145,30 +148,30 @@ esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.
 
 ```jsonc
 {
-  "name": "agent-canvas",          // unique name on npm
-  "version": "0.1.0",              // semver
-  "type": "module",                // ESM by default
+  "name": "agent-canvas", // unique name on npm
+  "version": "0.1.0", // semver
+  "type": "module", // ESM by default
   "bin": {
-    "agent-canvas": "./dist/index.js"  // command → executable mapping
+    "agent-canvas": "./dist/index.js", // command → executable mapping
   },
-  "files": ["dist", "bin", "web"],     // whitelist published files
+  "files": ["dist", "bin", "web"], // whitelist published files
   "engines": {
-    "node": ">=18"                 // minimum Node version (advisory)
+    "node": ">=18", // minimum Node version (advisory)
   },
   "keywords": ["cli", "canvas", "tldraw", "agent"],
   "repository": { "type": "git", "url": "..." },
-  "license": "MIT"
+  "license": "MIT",
 }
 ```
 
 ### Key Takeaways
 
-| Field | Purpose | Notes |
-|---|---|---|
-| `bin` | Maps CLI commands to executables | npm creates symlinks (Unix) / .cmd wrappers (Windows) |
-| `files` | Whitelists files in the published tarball | Safest approach — avoids leaking secrets or test fixtures |
-| `engines` | Declares required Node/npm versions | Advisory by default; enforced with `engine-strict` config |
-| `type` | `"module"` for ESM, omit for CJS | Determines how `.js` files are interpreted |
+| Field     | Purpose                                   | Notes                                                     |
+| --------- | ----------------------------------------- | --------------------------------------------------------- |
+| `bin`     | Maps CLI commands to executables          | npm creates symlinks (Unix) / .cmd wrappers (Windows)     |
+| `files`   | Whitelists files in the published tarball | Safest approach — avoids leaking secrets or test fixtures |
+| `engines` | Declares required Node/npm versions       | Advisory by default; enforced with `engine-strict` config |
+| `type`    | `"module"` for ESM, omit for CJS          | Determines how `.js` files are interpreted                |
 
 ### Resources
 
@@ -203,6 +206,7 @@ npx changeset publish       # publish to npm
 ### CI/CD Automation
 
 The [Changesets GitHub Action](https://github.com/changesets/action) can:
+
 - Automatically open a "Version Packages" PR when changesets land on main
 - Publish to npm when that PR is merged
 
@@ -229,6 +233,7 @@ npm pack             # creates agent-canvas-0.1.0.tgz
 ```
 
 Install the tarball in a test project to verify:
+
 ```bash
 npm install /path/to/agent-canvas-0.1.0.tgz
 ```
@@ -247,6 +252,7 @@ npm unlink -g agent-canvas  # clean up
 ### `bun link`
 
 Bun's equivalent:
+
 ```bash
 cd apps/cli
 bun link                    # register the package
@@ -272,6 +278,7 @@ agent-canvas-monorepo (private, not published)
 ```
 
 **Issues to fix:**
+
 - `bin/run.js` uses `#!/usr/bin/env bun` and imports TypeScript directly
 - `workspace:*` deps must be resolved before publishing
 - Server package uses `@types/bun` — may contain Bun-specific APIs
@@ -281,6 +288,7 @@ agent-canvas-monorepo (private, not published)
 Since the project already uses Bun throughout, the simplest path:
 
 1. **Fix `bin/run.js`** to import compiled JS:
+
    ```js
    #!/usr/bin/env bun
    import "../dist/index.js";
@@ -308,13 +316,13 @@ If you'd rather publish only the CLI:
 
 ## Quick Reference
 
-| Task | Command |
-|---|---|
-| Preview published files | `npm pack --dry-run` |
-| Test CLI locally | `npm link` or `bun link` |
-| Publish (npm) | `npm publish --access public` |
-| Publish (bun, auto-resolves workspace:*) | `bun publish --access public` |
-| Add a changeset | `npx changeset` |
-| Bump versions | `npx changeset version` |
-| Publish with changesets | `npx changeset publish` |
-| Dry run publish | `npm publish --dry-run` or `bun publish --dry-run` |
+| Task                                      | Command                                            |
+| ----------------------------------------- | -------------------------------------------------- |
+| Preview published files                   | `npm pack --dry-run`                               |
+| Test CLI locally                          | `npm link` or `bun link`                           |
+| Publish (npm)                             | `npm publish --access public`                      |
+| Publish (bun, auto-resolves workspace:\*) | `bun publish --access public`                      |
+| Add a changeset                           | `npx changeset`                                    |
+| Bump versions                             | `npx changeset version`                            |
+| Publish with changesets                   | `npx changeset publish`                            |
+| Dry run publish                           | `npm publish --dry-run` or `bun publish --dry-run` |

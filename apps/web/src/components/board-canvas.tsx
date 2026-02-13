@@ -1,10 +1,7 @@
 import { Tldraw } from "tldraw";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
 import { markdownOverrides } from "@/tldraw-config/markdown-overrides";
-import {
-  CustomToolbar,
-  MarkdownDialogOverlay,
-} from "@/tldraw-config/markdown-toolbar";
+import { CustomToolbar, MarkdownDialogOverlay } from "@/tldraw-config/markdown-toolbar";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 
 const customShapeUtils = [MarkdownShapeUtil];

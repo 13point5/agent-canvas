@@ -35,11 +35,7 @@ function broadcast(event: BoardEvent) {
 }
 
 export function sendToClients(
-  message:
-    | GetShapesRequest
-    | CreateShapesRequest
-    | UpdateShapesRequest
-    | DeleteShapesRequest,
+  message: GetShapesRequest | CreateShapesRequest | UpdateShapesRequest | DeleteShapesRequest,
 ) {
   const data = JSON.stringify(message);
   for (const ws of clients) {
@@ -59,9 +55,7 @@ export const websocketHandler = {
   },
   message(_ws: ServerWebSocket, message: string | Buffer) {
     try {
-      const data = JSON.parse(
-        typeof message === "string" ? message : message.toString(),
-      ) as
+      const data = JSON.parse(typeof message === "string" ? message : message.toString()) as
         | GetShapesResponse
         | CreateShapesResponse
         | UpdateShapesResponse
@@ -76,17 +70,9 @@ export const websocketHandler = {
           data.error,
         );
       } else if (data.type === "update-shapes:response") {
-        resolvePendingRequest(
-          data.requestId,
-          { updatedIds: data.updatedIds },
-          data.error,
-        );
+        resolvePendingRequest(data.requestId, { updatedIds: data.updatedIds }, data.error);
       } else if (data.type === "delete-shapes:response") {
-        resolvePendingRequest(
-          data.requestId,
-          { deletedIds: data.deletedIds },
-          data.error,
-        );
+        resolvePendingRequest(data.requestId, { deletedIds: data.deletedIds }, data.error);
       }
     } catch {
       // Ignore malformed messages

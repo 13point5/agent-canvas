@@ -14,18 +14,14 @@ interface DeleteBoardDialogProps {
   onConfirm: () => void;
 }
 
-export function DeleteBoardDialog({
-  onOpenChange,
-  onConfirm,
-}: DeleteBoardDialogProps) {
+export function DeleteBoardDialog({ onOpenChange, onConfirm }: DeleteBoardDialogProps) {
   return (
     <AlertDialog open onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Board</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete this board? This action cannot be
-            undone.
+            Are you sure you want to delete this board? This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

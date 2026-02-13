@@ -65,35 +65,84 @@ Inline marks — apply to text nodes within a paragraph:
 ```
 
 Combine marks within a paragraph:
+
 ```json
-{"props": {"richText": {"type": "doc", "content": [
-  {"type": "paragraph", "content": [
-    {"type": "text", "text": "Normal "},
-    {"type": "text", "text": "bold", "marks": [{"type": "bold"}]},
-    {"type": "text", "text": " and "},
-    {"type": "text", "text": "code", "marks": [{"type": "code"}]}
-  ]}
-]}}}
+{
+  "props": {
+    "richText": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "Normal " },
+            { "type": "text", "text": "bold", "marks": [{ "type": "bold" }] },
+            { "type": "text", "text": " and " },
+            { "type": "text", "text": "code", "marks": [{ "type": "code" }] }
+          ]
+        }
+      ]
+    }
+  }
+}
 ```
 
 Block-level structures — bullet lists and ordered lists:
 
 ```json
-{"props": {"richText": {"type": "doc", "content": [
-  {"type": "bulletList", "content": [
-    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "First"}]}]},
-    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Second"}]}]}
-  ]}
-]}}}
+{
+  "props": {
+    "richText": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "bulletList",
+          "content": [
+            {
+              "type": "listItem",
+              "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "First" }] }]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                { "type": "paragraph", "content": [{ "type": "text", "text": "Second" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
 ```
 
 ```json
-{"props": {"richText": {"type": "doc", "content": [
-  {"type": "orderedList", "content": [
-    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Step 1"}]}]},
-    {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Step 2"}]}]}
-  ]}
-]}}}
+{
+  "props": {
+    "richText": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "orderedList",
+          "content": [
+            {
+              "type": "listItem",
+              "content": [
+                { "type": "paragraph", "content": [{ "type": "text", "text": "Step 1" }] }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                { "type": "paragraph", "content": [{ "type": "text", "text": "Step 2" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
 ```
 
 ### Headings
@@ -105,8 +154,25 @@ TLDraw does not visually differentiate heading levels — all headings render at
 - H3: `"size": "m"`
 
 You can combine this with bold for emphasis:
+
 ```json
-{"type": "text", "x": 100, "y": 100, "props": {"richText": {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Section Title", "marks": [{"type": "bold"}]}]}]}, "size": "xl"}}
+{
+  "type": "text",
+  "x": 100,
+  "y": 100,
+  "props": {
+    "richText": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [{ "type": "text", "text": "Section Title", "marks": [{ "type": "bold" }] }]
+        }
+      ]
+    },
+    "size": "xl"
+  }
+}
 ```
 
 ### Not Supported
@@ -123,6 +189,7 @@ agent-canvas shapes create --board <board-id> --shapes '[
 ```
 
 With text label:
+
 ```bash
 agent-canvas shapes create --board <board-id> --shapes '[
   {"type": "geo", "x": 100, "y": 100, "props": {"w": 200, "h": 100, "geo": "rectangle", "text": "Hello", "align": "middle", "verticalAlign": "middle"}}
@@ -177,11 +244,12 @@ agent-canvas shapes create --board <board-id> --shapes '[
 ```
 
 Response includes `idMap`:
+
 ```json
 {
   "boardId": "...",
   "createdIds": ["shape:abc123", "shape:def456"],
-  "idMap": {"box-a": "shape:abc123", "box-b": "shape:def456"}
+  "idMap": { "box-a": "shape:abc123", "box-b": "shape:def456" }
 }
 ```
 
@@ -200,6 +268,7 @@ agent-canvas shapes create --board <board-id> --shapes '[
 ```
 
 Arrow fields:
+
 - `fromId` — tempId of the source shape (arrow starts here)
 - `toId` — tempId of the target shape (arrow ends here)
 - `x1`, `y1` — start point coordinates (should be on/near the source shape edge)
@@ -252,15 +321,17 @@ agent-canvas shapes create --board <board-id> --shapes '[
 ```
 
 Image fields:
+
 - `src` — absolute path to a local image file (png, jpg, jpeg, gif, webp, svg)
 - `props.w`, `props.h` — optional width/height override (auto-detected if omitted)
 
 Response includes `assetPaths` mapping original filenames to served URLs:
+
 ```json
 {
   "boardId": "...",
   "createdIds": ["shape:abc123"],
-  "assetPaths": {"screenshot.png": "/api/boards/<id>/assets/screenshot.png"}
+  "assetPaths": { "screenshot.png": "/api/boards/<id>/assets/screenshot.png" }
 }
 ```
 
@@ -279,21 +350,25 @@ You can update position (`x`, `y`), any props, or both. The `text` prop is auto-
 ### Examples
 
 Change color:
+
 ```bash
 agent-canvas shapes update --board <board-id> --shapes '[{"id": "shape:abc", "type": "geo", "props": {"color": "red"}}]'
 ```
 
 Move a shape:
+
 ```bash
 agent-canvas shapes update --board <board-id> --shapes '[{"id": "shape:abc", "type": "geo", "x": 500, "y": 200}]'
 ```
 
 Update text:
+
 ```bash
 agent-canvas shapes update --board <board-id> --shapes '[{"id": "shape:abc", "type": "note", "props": {"text": "New text"}}]'
 ```
 
 Multiple updates in one call:
+
 ```bash
 agent-canvas shapes update --board <board-id> --shapes '[
   {"id": "shape:abc", "type": "geo", "props": {"color": "red", "fill": "solid"}},

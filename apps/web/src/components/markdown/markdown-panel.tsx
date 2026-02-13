@@ -46,12 +46,9 @@ export function MarkdownPanel({
     // Our `code` component handles its own wrapping — skip the default <pre>
     pre: ({ children }) => <>{children}</>,
 
-    h1: ({ children, ...props }) =>
-      renderHeading("h1", children, props, sectionMap),
-    h2: ({ children, ...props }) =>
-      renderHeading("h2", children, props, sectionMap),
-    h3: ({ children, ...props }) =>
-      renderHeading("h3", children, props, sectionMap),
+    h1: ({ children, ...props }) => renderHeading("h1", children, props, sectionMap),
+    h2: ({ children, ...props }) => renderHeading("h2", children, props, sectionMap),
+    h3: ({ children, ...props }) => renderHeading("h3", children, props, sectionMap),
 
     code: ({ className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className ?? "");
@@ -62,21 +59,14 @@ export function MarkdownPanel({
         const block = mermaidByCode.get(raw);
         if (!block) return null;
         return (
-          <MermaidBlockComponent
-            id={block.id}
-            code={block.code}
-            onPinToPanel={onPinDiagram}
-          />
+          <MermaidBlockComponent id={block.id} code={block.code} onPinToPanel={onPinDiagram} />
         );
       }
 
       // Inline code
       if (!match) {
         return (
-          <code
-            className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-sm"
-            {...props}
-          >
+          <code className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-sm" {...props}>
             {children}
           </code>
         );
@@ -101,10 +91,7 @@ export function MarkdownPanel({
       </div>
     ),
     th: ({ children, ...props }) => (
-      <th
-        className="border border-border bg-muted px-3 py-1.5 text-left font-medium"
-        {...props}
-      >
+      <th className="border border-border bg-muted px-3 py-1.5 text-left font-medium" {...props}>
         {children}
       </th>
     ),
@@ -176,11 +163,7 @@ function renderHeading(
   };
 
   return (
-    <Tag
-      className={`${sizeClasses[Tag]} text-foreground`}
-      data-section-id={sectionId}
-      {...props}
-    >
+    <Tag className={`${sizeClasses[Tag]} text-foreground`} data-section-id={sectionId} {...props}>
       {children}
     </Tag>
   );
@@ -192,9 +175,7 @@ function extractText(node: React.ReactNode): string {
   if (!node) return "";
   if (Array.isArray(node)) return node.map(extractText).join("");
   if (typeof node === "object" && "props" in node) {
-    return extractText(
-      (node as { props: { children?: React.ReactNode } }).props.children,
-    );
+    return extractText((node as { props: { children?: React.ReactNode } }).props.children);
   }
   return "";
 }

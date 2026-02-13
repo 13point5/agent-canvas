@@ -17,10 +17,7 @@ const pendingRequests = new Map<string, PendingRequest<unknown>>();
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 const ERROR_GRACE_MS = 2000; // Wait up to 2s for a success after first error
 
-export function createPendingRequest<T = unknown>(
-  requestId: string,
-  boardId: string,
-): Promise<T> {
+export function createPendingRequest<T = unknown>(requestId: string, boardId: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       const pending = pendingRequests.get(requestId);

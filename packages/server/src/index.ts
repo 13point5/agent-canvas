@@ -26,9 +26,7 @@ async function migrateSnapshots() {
       if (raw.includes("visual-markdown")) {
         const migrated = raw.replaceAll("visual-markdown", "markdown");
         await writeFile(snapshotPath, migrated);
-        console.log(
-          `Migrated snapshot for board ${id}: visual-markdown → markdown`,
-        );
+        console.log(`Migrated snapshot for board ${id}: visual-markdown → markdown`);
       }
     } catch {
       // Snapshot doesn't exist or is unreadable — skip
