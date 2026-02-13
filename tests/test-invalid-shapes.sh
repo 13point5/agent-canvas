@@ -94,6 +94,9 @@ run_test "Frame: missing props.w" \
 run_test "Frame: missing props.h" \
   '{"shapes":[{"type":"frame","x":0,"y":0,"props":{"w":100}}]}'
 
+run_test "Visual Iframe: missing props.html" \
+  '{"shapes":[{"type":"visual-iframe","x":0,"y":0,"props":{"w":400,"h":300,"name":"Artifact"}}]}'
+
 # ══════════════════════════════════════════════════════════════════════
 # BAD ENUM VALUES
 # ══════════════════════════════════════════════════════════════════════
@@ -171,6 +174,9 @@ run_test "Frame: unknown prop 'locked' in props" \
 
 run_test "Arrow: unknown prop 'weight' in props" \
   '{"shapes":[{"type":"arrow","x1":0,"y1":0,"x2":100,"y2":100,"props":{"weight":5}}]}'
+
+run_test "Visual Iframe: unknown prop in props" \
+  '{"shapes":[{"type":"visual-iframe","x":0,"y":0,"props":{"html":"<h1>Test</h1>","interactive":true}}]}'
 
 run_test "Top-level unknown field 'id'" \
   '{"shapes":[{"type":"geo","x":0,"y":0,"id":"shape:custom","props":{"w":100,"h":100,"geo":"rectangle"}}]}'

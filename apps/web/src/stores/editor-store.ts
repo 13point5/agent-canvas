@@ -4,9 +4,10 @@ import type { Editor, TLStoreSnapshot } from "tldraw";
 import { loadSnapshot, Tldraw } from "tldraw";
 import { create } from "zustand";
 import { boardsApi } from "@/api/client";
+import { IframeShapeUtil } from "@/tldraw-shapes/iframe";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 
-const customShapeUtils = [MarkdownShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil, IframeShapeUtil];
 
 const MAX_CACHED_EDITORS = 10;
 

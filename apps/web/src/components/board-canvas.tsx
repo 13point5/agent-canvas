@@ -1,5 +1,6 @@
 import { Tldraw } from "tldraw";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
+import { IframeShapeUtil } from "@/tldraw-shapes/iframe";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 import { markdownOverrides } from "@/tldraw-config/markdown-overrides";
 import {
@@ -7,7 +8,7 @@ import {
   MarkdownDialogOverlay,
 } from "@/tldraw-config/markdown-toolbar";
 
-const customShapeUtils = [MarkdownShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil, IframeShapeUtil];
 
 interface BoardCanvasProps {
   boardId: string;

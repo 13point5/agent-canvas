@@ -218,6 +218,23 @@ const visualMarkdownShapeSchema = z.object({
   props: visualMarkdownPropsSchema,
 }).strict();
 
+// ── Visual Iframe Artifact shape ─────────────────────────────────────
+
+const visualIframePropsSchema = z.object({
+  w: z.number().optional(),
+  h: z.number().optional(),
+  name: z.string().optional(),
+  html: z.string(),
+}).strict();
+
+const visualIframeShapeSchema = z.object({
+  type: z.literal("visual-iframe"),
+  x: z.number(),
+  y: z.number(),
+  tempId: z.string().optional(),
+  props: visualIframePropsSchema,
+}).strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -228,6 +245,7 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   frameShapeSchema,
   imageShapeSchema,
   visualMarkdownShapeSchema,
+  visualIframeShapeSchema,
 ]);
 
 export const createShapesBodySchema = z.object({
@@ -284,6 +302,14 @@ const imageUpdateSchema = z.object({
   props: imagePropsSchema.partial().optional(),
 }).strict();
 
+const visualIframeUpdateSchema = z.object({
+  id: z.string(),
+  type: z.literal("visual-iframe"),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  props: visualIframePropsSchema.partial().optional(),
+}).strict();
+
 export const updateShapeSchema = z.discriminatedUnion("type", [
   geoUpdateSchema,
   textUpdateSchema,
@@ -291,6 +317,7 @@ export const updateShapeSchema = z.discriminatedUnion("type", [
   noteUpdateSchema,
   frameUpdateSchema,
   imageUpdateSchema,
+  visualIframeUpdateSchema,
 ]);
 
 export const updateShapesBodySchema = z.object({

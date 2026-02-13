@@ -120,6 +120,11 @@ run_test "Frame: basic" \
 run_test "Frame: named with color" \
   '{"shapes":[{"type":"frame","x":800,"y":400,"props":{"w":400,"h":300,"name":"My Frame","color":"blue"}}]}'
 
+# ── Visual iframe artifact shapes ────────────────────────────────────
+
+run_test "Visual Iframe: basic html artifact" \
+  '{"shapes":[{"type":"visual-iframe","x":1300,"y":50,"props":{"w":500,"h":320,"name":"Demo Artifact","html":"<html><body><h1>Hello Artifact</h1></body></html>"}}]}'
+
 # ── Arrow shapes ──────────────────────────────────────────────────────
 
 run_test "Arrow: standalone with coordinates" \
