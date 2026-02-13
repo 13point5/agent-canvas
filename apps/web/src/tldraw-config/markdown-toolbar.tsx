@@ -1,16 +1,7 @@
-import {
-  Cancel01Icon,
-  File01Icon,
-  FileUploadIcon,
-} from "@hugeicons/core-free-icons";
+import { Cancel01Icon, File01Icon, FileUploadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  DefaultToolbar,
-  DefaultToolbarContent,
-  ToolbarItem,
-  useEditor,
-} from "tldraw";
+import { DefaultToolbar, DefaultToolbarContent, ToolbarItem, useEditor } from "tldraw";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,12 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { setOpenMarkdownDialog } from "@/tldraw-config/markdown-overrides";
+import { setOpenDbSchemaDialog, setOpenMarkdownDialog } from "@/tldraw-config/markdown-overrides";
 
-/**
- * Rendered via tldraw's `components.InFrontOfTheCanvas` so it lives
- * inside the <Tldraw> tree and has access to `useEditor()`.
- */
 export function MarkdownDialogOverlay() {
   const editor = useEditor();
   const [open, setOpen] = useState(false);
@@ -53,20 +40,17 @@ export function MarkdownDialogOverlay() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      setFileName(file.name);
-      setName(file.name.replace(/\.(md|markdown|txt)$/i, ""));
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFileContent(reader.result as string);
-      };
-      reader.readAsText(file);
-    },
-    []
-  );
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setName(file.name.replace(/\.(md|markdown|txt)$/i, ""));
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileContent(reader.result as string);
+    };
+    reader.readAsText(file);
+  }, []);
 
   const resolvedMarkdown = fileContent ?? markdown;
 
@@ -90,7 +74,7 @@ export function MarkdownDialogOverlay() {
       setOpen(value);
       if (!value) reset();
     },
-    [reset]
+    [reset],
   );
 
   return (
@@ -103,10 +87,7 @@ export function MarkdownDialogOverlay() {
         <div className="flex flex-col gap-4">
           {fileName ? (
             <div className="flex w-full items-center gap-3 rounded-lg border border-input bg-input/30 px-3 py-3">
-              <HugeiconsIcon
-                icon={File01Icon}
-                className="size-5 shrink-0 text-muted-foreground"
-              />
+              <HugeiconsIcon icon={File01Icon} className="size-5 shrink-0 text-muted-foreground" />
               <span className="flex-1 truncate text-sm">{fileName}</span>
               <Button
                 variant="ghost"
@@ -127,10 +108,7 @@ export function MarkdownDialogOverlay() {
               onClick={() => fileInputRef.current?.click()}
               className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-input px-3 py-3 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground cursor-pointer"
             >
-              <HugeiconsIcon
-                icon={FileUploadIcon}
-                className="size-5 shrink-0"
-              />
+              <HugeiconsIcon icon={FileUploadIcon} className="size-5 shrink-0" />
               <span>Upload .md file</span>
             </button>
           )}
@@ -191,11 +169,103 @@ export function MarkdownDialogOverlay() {
   );
 }
 
+export function DbSchemaDialogOverlay() {
+  const editor = useEditor();
+  const [open, setOpen] = useState(false);
+  const [tableName, setTableName] = useState("users");
+  const [columns, setColumns] = useState(
+    "id: uuid #primary key\nemail: varchar(255) #unique login\nrole: varchar(50) #authorization role",
+  );
+
+  useEffect(() => {
+    setOpenDbSchemaDialog(() => setOpen(true));
+    return () => {
+      setOpenDbSchemaDialog(null);
+    };
+  }, []);
+
+  const handleCreate = useCallback(() => {
+    if (!tableName.trim()) return;
+
+    const center = editor.getViewportPageBounds().center;
+    const columnCount = columns
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean).length;
+
+    const w = 560;
+    const h = Math.max(220, 44 + columnCount * 30);
+
+    editor.createShape({
+      type: "db-schema",
+      x: center.x - w / 2,
+      y: center.y - h / 2,
+      props: {
+        w,
+        h,
+        tableName: tableName.trim(),
+        columns,
+      },
+    });
+
+    setOpen(false);
+  }, [columns, editor, tableName]);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Insert DB Schema Table</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="schema-name">Table Name</Label>
+            <Input
+              id="schema-name"
+              type="text"
+              value={tableName}
+              onChange={(e) => setTableName(e.target.value)}
+              placeholder="users"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="schema-columns">Columns</Label>
+            <Textarea
+              id="schema-columns"
+              rows={10}
+              value={columns}
+              onChange={(e) => setColumns(e.target.value)}
+              className="font-mono resize-y"
+              placeholder="one column per line: column_name: type #comment"
+            />
+            <p className="text-xs text-muted-foreground">
+              Format each line as <code>column_name: column_type #comment</code>. Crow&apos;s foot
+              connectors can snap to per-column handles on left/right sides.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreate} disabled={!tableName.trim()}>
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CustomToolbar() {
   return (
     <DefaultToolbar>
       <DefaultToolbarContent />
       <ToolbarItem tool="markdown" />
+      <ToolbarItem tool="dbSchema" />
     </DefaultToolbar>
   );
 }

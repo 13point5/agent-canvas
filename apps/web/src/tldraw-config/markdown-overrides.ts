@@ -1,13 +1,18 @@
 import { createElement } from "react";
-import { Markdown } from "@react-symbols/icons";
+import { Database, Markdown } from "@react-symbols/icons";
 import type { TLUiOverrides } from "tldraw";
 
-// Module-level callback ref so the toolbar override can open the dialog
+// Module-level callback refs so toolbar overrides can open dialogs
 // rendered inside the <Tldraw> tree.
 export let openMarkdownDialog: (() => void) | null = null;
+export let openDbSchemaDialog: (() => void) | null = null;
 
 export function setOpenMarkdownDialog(fn: (() => void) | null) {
   openMarkdownDialog = fn;
+}
+
+export function setOpenDbSchemaDialog(fn: (() => void) | null) {
+  openDbSchemaDialog = fn;
 }
 
 const markdownIcon = createElement(
@@ -21,7 +26,21 @@ const markdownIcon = createElement(
       height: 18,
     },
   },
-  createElement(Markdown, { width: 18, height: 18 })
+  createElement(Markdown, { width: 18, height: 18 }),
+) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
+
+const dbSchemaIcon = createElement(
+  "div",
+  {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: 18,
+      height: 18,
+    },
+  },
+  createElement(Database, { width: 18, height: 18 }),
 ) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
 
 export const markdownOverrides: TLUiOverrides = {
@@ -34,11 +53,22 @@ export const markdownOverrides: TLUiOverrides = {
         openMarkdownDialog?.();
       },
     };
+
+    tools.dbSchema = {
+      id: "dbSchema",
+      icon: dbSchemaIcon,
+      label: "tool.dbSchema" as "tool.select",
+      onSelect() {
+        openDbSchemaDialog?.();
+      },
+    };
+
     return tools;
   },
   translations: {
     en: {
       "tool.markdown": "Markdown",
+      "tool.dbSchema": "DB Schema",
     },
   },
 };

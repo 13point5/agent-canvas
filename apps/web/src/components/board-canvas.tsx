@@ -1,13 +1,15 @@
 import { Tldraw } from "tldraw";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
+import { DbSchemaShapeUtil } from "@/tldraw-shapes/db-schema";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 import { markdownOverrides } from "@/tldraw-config/markdown-overrides";
 import {
   CustomToolbar,
+  DbSchemaDialogOverlay,
   MarkdownDialogOverlay,
 } from "@/tldraw-config/markdown-toolbar";
 
-const customShapeUtils = [MarkdownShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil, DbSchemaShapeUtil];
 
 interface BoardCanvasProps {
   boardId: string;
@@ -24,7 +26,12 @@ export function BoardCanvas({ boardId }: BoardCanvasProps) {
         overrides={markdownOverrides}
         components={{
           Toolbar: CustomToolbar,
-          InFrontOfTheCanvas: MarkdownDialogOverlay,
+          InFrontOfTheCanvas: () => (
+            <>
+              <MarkdownDialogOverlay />
+              <DbSchemaDialogOverlay />
+            </>
+          ),
         }}
       />
     </div>
