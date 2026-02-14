@@ -24,11 +24,8 @@ const combinedOverrides: TLUiOverrides = {
   translations: {
     ...markdownOverrides.translations,
     en: {
-      ...(
-        markdownOverrides.translations as Record<string, Record<string, string>>
-      )?.en,
-      ...(htmlOverrides.translations as Record<string, Record<string, string>>)
-        ?.en,
+      ...(markdownOverrides.translations as Record<string, Record<string, string>>)?.en,
+      ...(htmlOverrides.translations as Record<string, Record<string, string>>)?.en,
     },
   },
 };

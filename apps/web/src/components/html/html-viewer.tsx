@@ -10,13 +10,7 @@ interface HtmlViewerProps {
   isEditing: boolean;
 }
 
-export function HtmlViewer({
-  name,
-  html,
-  width,
-  height,
-  isEditing,
-}: HtmlViewerProps) {
+export function HtmlViewer({ name, html, width, height, isEditing }: HtmlViewerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const handleFullscreen = useCallback(() => {
@@ -38,9 +32,7 @@ export function HtmlViewer({
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [isFullscreen]);
 
-  const borderClass = isEditing
-    ? "border border-chart-2"
-    : "border border-border";
+  const borderClass = isEditing ? "border border-chart-2" : "border border-border";
 
   const codeIcon = (
     <svg
@@ -128,9 +120,7 @@ export function HtmlViewer({
         </span>
       </div>
       <div className="flex items-center gap-1">
-        {isEditing && (
-          <span className="inline-flex size-2 shrink-0 rounded-full bg-chart-2" />
-        )}
+        {isEditing && <span className="inline-flex size-2 shrink-0 rounded-full bg-chart-2" />}
         <Button
           variant="ghost"
           size="icon-xs"
