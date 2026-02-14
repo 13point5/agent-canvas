@@ -1,8 +1,4 @@
-import {
-  Cancel01Icon,
-  File01Icon,
-  FileUploadIcon,
-} from "@hugeicons/core-free-icons";
+import { Cancel01Icon, File01Icon, FileUploadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor } from "tldraw";
@@ -48,20 +44,17 @@ export function HtmlDialogOverlay() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      setFileName(file.name);
-      setName(file.name.replace(/\.(html?|svg)$/i, ""));
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFileContent(reader.result as string);
-      };
-      reader.readAsText(file);
-    },
-    [],
-  );
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setName(file.name.replace(/\.(html?|svg)$/i, ""));
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileContent(reader.result as string);
+    };
+    reader.readAsText(file);
+  }, []);
 
   const resolvedHtml = fileContent ?? html;
 
@@ -96,10 +89,7 @@ export function HtmlDialogOverlay() {
         <div className="flex flex-col gap-4">
           {fileName ? (
             <div className="flex w-full items-center gap-3 rounded-lg border border-input bg-input/30 px-3 py-3">
-              <HugeiconsIcon
-                icon={File01Icon}
-                className="size-5 shrink-0 text-muted-foreground"
-              />
+              <HugeiconsIcon icon={File01Icon} className="size-5 shrink-0 text-muted-foreground" />
               <span className="flex-1 truncate text-sm">{fileName}</span>
               <Button
                 variant="ghost"
@@ -120,10 +110,7 @@ export function HtmlDialogOverlay() {
               onClick={() => fileInputRef.current?.click()}
               className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-input px-3 py-3 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground cursor-pointer"
             >
-              <HugeiconsIcon
-                icon={FileUploadIcon}
-                className="size-5 shrink-0"
-              />
+              <HugeiconsIcon icon={FileUploadIcon} className="size-5 shrink-0" />
               <span>Upload .html file</span>
             </button>
           )}

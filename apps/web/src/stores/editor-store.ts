@@ -22,12 +22,7 @@ interface EditorEntry {
 interface EditorStore {
   editors: Map<string, EditorEntry>;
 
-  registerEditor: (
-    boardId: string,
-    editor: Editor,
-    container: HTMLDivElement,
-    root: Root,
-  ) => void;
+  registerEditor: (boardId: string, editor: Editor, container: HTMLDivElement, root: Root) => void;
   setVisibleEditor: (boardId: string, editor: Editor) => void;
   unsetVisibleEditor: (boardId: string) => void;
   getEditor: (boardId: string) => Editor | undefined;
@@ -111,9 +106,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const offscreen = entries.filter((e) => e.container !== null);
     if (offscreen.length === 0) return;
 
-    const oldest = offscreen.reduce((a, b) =>
-      a.loadedAt < b.loadedAt ? a : b,
-    );
+    const oldest = offscreen.reduce((a, b) => (a.loadedAt < b.loadedAt ? a : b));
     get().cleanupEditor(oldest.boardId);
   },
 

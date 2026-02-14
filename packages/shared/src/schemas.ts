@@ -37,25 +37,11 @@ const colorEnum = z.enum([
   "red",
   "white",
 ]);
-const fillEnum = z.enum([
-  "none",
-  "semi",
-  "solid",
-  "pattern",
-  "fill",
-  "lined-fill",
-]);
+const fillEnum = z.enum(["none", "semi", "solid", "pattern", "fill", "lined-fill"]);
 const sizeEnum = z.enum(["s", "m", "l", "xl"]);
 const dashEnum = z.enum(["draw", "solid", "dashed", "dotted"]);
 const fontEnum = z.enum(["draw", "sans", "serif", "mono"]);
-const alignEnum = z.enum([
-  "start",
-  "middle",
-  "end",
-  "start-legacy",
-  "end-legacy",
-  "middle-legacy",
-]);
+const alignEnum = z.enum(["start", "middle", "end", "start-legacy", "end-legacy", "middle-legacy"]);
 const verticalAlignEnum = z.enum(["start", "middle", "end"]);
 const textAlignEnum = z.enum(["start", "middle", "end"]);
 const arrowheadEnum = z.enum([
