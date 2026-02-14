@@ -34,10 +34,6 @@ export const codeDiffOverrides: TLUiOverrides = {
           type: "code-diff",
           x: center.x - DEFAULT_CODE_DIFF_WIDTH / 2,
           y: center.y - DEFAULT_CODE_DIFF_HEIGHT / 2,
-          props: {
-            w: DEFAULT_CODE_DIFF_WIDTH,
-            h: DEFAULT_CODE_DIFF_HEIGHT,
-          },
         });
 
         editor.setCurrentTool("select");
