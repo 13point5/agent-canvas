@@ -9,20 +9,31 @@ export const isFileBackedInputShape = (shape: InputShape): shape is FileBackedSh
 export const isFileBackedUpdateShape = (shape: UpdateShape): shape is FileBackedUpdateShape =>
   shape.type === "markdown" || shape.type === "html";
 
+type ResolveShapeContentOptions = {
+  defaultMissingContent: boolean;
+};
+
 export const resolveShapeContentFromFile = async <T extends FileBackedShape | FileBackedUpdateShape>(
   shape: T,
+  options: ResolveShapeContentOptions = { defaultMissingContent: true },
 ): Promise<T> => {
-  if (typeof shape.props?.content === "string") {
+  const props = shape.props;
+  const hasContent = typeof props?.content === "string" && props.content.length > 0;
+  if (hasContent) {
     return shape;
   }
 
-  const props = shape.props ?? {};
-  const filePath = props.filePath;
+  const safeProps = props ?? {};
+  const filePath = safeProps.filePath;
   if (typeof filePath !== "string" || !filePath) {
+    if (!options.defaultMissingContent) {
+      return shape;
+    }
+
     return {
       ...shape,
       props: {
-        ...props,
+        ...safeProps,
         content: "",
       },
     };
@@ -37,12 +48,14 @@ export const resolveShapeContentFromFile = async <T extends FileBackedShape | Fi
 
   const content = await readFile(filePath, "utf-8");
   const name =
-    typeof props.name === "string" && props.name.trim() ? props.name : basename(filePath).replace(/\.[^.]+$/, "");
+    typeof safeProps.name === "string" && safeProps.name.trim()
+      ? safeProps.name
+      : basename(filePath).replace(/\.[^.]+$/, "");
 
   return {
     ...shape,
     props: {
-      ...props,
+      ...safeProps,
       content,
       name,
     },
