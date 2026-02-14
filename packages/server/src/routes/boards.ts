@@ -37,9 +37,7 @@ boards.get("/", async (c) => {
   await ensureDir(getBoardsDir());
   const ids = await listDirs(getBoardsDir());
 
-  const results = await Promise.all(
-    ids.map((id) => readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"))),
-  );
+  const results = await Promise.all(ids.map((id) => readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"))));
   const allBoards = results.filter((m): m is BoardMetadata => m !== null);
 
   // Sort by createdAt descending (newest first)

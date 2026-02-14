@@ -26,9 +26,7 @@ export function DiagramsPanel({ pinnedIds, allBlocks, onUnpin }: DiagramsPanelPr
   }
 
   const blockMap = new Map(allBlocks.map((b) => [b.id, b]));
-  const pinnedBlocks = pinnedIds
-    .map((id) => blockMap.get(id))
-    .filter((b): b is MermaidBlock => b !== undefined);
+  const pinnedBlocks = pinnedIds.map((id) => blockMap.get(id)).filter((b): b is MermaidBlock => b !== undefined);
 
   if (pinnedBlocks.length === 0) {
     return (
@@ -74,9 +72,7 @@ export function DiagramsPanel({ pinnedIds, allBlocks, onUnpin }: DiagramsPanelPr
               >
                 <path d="M4 2l4 4-4 4" />
               </svg>
-              <span className="text-xs font-medium text-muted-foreground truncate">
-                Diagram {index + 1}
-              </span>
+              <span className="text-xs font-medium text-muted-foreground truncate">Diagram {index + 1}</span>
               <Button
                 variant="ghost"
                 size="icon-xs"

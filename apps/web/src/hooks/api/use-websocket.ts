@@ -60,11 +60,7 @@ export function useWebSocket() {
             return;
           }
 
-          if (
-            data.type === "board:created" ||
-            data.type === "board:updated" ||
-            data.type === "board:deleted"
-          ) {
+          if (data.type === "board:created" || data.type === "board:updated" || data.type === "board:deleted") {
             queryClient.invalidateQueries({ queryKey: queryKeys.boards });
           }
         } catch {
@@ -110,18 +106,12 @@ export function useWebSocket() {
         console.log("[ws] createShapes: registered shape utils:", Object.keys(editor.shapeUtils));
 
         // Check all requested shape types are available in this editor
-        const requestedTypes = new Set(
-          inputShapes.map((s: Record<string, unknown>) => s.type as string),
-        );
+        const requestedTypes = new Set(inputShapes.map((s: Record<string, unknown>) => s.type as string));
         const missingTypes = [...requestedTypes].filter((t) => !editor.shapeUtils[t]);
 
         if (missingTypes.length > 0) {
           // Try force-reloading the editor to pick up any newly registered shape utils
-          console.warn(
-            "[ws] createShapes: missing shape utils:",
-            missingTypes,
-            "— forcing fresh editor",
-          );
+          console.warn("[ws] createShapes: missing shape utils:", missingTypes, "— forcing fresh editor");
           editor = await useEditorStore.getState().loadBoard(boardId, true);
 
           // Re-check after reload
@@ -129,11 +119,7 @@ export function useWebSocket() {
           if (stillMissing.length > 0) {
             // This client can't handle these shape types — silently skip
             // so another connected client can handle the request
-            console.warn(
-              "[ws] createShapes: still missing after reload:",
-              stillMissing,
-              "— skipping request",
-            );
+            console.warn("[ws] createShapes: still missing after reload:", stillMissing, "— skipping request");
             return;
           }
         }
@@ -165,8 +151,7 @@ export function useWebSocket() {
             idMap[shape.tempId as string] = realId;
           }
 
-          const isArrow =
-            shape.type === "arrow" && (shape.fromId !== undefined || shape.toId !== undefined);
+          const isArrow = shape.type === "arrow" && (shape.fromId !== undefined || shape.toId !== undefined);
           const isImage = shape.type === "image";
 
           if (isArrow) {
@@ -188,10 +173,7 @@ export function useWebSocket() {
         const preparedShapes: Record<string, unknown>[] = [];
 
         // Non-arrow shapes first (including images), then arrows (so targets exist when bindings are created)
-        const sorted = [
-          ...shapesWithIds.filter((s) => !s.isArrow),
-          ...shapesWithIds.filter((s) => s.isArrow),
-        ];
+        const sorted = [...shapesWithIds.filter((s) => !s.isArrow), ...shapesWithIds.filter((s) => s.isArrow)];
 
         for (const { input, realId, isArrow, isImage } of sorted) {
           // Strip custom fields
@@ -426,11 +408,7 @@ export function useWebSocket() {
   }, []);
 }
 
-function calculateArrowBindingAnchor(
-  editor: Editor,
-  targetShape: TLShape,
-  targetPoint: VecLike,
-): VecLike {
+function calculateArrowBindingAnchor(editor: Editor, targetShape: TLShape, targetPoint: VecLike): VecLike {
   const targetShapePageBounds = editor.getShapePageBounds(targetShape);
   const targetShapeGeometry = editor.getShapeGeometry(targetShape);
 

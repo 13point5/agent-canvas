@@ -64,11 +64,7 @@ export const websocketHandler = {
       if (data.type === "get-shapes:response") {
         resolvePendingRequest(data.requestId, data.shapes, data.error);
       } else if (data.type === "create-shapes:response") {
-        resolvePendingRequest(
-          data.requestId,
-          { createdIds: data.createdIds, idMap: data.idMap },
-          data.error,
-        );
+        resolvePendingRequest(data.requestId, { createdIds: data.createdIds, idMap: data.idMap }, data.error);
       } else if (data.type === "update-shapes:response") {
         resolvePendingRequest(data.requestId, { updatedIds: data.updatedIds }, data.error);
       } else if (data.type === "delete-shapes:response") {

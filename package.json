@@ -10,18 +10,27 @@
     "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build && bun run --filter web build && bun run --filter agent-canvas build",
     "build:link": "bun run build && bun run bundle:web && cd apps/cli && bun link",
     "bundle:web": "rm -rf apps/cli/web && cp -r apps/web/dist apps/cli/web",
-    "format": "biome check --write . && prettier --write .",
+    "format": "bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true",
+    "format:check": "bunx biome check --no-errors-on-unmatched --files-ignore-unknown=true",
     "cli": "bun apps/cli/src/index.ts",
     "cli:prod": "bun run bundle:web && bun apps/cli/src/index.ts",
     "clean": "rm -rf packages/shared/dist packages/server/dist apps/web/dist apps/cli/dist apps/cli/web node_modules bun.lock",
     "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/*/src/**/*.{js,jsx,ts,tsx,cjs,mjs,cts,mts}": [
+      "bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
+    ],
+    "packages/*/src/**/*.{js,jsx,ts,tsx,cjs,mjs,cts,mts}": [
+      "bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
+    ]
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
     "@types/dompurify": "^3.2.0",
     "concurrently": "^9.2.1",
     "husky": "^9.1.7",
-    "prettier": "^3.8.1"
+    "lint-staged": "^16.2.7"
   },
   "dependencies": {
     "dompurify": "^3.3.1"

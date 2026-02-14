@@ -78,11 +78,7 @@ export function MarkdownViewer({ name, markdown, width, height, isEditing }: Mar
       <Separator className="w-px bg-border hover:bg-chart-1 transition-colors" />
       <Panel defaultSize={30} minSize={15}>
         <div className="flex h-full flex-col overflow-hidden">
-          <DiagramsPanel
-            pinnedIds={pinnedDiagramIds}
-            allBlocks={parsed.mermaidBlocks}
-            onUnpin={handleUnpinDiagram}
-          />
+          <DiagramsPanel pinnedIds={pinnedDiagramIds} allBlocks={parsed.mermaidBlocks} onUnpin={handleUnpinDiagram} />
         </div>
       </Panel>
     </>
@@ -135,9 +131,7 @@ export function MarkdownViewer({ name, markdown, width, height, isEditing }: Mar
             <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 shrink-0">
               <div className="flex items-center gap-1.5 truncate">
                 <MarkdownIcon className="size-5 shrink-0" />
-                <span className="text-sm font-medium text-foreground truncate">
-                  {name || "Markdown"}
-                </span>
+                <span className="text-sm font-medium text-foreground truncate">{name || "Markdown"}</span>
               </div>
               <div className="flex items-center gap-1">
                 {sidePanelToggleButton}

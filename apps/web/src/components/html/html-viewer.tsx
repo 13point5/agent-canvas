@@ -60,9 +60,7 @@ export function HtmlViewer({ name, html, width, height, isEditing }: HtmlViewerP
             <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2 shrink-0">
               <div className="flex items-center gap-1.5 truncate">
                 {codeIcon}
-                <span className="text-sm font-medium text-foreground truncate">
-                  {name || "HTML Artifact"}
-                </span>
+                <span className="text-sm font-medium text-foreground truncate">{name || "HTML Artifact"}</span>
               </div>
               <Button
                 variant="ghost"
@@ -99,9 +97,7 @@ export function HtmlViewer({ name, html, width, height, isEditing }: HtmlViewerP
     <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-1.5 shrink-0">
       <div className="flex items-center gap-1.5 truncate">
         {codeIcon}
-        <span className="text-sm font-medium text-foreground truncate">
-          {name || "HTML Artifact"}
-        </span>
+        <span className="text-sm font-medium text-foreground truncate">{name || "HTML Artifact"}</span>
       </div>
       <div className="flex items-center gap-1">
         {isEditing && <span className="inline-flex size-2 shrink-0 rounded-full bg-chart-2" />}

@@ -36,12 +36,7 @@ export function RenameBoardDialog({ onOpenChange, boardName, onConfirm }: Rename
             <DialogDescription>Enter a new name for this board.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Board name"
-              autoFocus
-            />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Board name" autoFocus />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -37,11 +37,7 @@ export function createPendingRequest<T = unknown>(requestId: string, boardId: st
   });
 }
 
-export function resolvePendingRequest<T = unknown>(
-  requestId: string,
-  result: T | null,
-  error?: string,
-): boolean {
+export function resolvePendingRequest<T = unknown>(requestId: string, result: T | null, error?: string): boolean {
   const pending = pendingRequests.get(requestId);
   if (!pending) {
     return false;

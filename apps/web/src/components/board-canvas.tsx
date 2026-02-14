@@ -1,10 +1,4 @@
-import {
-  DefaultToolbar,
-  DefaultToolbarContent,
-  type TLUiOverrides,
-  Tldraw,
-  ToolbarItem,
-} from "tldraw";
+import { DefaultToolbar, DefaultToolbarContent, type TLUiOverrides, Tldraw, ToolbarItem } from "tldraw";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
 import { htmlOverrides } from "@/tldraw-config/html-overrides";
 import { HtmlDialogOverlay } from "@/tldraw-config/html-toolbar";

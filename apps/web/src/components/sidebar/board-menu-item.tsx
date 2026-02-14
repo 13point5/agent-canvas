@@ -20,13 +20,7 @@ interface BoardMenuItemProps {
   onDelete: () => void;
 }
 
-export function BoardMenuItem({
-  board,
-  isActive,
-  onNavigate,
-  onRename,
-  onDelete,
-}: BoardMenuItemProps) {
+export function BoardMenuItem({ board, isActive, onNavigate, onRename, onDelete }: BoardMenuItemProps) {
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -58,16 +52,10 @@ export function BoardMenuItem({
       </DropdownMenu>
 
       {showRenameDialog && (
-        <RenameBoardDialog
-          onOpenChange={setShowRenameDialog}
-          boardName={board.name}
-          onConfirm={onRename}
-        />
+        <RenameBoardDialog onOpenChange={setShowRenameDialog} boardName={board.name} onConfirm={onRename} />
       )}
 
-      {showDeleteDialog && (
-        <DeleteBoardDialog onOpenChange={setShowDeleteDialog} onConfirm={onDelete} />
-      )}
+      {showDeleteDialog && <DeleteBoardDialog onOpenChange={setShowDeleteDialog} onConfirm={onDelete} />}
     </SidebarMenuItem>
   );
 }
