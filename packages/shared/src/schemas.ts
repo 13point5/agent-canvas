@@ -296,6 +296,25 @@ export const htmlShapeSchema = z
   })
   .strict();
 
+// ── Code diff shape ─────────────────────────────────────────────────
+
+const codeDiffPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+  })
+  .strict();
+
+export const codeDiffShapeSchema = z
+  .object({
+    type: z.literal("code-diff"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: codeDiffPropsSchema.optional(),
+  })
+  .strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -307,6 +326,7 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   imageShapeSchema,
   markdownShapeSchema,
   htmlShapeSchema,
+  codeDiffShapeSchema,
 ]);
 
 export const fileBackedShapeSchema = z.discriminatedUnion("type", [markdownShapeSchema, htmlShapeSchema]);
@@ -397,6 +417,16 @@ const htmlUpdateSchema = z
   })
   .strict();
 
+const codeDiffUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("code-diff"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: codeDiffPropsSchema.partial().optional(),
+  })
+  .strict();
+
 export const updateShapeSchema = z.discriminatedUnion("type", [
   geoUpdateSchema,
   textUpdateSchema,
@@ -406,6 +436,7 @@ export const updateShapeSchema = z.discriminatedUnion("type", [
   imageUpdateSchema,
   markdownUpdateSchema,
   htmlUpdateSchema,
+  codeDiffUpdateSchema,
 ]);
 
 export const fileBackedUpdateShapeSchema = z.discriminatedUnion("type", [markdownUpdateSchema, htmlUpdateSchema]);

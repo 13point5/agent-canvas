@@ -4,10 +4,11 @@ import type { Editor, TLStoreSnapshot } from "tldraw";
 import { loadSnapshot, Tldraw } from "tldraw";
 import { create } from "zustand";
 import { boardsApi } from "@/api/client";
+import { CodeDiffShapeUtil } from "@/tldraw-shapes/code-diff";
 import { HtmlShapeUtil } from "@/tldraw-shapes/html";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 
-const customShapeUtils = [MarkdownShapeUtil, HtmlShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil, HtmlShapeUtil, CodeDiffShapeUtil];
 
 const MAX_CACHED_EDITORS = 10;
 
