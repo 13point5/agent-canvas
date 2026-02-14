@@ -25,11 +25,11 @@ const codeIcon = createElement(
 ) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
 
 export const htmlOverrides: TLUiOverrides = {
-  tools(_editor, tools, _helpers) {
+  tools(_editor, tools) {
     tools.html = {
       id: "html",
       icon: codeIcon,
-      label: "tool.html" as "tool.select",
+      label: "tool.html",
       onSelect() {
         openHtmlDialog?.();
       },

@@ -25,11 +25,11 @@ const markdownIcon = createElement(
 ) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
 
 export const markdownOverrides: TLUiOverrides = {
-  tools(_editor, tools, _helpers) {
+  tools(_editor, tools) {
     tools.markdown = {
       id: "markdown",
       icon: markdownIcon,
-      label: "tool.markdown" as "tool.select",
+      label: "tool.markdown",
       onSelect() {
         openMarkdownDialog?.();
       },
