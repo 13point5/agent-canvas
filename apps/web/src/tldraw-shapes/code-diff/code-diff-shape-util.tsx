@@ -1,24 +1,45 @@
-import { File, type FileContents } from "@pierre/diffs/react";
-import { BaseBoxShapeUtil, HTMLContainer, resizeBox, type TLResizeInfo } from "tldraw";
-import type { CodeDiffShape } from "./code-diff-shape-props";
+import { MultiFileDiff } from "@pierre/diffs/react";
+import {
+  BaseBoxShapeUtil,
+  createShapePropsMigrationSequence,
+  HTMLContainer,
+  resizeBox,
+  type TLResizeInfo,
+} from "tldraw";
+import type { CodeDiffFile, CodeDiffShape } from "./code-diff-shape-props";
 import { codeDiffShapeProps } from "./code-diff-shape-props";
 
-const file: FileContents = {
+const CODE_DIFF_THEME = "pierre-dark";
+const CODE_DIFF_THEME_BG = "#070707";
+const DEFAULT_OLD_FILE: CodeDiffFile = {
+  name: "some/path/example.ts",
+  contents: 'console.log("Hello world")',
+};
+const DEFAULT_NEW_FILE: CodeDiffFile = {
   name: "example.ts",
-  contents: `function greet(name: string) {
-  console.log(\`Hello, \${name}!\`);
-}
-
-export { greet };`,
+  contents: 'console.warn("Updated message")',
 };
 
-const CODE_DIFF_THEME = { dark: "pierre-dark", light: "pierre-light" };
-const CODE_DIFF_THEME_TYPE = "dark";
-const CODE_DIFF_THEME_BG = "#070707";
+const cloneFile = (file: CodeDiffFile): CodeDiffFile => ({ ...file });
 
 export class CodeDiffShapeUtil extends BaseBoxShapeUtil<CodeDiffShape> {
   static override type = "code-diff";
   static override props = codeDiffShapeProps;
+  static override migrations = createShapePropsMigrationSequence({
+    sequence: [
+      {
+        id: "com.tldraw.shape.code-diff/1",
+        up(props: Record<string, unknown>) {
+          if (props.oldFile === undefined) {
+            props.oldFile = cloneFile(DEFAULT_OLD_FILE);
+          }
+          if (props.newFile === undefined) {
+            props.newFile = cloneFile(DEFAULT_NEW_FILE);
+          }
+        },
+      },
+    ],
+  });
 
   private static readonly minWidth = 360;
   private static readonly minHeight = 140;
@@ -27,6 +48,8 @@ export class CodeDiffShapeUtil extends BaseBoxShapeUtil<CodeDiffShape> {
     return {
       w: 600,
       h: 400,
+      oldFile: cloneFile(DEFAULT_OLD_FILE),
+      newFile: cloneFile(DEFAULT_NEW_FILE),
     };
   }
 
@@ -60,14 +83,15 @@ export class CodeDiffShapeUtil extends BaseBoxShapeUtil<CodeDiffShape> {
         }}
       >
         <div className="h-full w-full overflow-auto">
-          <File
-            file={file}
+          <MultiFileDiff
+            oldFile={shape.props.oldFile}
+            newFile={shape.props.newFile}
             options={{
               theme: CODE_DIFF_THEME,
-              themeType: CODE_DIFF_THEME_TYPE,
+              themeType: "dark",
               overflow: "scroll",
+              diffStyle: "unified",
             }}
-            className="min-h-full w-full"
           />
         </div>
       </HTMLContainer>

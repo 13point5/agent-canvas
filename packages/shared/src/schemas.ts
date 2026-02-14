@@ -298,10 +298,19 @@ export const htmlShapeSchema = z
 
 // ── Code diff shape ─────────────────────────────────────────────────
 
+const codeDiffFileSchema = z
+  .object({
+    name: z.string(),
+    contents: z.string(),
+  })
+  .strict();
+
 const codeDiffPropsSchema = z
   .object({
     w: z.number().optional(),
     h: z.number().optional(),
+    oldFile: codeDiffFileSchema.optional(),
+    newFile: codeDiffFileSchema.optional(),
   })
   .strict();
 
