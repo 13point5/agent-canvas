@@ -1,4 +1,4 @@
-import { BaseBoxShapeUtil, HTMLContainer } from "tldraw";
+import { BaseBoxShapeUtil, createShapePropsMigrationSequence, HTMLContainer } from "tldraw";
 import { HtmlViewer } from "@/components/html/html-viewer";
 import type { HtmlShape } from "./html-shape-props";
 import { htmlShapeProps } from "./html-shape-props";
@@ -6,13 +6,28 @@ import { htmlShapeProps } from "./html-shape-props";
 export class HtmlShapeUtil extends BaseBoxShapeUtil<HtmlShape> {
   static override type = "html" as const;
   static override props = htmlShapeProps;
+  static override migrations = createShapePropsMigrationSequence({
+    sequence: [
+      {
+        id: "com.tldraw.shape.html/1",
+        up(props: Record<string, unknown>) {
+          if (props.filePath === undefined) {
+            props.filePath = "";
+          }
+          if (props.content === undefined) {
+            props.content = "";
+          }
+        },
+      },
+    ],
+  });
 
   override getDefaultProps(): HtmlShape["props"] {
     return {
       w: 600,
       h: 400,
       name: "",
-      html: "",
+      content: "",
       filePath: "",
     };
   }
@@ -61,7 +76,7 @@ export class HtmlShapeUtil extends BaseBoxShapeUtil<HtmlShape> {
       >
         <HtmlViewer
           name={shape.props.name}
-          html={shape.props.html}
+          content={shape.props.content}
           width={shape.props.w}
           height={shape.props.h}
           isEditing={isEditing}

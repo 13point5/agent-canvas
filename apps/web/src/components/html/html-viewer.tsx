@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 
 interface HtmlViewerProps {
   name: string;
-  html: string;
+  content: string;
   width: number;
   height: number;
   isEditing: boolean;
 }
 
-export function HtmlViewer({ name, html, width, height, isEditing }: HtmlViewerProps) {
+export function HtmlViewer({ name, content, width, height, isEditing }: HtmlViewerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const handleFullscreen = useCallback(() => {
@@ -39,7 +39,7 @@ export function HtmlViewer({ name, html, width, height, isEditing }: HtmlViewerP
 
   const iframe = (
     <iframe
-      srcDoc={html}
+      srcDoc={content}
       sandbox="allow-scripts"
       title={name || "HTML Artifact"}
       className="border-0 bg-white"

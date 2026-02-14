@@ -59,7 +59,7 @@ export function HtmlDialogOverlay() {
       type: "html",
       x: center.x,
       y: center.y,
-      props: { name, html: resolvedHtml, filePath: "" },
+      props: { name, content: resolvedHtml, filePath: "" },
     });
     setOpen(false);
     reset();

@@ -11,7 +11,12 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
       {
         id: "com.tldraw.shape.markdown/1",
         up(props: Record<string, unknown>) {
-          props.filePath = "";
+          if (props.filePath === undefined) {
+            props.filePath = "";
+          }
+          if (props.content === undefined) {
+            props.content = "";
+          }
         },
       },
     ],
@@ -22,7 +27,7 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
       w: 400,
       h: 300,
       name: "",
-      markdown: "",
+      content: "",
       filePath: "",
     };
   }
@@ -71,7 +76,7 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
       >
         <MarkdownViewer
           name={shape.props.name}
-          markdown={shape.props.markdown}
+          content={shape.props.content}
           width={shape.props.w}
           height={shape.props.h}
           isEditing={isEditing}
