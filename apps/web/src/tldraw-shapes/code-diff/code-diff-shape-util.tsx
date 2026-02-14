@@ -1,10 +1,27 @@
-import { BaseBoxShapeUtil, HTMLContainer } from "tldraw";
+import { File, type FileContents } from "@pierre/diffs/react";
+import { BaseBoxShapeUtil, HTMLContainer, resizeBox, type TLResizeInfo } from "tldraw";
 import type { CodeDiffShape } from "./code-diff-shape-props";
 import { codeDiffShapeProps } from "./code-diff-shape-props";
 
+const file: FileContents = {
+  name: "example.ts",
+  contents: `function greet(name: string) {
+  console.log(\`Hello, \${name}!\`);
+}
+
+export { greet };`,
+};
+
+const CODE_DIFF_THEME = { dark: "pierre-dark", light: "pierre-light" };
+const CODE_DIFF_THEME_TYPE = "dark";
+const CODE_DIFF_THEME_BG = "#070707";
+
 export class CodeDiffShapeUtil extends BaseBoxShapeUtil<CodeDiffShape> {
-  static override type = "code-diff" as const;
+  static override type = "code-diff";
   static override props = codeDiffShapeProps;
+
+  private static readonly minWidth = 360;
+  private static readonly minHeight = 140;
 
   override getDefaultProps(): CodeDiffShape["props"] {
     return {
@@ -13,7 +30,24 @@ export class CodeDiffShapeUtil extends BaseBoxShapeUtil<CodeDiffShape> {
     };
   }
 
+  override canEdit() {
+    return true;
+  }
+
+  override canScroll() {
+    return true;
+  }
+
+  override onResize(shape: CodeDiffShape, info: TLResizeInfo<CodeDiffShape>) {
+    return resizeBox(shape, info, {
+      minWidth: CodeDiffShapeUtil.minWidth,
+      minHeight: CodeDiffShapeUtil.minHeight,
+    });
+  }
+
   override component(shape: CodeDiffShape) {
+    const isEditing = this.editor.getEditingShapeId() === shape.id;
+
     return (
       <HTMLContainer
         style={{
@@ -21,10 +55,21 @@ export class CodeDiffShapeUtil extends BaseBoxShapeUtil<CodeDiffShape> {
           height: shape.props.h,
           overflow: "hidden",
           borderRadius: 8,
-          padding: 16,
+          pointerEvents: isEditing ? "all" : "none",
+          backgroundColor: CODE_DIFF_THEME_BG,
         }}
       >
-        <p>Code diff placeholder</p>
+        <div className="h-full w-full overflow-auto">
+          <File
+            file={file}
+            options={{
+              theme: CODE_DIFF_THEME,
+              themeType: CODE_DIFF_THEME_TYPE,
+              overflow: "scroll",
+            }}
+            className="min-h-full w-full"
+          />
+        </div>
       </HTMLContainer>
     );
   }
