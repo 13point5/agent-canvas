@@ -340,7 +340,9 @@ boards.patch("/:id/shapes", zValidator("json", updateShapesBodySchema as any), a
     let resolvedShape: UpdateShape;
 
     try {
-      resolvedShape = isFileBackedUpdateShape(shape) ? await resolveShapeContentFromFile(shape) : shape;
+      resolvedShape = isFileBackedUpdateShape(shape)
+        ? await resolveShapeContentFromFile(shape, { defaultMissingContent: false })
+        : shape;
     } catch (error) {
       return c.json(
         {
