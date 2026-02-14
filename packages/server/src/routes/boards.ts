@@ -1,14 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { basename, isAbsolute, join } from "node:path";
+import { basename, join } from "node:path";
 import {
   type BoardMetadata,
+  type CreateShapesBody,
   createBoardSchema,
   createShapesBodySchema,
   deleteShapesBodySchema,
+  type InputShape,
   type Snapshot,
   snapshotSchema,
+  type UpdateShape,
+  type UpdateShapesBody,
   updateBoardSchema,
   updateShapesBodySchema,
 } from "@agent-canvas/shared";
@@ -18,6 +21,7 @@ import { imageSizeFromFile } from "image-size/fromFile";
 
 import { emitBoardEvent } from "@/lib/events";
 import { createPendingRequest } from "@/lib/pending-requests";
+import { isFileBackedInputShape, isFileBackedUpdateShape, resolveShapeContentFromFile } from "@/lib/shape-content";
 import {
   copyToBoardAssets,
   ensureDir,
@@ -206,7 +210,7 @@ boards.post("/:id/shapes", zValidator("json", createShapesBodySchema as any), as
     );
   }
 
-  const { shapes } = c.req.valid("json");
+  const { shapes } = c.req.valid("json") as CreateShapesBody;
   const requestId = randomUUID();
 
   // Process image shapes: copy files to board assets, detect dimensions
@@ -214,52 +218,25 @@ boards.post("/:id/shapes", zValidator("json", createShapesBodySchema as any), as
   const processedShapes = [];
 
   for (const shape of shapes) {
-    // Handle markdown shapes with filePath
-    if (shape.type === "markdown" && shape.props.filePath && !shape.props.markdown) {
-      const filePath = shape.props.filePath;
+    let resolvedShape: InputShape;
 
-      if (!isAbsolute(filePath)) {
-        return c.json({ error: `filePath must be absolute: ${filePath}` }, 400);
-      }
-      if (!existsSync(filePath)) {
-        return c.json({ error: `File not found: ${filePath}` }, 400);
-      }
+    try {
+      resolvedShape = isFileBackedInputShape(shape) ? await resolveShapeContentFromFile(shape) : shape;
+    } catch (error) {
+      return c.json(
+        {
+          error: error instanceof Error ? error.message : "Failed to resolve file-backed shape",
+        },
+        400,
+      );
+    }
 
-      const content = await readFile(filePath, "utf-8");
-      const name = shape.props.name || basename(filePath).replace(/\.[^.]+$/, "");
-      processedShapes.push({
-        ...shape,
-        props: { ...shape.props, markdown: content, name },
-      });
+    if (resolvedShape.type !== "image") {
+      processedShapes.push(resolvedShape);
       continue;
     }
 
-    // Handle HTML shapes with filePath
-    if (shape.type === "html" && shape.props.filePath && !shape.props.html) {
-      const filePath = shape.props.filePath;
-
-      if (!isAbsolute(filePath)) {
-        return c.json({ error: `filePath must be absolute: ${filePath}` }, 400);
-      }
-      if (!existsSync(filePath)) {
-        return c.json({ error: `File not found: ${filePath}` }, 400);
-      }
-
-      const content = await readFile(filePath, "utf-8");
-      const name = shape.props.name || basename(filePath).replace(/\.[^.]+$/, "");
-      processedShapes.push({
-        ...shape,
-        props: { ...shape.props, html: content, name },
-      });
-      continue;
-    }
-
-    if (shape.type !== "image") {
-      processedShapes.push(shape);
-      continue;
-    }
-
-    const imgShape = shape as {
+    const imgShape = resolvedShape as {
       type: "image";
       x: number;
       y: number;
@@ -355,14 +332,32 @@ boards.patch("/:id/shapes", zValidator("json", updateShapesBodySchema as any), a
     );
   }
 
-  const { shapes } = c.req.valid("json");
+  const { shapes } = c.req.valid("json") as UpdateShapesBody;
   const requestId = randomUUID();
+
+  const processedShapes = [];
+  for (const shape of shapes) {
+    let resolvedShape: UpdateShape;
+
+    try {
+      resolvedShape = isFileBackedUpdateShape(shape) ? await resolveShapeContentFromFile(shape) : shape;
+    } catch (error) {
+      return c.json(
+        {
+          error: error instanceof Error ? error.message : "Failed to resolve file-backed shape",
+        },
+        400,
+      );
+    }
+
+    processedShapes.push(resolvedShape);
+  }
 
   sendToClients({
     type: "update-shapes:request",
     requestId,
     boardId: id,
-    shapes,
+    shapes: processedShapes,
   });
 
   try {

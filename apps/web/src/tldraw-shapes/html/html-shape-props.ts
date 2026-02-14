@@ -8,7 +8,7 @@ declare module "tldraw" {
       w: number;
       h: number;
       name: string;
-      html: string;
+      content: string;
       filePath: string;
     };
   }
@@ -20,6 +20,6 @@ export const htmlShapeProps: RecordProps<HtmlShape> = {
   w: T.number,
   h: T.number,
   name: T.string,
-  html: T.string,
+  content: T.string,
   filePath: T.string,
 };

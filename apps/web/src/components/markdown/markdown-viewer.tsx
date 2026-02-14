@@ -9,14 +9,14 @@ import { MarkdownPanel } from "./markdown-panel";
 
 interface MarkdownViewerProps {
   name: string;
-  markdown: string;
+  content: string;
   width: number;
   height: number;
   isEditing: boolean;
 }
 
-export function MarkdownViewer({ name, markdown, width, height, isEditing }: MarkdownViewerProps) {
-  const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
+export function MarkdownViewer({ name, content, width, height, isEditing }: MarkdownViewerProps) {
+  const parsed = useMemo(() => parseMarkdown(content), [content]);
 
   const [pinnedDiagramIds, setPinnedDiagramIds] = useState<string[]>([]);
   const [showSidePanel, setShowSidePanel] = useState(false);
@@ -66,7 +66,7 @@ export function MarkdownViewer({ name, markdown, width, height, isEditing }: Mar
 
   const markdownPanel = (
     <MarkdownPanel
-      markdown={markdown}
+      markdown={content}
       parsed={parsed}
       mermaidBlocks={parsed.mermaidBlocks}
       onPinDiagram={handlePinDiagram}

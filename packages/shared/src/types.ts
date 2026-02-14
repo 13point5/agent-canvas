@@ -5,6 +5,8 @@ import type {
   createBoardSchema,
   createShapesBodySchema,
   deleteShapesBodySchema,
+  fileBackedShapeSchema,
+  fileBackedUpdateShapeSchema,
   inputShapeSchema,
   snapshotSchema,
   updateBoardSchema,
@@ -17,6 +19,7 @@ export type CreateBoardInput = z.infer<typeof createBoardSchema>;
 export type UpdateBoardInput = z.infer<typeof updateBoardSchema>;
 export type Snapshot = z.infer<typeof snapshotSchema>;
 export type InputShape = z.infer<typeof inputShapeSchema>;
+export type FileBackedShape = z.infer<typeof fileBackedShapeSchema>;
 export type CreateShapesBody = z.infer<typeof createShapesBodySchema>;
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 
@@ -65,6 +68,7 @@ export type CreateShapesApiResponse = {
 // ── Update shapes ────────────────────────────────────────────────────
 
 export type UpdateShape = z.infer<typeof updateShapeSchema>;
+export type FileBackedUpdateShape = z.infer<typeof fileBackedUpdateShapeSchema>;
 export type UpdateShapesBody = z.infer<typeof updateShapesBodySchema>;
 
 export type UpdateShapesRequest = {

@@ -59,7 +59,7 @@ export function MarkdownDialogOverlay() {
       type: "markdown",
       x: center.x,
       y: center.y,
-      props: { name, markdown: resolvedMarkdown, filePath: "" },
+      props: { name, content: resolvedMarkdown, filePath: "" },
     });
     setOpen(false);
     reset();

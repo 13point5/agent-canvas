@@ -8,7 +8,7 @@ declare module "tldraw" {
       w: number;
       h: number;
       name: string;
-      markdown: string;
+      content: string;
       filePath: string;
     };
   }
@@ -20,6 +20,6 @@ export const markdownShapeProps: RecordProps<MarkdownShape> = {
   w: T.number,
   h: T.number,
   name: T.string,
-  markdown: T.string,
+  content: T.string,
   filePath: T.string,
 };

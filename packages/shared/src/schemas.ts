@@ -259,12 +259,12 @@ const markdownPropsSchema = z
     w: z.number().optional(),
     h: z.number().optional(),
     name: z.string().optional(),
-    markdown: z.string().optional(),
+    content: z.string().optional(),
     filePath: z.string().optional(),
   })
   .strict();
 
-const markdownShapeSchema = z
+export const markdownShapeSchema = z
   .object({
     type: z.literal("markdown"),
     x: z.number(),
@@ -281,12 +281,12 @@ const htmlPropsSchema = z
     w: z.number().optional(),
     h: z.number().optional(),
     name: z.string().optional(),
-    html: z.string().optional(),
+    content: z.string().optional(),
     filePath: z.string().optional(),
   })
   .strict();
 
-const htmlShapeSchema = z
+export const htmlShapeSchema = z
   .object({
     type: z.literal("html"),
     x: z.number(),
@@ -308,6 +308,8 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   markdownShapeSchema,
   htmlShapeSchema,
 ]);
+
+export const fileBackedShapeSchema = z.discriminatedUnion("type", [markdownShapeSchema, htmlShapeSchema]);
 
 export const createShapesBodySchema = z.object({
   shapes: z.array(inputShapeSchema).min(1),
@@ -405,6 +407,8 @@ export const updateShapeSchema = z.discriminatedUnion("type", [
   markdownUpdateSchema,
   htmlUpdateSchema,
 ]);
+
+export const fileBackedUpdateShapeSchema = z.discriminatedUnion("type", [markdownUpdateSchema, htmlUpdateSchema]);
 
 export const updateShapesBodySchema = z.object({
   shapes: z.array(updateShapeSchema).min(1),
