@@ -37,11 +37,25 @@ const colorEnum = z.enum([
   "red",
   "white",
 ]);
-const fillEnum = z.enum(["none", "semi", "solid", "pattern", "fill", "lined-fill"]);
+const fillEnum = z.enum([
+  "none",
+  "semi",
+  "solid",
+  "pattern",
+  "fill",
+  "lined-fill",
+]);
 const sizeEnum = z.enum(["s", "m", "l", "xl"]);
 const dashEnum = z.enum(["draw", "solid", "dashed", "dotted"]);
 const fontEnum = z.enum(["draw", "sans", "serif", "mono"]);
-const alignEnum = z.enum(["start", "middle", "end", "start-legacy", "end-legacy", "middle-legacy"]);
+const alignEnum = z.enum([
+  "start",
+  "middle",
+  "end",
+  "start-legacy",
+  "end-legacy",
+  "middle-legacy",
+]);
 const verticalAlignEnum = z.enum(["start", "middle", "end"]);
 const textAlignEnum = z.enum(["start", "middle", "end"]);
 const arrowheadEnum = z.enum([
@@ -284,6 +298,28 @@ const markdownShapeSchema = z
   })
   .strict();
 
+// ── HTML shape ─────────────────────────────────────────────────────
+
+const htmlPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    html: z.string().optional(),
+    filePath: z.string().optional(),
+  })
+  .strict();
+
+const htmlShapeSchema = z
+  .object({
+    type: z.literal("html"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: htmlPropsSchema,
+  })
+  .strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -294,6 +330,7 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   frameShapeSchema,
   imageShapeSchema,
   markdownShapeSchema,
+  htmlShapeSchema,
 ]);
 
 export const createShapesBodySchema = z.object({
@@ -362,6 +399,26 @@ const imageUpdateSchema = z
   })
   .strict();
 
+const markdownUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("markdown"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: markdownPropsSchema.partial().optional(),
+  })
+  .strict();
+
+const htmlUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("html"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: htmlPropsSchema.partial().optional(),
+  })
+  .strict();
+
 export const updateShapeSchema = z.discriminatedUnion("type", [
   geoUpdateSchema,
   textUpdateSchema,
@@ -369,6 +426,8 @@ export const updateShapeSchema = z.discriminatedUnion("type", [
   noteUpdateSchema,
   frameUpdateSchema,
   imageUpdateSchema,
+  markdownUpdateSchema,
+  htmlUpdateSchema,
 ]);
 
 export const updateShapesBodySchema = z.object({

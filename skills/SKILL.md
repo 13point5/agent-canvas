@@ -337,6 +337,43 @@ Response includes `assetPaths` mapping original filenames to served URLs:
 
 Images are stored at `~/.agent-canvas/boards/<boardId>/assets/`. Duplicate filenames are auto-deduplicated (e.g. `screenshot-1.png`).
 
+### HTML Artifacts
+
+Render arbitrary HTML in a sandboxed iframe. Use for interactive prototypes, visualizations, diagrams with embedded JS, or any rich visual content beyond plain markdown.
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {"type": "html", "x": 100, "y": 100, "props": {"name": "My Widget", "html": "<h1>Hello</h1><p>Interactive content here</p>"}}
+]'
+```
+
+HTML props:
+
+- `name` — display name shown in the shape header
+- `html` — raw HTML string rendered via iframe `srcdoc`
+- `filePath` — absolute path to a local `.html` file (reads content server-side, like markdown's `filePath`)
+- `w`, `h` — optional width/height (default 600×400)
+
+Use either `html` (inline content) or `filePath` (read from disk) — if `filePath` is provided and `html` is not, the server reads the file. The name auto-derives from the filename if not specified.
+
+The iframe runs with `sandbox="allow-scripts"` — scripts execute but cannot access the parent page or navigate away. Double-click the shape to interact with the iframe content.
+
+From a file:
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {"type": "html", "x": 100, "y": 100, "props": {"filePath": "/path/to/dashboard.html"}}
+]'
+```
+
+Inline HTML:
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {"type": "html", "x": 100, "y": 100, "props": {"name": "Counter", "html": "<div style=\"text-align:center;padding:20px;font-family:sans-serif\"><h2 id=\"count\">0</h2><button onclick=\"document.getElementById('"'"'count'"'"').textContent=++window.n\">+1</button><script>window.n=0<\/script></div>"}}
+]'
+```
+
 ## Updating Shapes
 
 Update existing shapes by passing an array of update objects. Each update object requires `id` (the real TLDraw shape ID from a create response or `shapes get`) and `type`. All other fields are optional — only the fields you provide are updated.
