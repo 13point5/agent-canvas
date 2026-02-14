@@ -19,19 +19,11 @@ interface MarkdownPanelProps {
   onPinDiagram?: (id: string) => void;
 }
 
-export function MarkdownPanel({
-  markdown,
-  parsed,
-  mermaidBlocks,
-  onPinDiagram,
-}: MarkdownPanelProps) {
+export function MarkdownPanel({ markdown, parsed, mermaidBlocks, onPinDiagram }: MarkdownPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Map mermaid code content → block for direct lookup (no counter needed)
-  const mermaidByCode = useMemo(
-    () => new Map(mermaidBlocks.map((b) => [b.code, b])),
-    [mermaidBlocks],
-  );
+  const mermaidByCode = useMemo(() => new Map(mermaidBlocks.map((b) => [b.code, b])), [mermaidBlocks]);
 
   // Derived mapping: heading text -> section id
   const sectionMap = useMemo(() => {
@@ -58,9 +50,7 @@ export function MarkdownPanel({
         const raw = extractText(children).trim();
         const block = mermaidByCode.get(raw);
         if (!block) return null;
-        return (
-          <MermaidBlockComponent id={block.id} code={block.code} onPinToPanel={onPinDiagram} />
-        );
+        return <MermaidBlockComponent id={block.id} code={block.code} onPinToPanel={onPinDiagram} />;
       }
 
       // Inline code
@@ -101,21 +91,12 @@ export function MarkdownPanel({
       </td>
     ),
     blockquote: ({ children, ...props }) => (
-      <blockquote
-        className="my-2 border-l-2 border-chart-1 pl-4 text-muted-foreground italic"
-        {...props}
-      >
+      <blockquote className="my-2 border-l-2 border-chart-1 pl-4 text-muted-foreground italic" {...props}>
         {children}
       </blockquote>
     ),
     a: ({ children, href, ...props }) => (
-      <a
-        href={href}
-        className="text-chart-1 hover:underline"
-        target="_blank"
-        rel="noopener noreferrer"
-        {...props}
-      >
+      <a href={href} className="text-chart-1 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>
         {children}
       </a>
     ),
@@ -135,11 +116,7 @@ export function MarkdownPanel({
   return (
     <div ref={scrollRef} className="h-full overflow-auto px-4 py-3">
       <div className="prose-sm max-w-prose mx-auto text-foreground">
-        <ReactMarkdown
-          remarkPlugins={remarkPlugins}
-          rehypePlugins={rehypePlugins}
-          components={components}
-        >
+        <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} components={components}>
           {markdown}
         </ReactMarkdown>
       </div>

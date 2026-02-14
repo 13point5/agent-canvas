@@ -44,17 +44,7 @@ const fontEnum = z.enum(["draw", "sans", "serif", "mono"]);
 const alignEnum = z.enum(["start", "middle", "end", "start-legacy", "end-legacy", "middle-legacy"]);
 const verticalAlignEnum = z.enum(["start", "middle", "end"]);
 const textAlignEnum = z.enum(["start", "middle", "end"]);
-const arrowheadEnum = z.enum([
-  "arrow",
-  "triangle",
-  "square",
-  "dot",
-  "pipe",
-  "diamond",
-  "inverted",
-  "bar",
-  "none",
-]);
+const arrowheadEnum = z.enum(["arrow", "triangle", "square", "dot", "pipe", "diamond", "inverted", "bar", "none"]);
 const geoTypeEnum = z.enum([
   "cloud",
   "rectangle",

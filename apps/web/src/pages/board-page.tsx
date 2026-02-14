@@ -40,9 +40,7 @@ export function BoardPage() {
         {board ? (
           <BoardCanvas boardId={board.id} />
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            Board not found
-          </div>
+          <div className="flex items-center justify-center h-full text-muted-foreground">Board not found</div>
         )}
       </main>
     </>

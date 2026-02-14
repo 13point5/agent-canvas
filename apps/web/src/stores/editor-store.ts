@@ -120,8 +120,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     }
 
     const container = document.createElement("div");
-    container.style.cssText =
-      "position:absolute;left:-9999px;top:-9999px;width:800px;height:600px;";
+    container.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:800px;height:600px;";
     document.body.appendChild(container);
 
     const inner = document.createElement("div");

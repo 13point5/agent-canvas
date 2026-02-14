@@ -20,9 +20,7 @@ export function HomePage() {
         <span className="font-medium">No board selected</span>
       </header>
       <main className="flex-1 overflow-hidden">
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          Select or create a board
-        </div>
+        <div className="flex items-center justify-center h-full text-muted-foreground">Select or create a board</div>
       </main>
     </>
   );

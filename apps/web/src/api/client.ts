@@ -1,10 +1,4 @@
-import type {
-  AppSettings,
-  BoardMetadata,
-  CreateBoardInput,
-  Snapshot,
-  UpdateBoardInput,
-} from "@agent-canvas/shared";
+import type { AppSettings, BoardMetadata, CreateBoardInput, Snapshot, UpdateBoardInput } from "@agent-canvas/shared";
 import axios from "axios";
 
 const api = axios.create({
@@ -18,8 +12,7 @@ export const boardsApi = {
 
   get: (id: string) => api.get<BoardMetadata>(`/boards/${id}`).then((r) => r.data),
 
-  getSnapshot: (id: string) =>
-    api.get<{ snapshot: Snapshot | null }>(`/boards/${id}/snapshot`).then((r) => r.data),
+  getSnapshot: (id: string) => api.get<{ snapshot: Snapshot | null }>(`/boards/${id}/snapshot`).then((r) => r.data),
 };
 
 // Settings
@@ -28,8 +21,7 @@ export const settingsApi = {
 };
 
 export const settingsMutations = {
-  update: (data: Partial<AppSettings>) =>
-    api.patch<AppSettings>("/settings", data).then((r) => r.data),
+  update: (data: Partial<AppSettings>) => api.patch<AppSettings>("/settings", data).then((r) => r.data),
 };
 
 // Mutation functions (for useMutation)
