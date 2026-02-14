@@ -25,7 +25,7 @@ const markdownIcon = createElement(
 ) as React.ReactElement<React.HTMLAttributes<HTMLDivElement>>;
 
 export const markdownOverrides: TLUiOverrides = {
-  tools(_editor, tools) {
+  tools(_editor, tools, _helpers) {
     tools.markdown = {
       id: "markdown",
       icon: markdownIcon,
