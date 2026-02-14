@@ -1,3 +1,4 @@
+import { Http } from "@react-symbols/icons";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
@@ -32,26 +33,9 @@ export function HtmlViewer({ name, html, width, height, isEditing }: HtmlViewerP
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [isFullscreen]);
 
-  const borderClass = isEditing ? "border border-chart-2" : "border border-border";
+  const borderClass = isEditing ? "border border-chart-1" : "border border-border";
 
-  const codeIcon = (
-    <svg
-      aria-hidden="true"
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="shrink-0"
-    >
-      <polyline points="5 4 1 8 5 12" />
-      <polyline points="11 4 15 8 11 12" />
-      <line x1="9" y1="2" x2="7" y2="14" />
-    </svg>
-  );
+  const codeIcon = <Http className="size-5 shrink-0" />;
 
   const iframe = (
     <iframe
