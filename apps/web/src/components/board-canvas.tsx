@@ -45,7 +45,8 @@ function CombinedDialogOverlay() {
 
 function CustomToolbar() {
   return (
-    <DefaultToolbar>
+    // tldraw places the main toolbar on the left when orientation is vertical.
+    <DefaultToolbar orientation="vertical">
       <DefaultToolbarContent />
       <ToolbarItem tool="markdown" />
       <ToolbarItem tool="html" />
