@@ -34,7 +34,17 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Markdown } from "@react-symbols/icons";
 import { useEffect, useState } from "react";
-import { DefaultMinimap, GeoShapeGeoStyle, type TLUiOverrides, Tldraw, useEditor, useTools, useValue } from "tldraw";
+import {
+  DefaultMinimap,
+  DefaultStylePanel,
+  GeoShapeGeoStyle,
+  type TLUiOverrides,
+  type TLUiStylePanelProps,
+  Tldraw,
+  useEditor,
+  useTools,
+  useValue,
+} from "tldraw";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -336,6 +346,14 @@ function MinimalMinimap() {
   );
 }
 
+function MinimalStylePanel(props: TLUiStylePanelProps) {
+  return (
+    <div className="minimal-style-panel-shell pointer-events-auto z-40">
+      <DefaultStylePanel {...props} />
+    </div>
+  );
+}
+
 interface MinimalToolButtonProps {
   active?: boolean;
   icon: React.ComponentProps<typeof HugeiconsIcon>["icon"];
@@ -588,6 +606,7 @@ export function BoardCanvas({ boardId }: BoardCanvasProps) {
           MenuPanel: null,
           HelperButtons: null,
           NavigationPanel: null,
+          StylePanel: MinimalStylePanel,
           Toolbar: MinimalToolbar,
           InFrontOfTheCanvas: CombinedDialogOverlay,
         }}
