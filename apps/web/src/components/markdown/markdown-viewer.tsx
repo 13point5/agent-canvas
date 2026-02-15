@@ -1,3 +1,11 @@
+import {
+  Cancel01Icon,
+  Comment01Icon,
+  CommentAdd01Icon,
+  FullScreenIcon,
+  ViewSidebarRightIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Markdown as MarkdownIcon } from "@react-symbols/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -670,21 +678,7 @@ export function MarkdownViewer({
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleOpenComposer}
         >
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 3h10v7H7l-3 3V3z" />
-            <line x1="8" y1="5" x2="8" y2="9" />
-            <line x1="6" y1="7" x2="10" y2="7" />
-          </svg>
+          <HugeiconsIcon icon={CommentAdd01Icon} className="size-4" strokeWidth={2} />
         </button>
       )}
 
@@ -738,19 +732,7 @@ export function MarkdownViewer({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setExpandedCommentId((current) => (current === comment.id ? null : comment.id))}
           >
-            <svg
-              aria-hidden="true"
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 3h10v7H7l-3 3V3z" />
-            </svg>
+            <HugeiconsIcon icon={Comment01Icon} className="size-3.5" strokeWidth={2} />
           </button>
         ) : (
           <div
@@ -860,20 +842,7 @@ export function MarkdownViewer({
       onClick={() => setShowSidePanel((value) => !value)}
       className={showSidePanel ? "bg-accent text-foreground" : "text-muted-foreground"}
     >
-      <svg
-        aria-hidden="true"
-        width="14"
-        height="14"
-        viewBox="0 0 16 16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="2" y="2" width="12" height="12" rx="1" />
-        <line x1="10" y1="2" x2="10" y2="14" />
-      </svg>
+      <HugeiconsIcon icon={ViewSidebarRightIcon} className="size-3.5" strokeWidth={2} />
     </Button>
   );
 
@@ -899,37 +868,9 @@ export function MarkdownViewer({
           className="text-muted-foreground"
         >
           {isFullscreen ? (
-            <svg
-              aria-hidden="true"
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="4" y1="4" x2="12" y2="12" />
-              <line x1="12" y1="4" x2="4" y2="12" />
-            </svg>
+            <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" strokeWidth={2} />
           ) : (
-            <svg
-              aria-hidden="true"
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="1 5 1 1 5 1" />
-              <polyline points="11 1 15 1 15 5" />
-              <polyline points="15 11 15 15 11 15" />
-              <polyline points="5 15 1 15 1 11" />
-            </svg>
+            <HugeiconsIcon icon={FullScreenIcon} className="size-3.5" strokeWidth={2} />
           )}
         </Button>
       </div>

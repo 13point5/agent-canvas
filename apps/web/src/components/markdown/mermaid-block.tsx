@@ -1,3 +1,5 @@
+import { FullScreenIcon, ViewSidebarRightIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { renderMermaid } from "beautiful-mermaid";
 import DOMPurify from "dompurify";
 import { useEffect, useState } from "react";
@@ -123,20 +125,7 @@ export function MermaidBlock({ code, id, onPinToPanel, compact = true }: Mermaid
                 title="Pin to side panel"
                 className="bg-background/80"
               >
-                <svg
-                  aria-hidden="true"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="2" width="12" height="12" rx="1" />
-                  <line x1="10" y1="2" x2="10" y2="14" />
-                </svg>
+                <HugeiconsIcon icon={ViewSidebarRightIcon} className="size-3.5" strokeWidth={2} />
               </Button>
             )}
             <Button
@@ -146,22 +135,7 @@ export function MermaidBlock({ code, id, onPinToPanel, compact = true }: Mermaid
               title="View full size"
               className="bg-background/80"
             >
-              <svg
-                aria-hidden="true"
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="1 5 1 1 5 1" />
-                <polyline points="11 1 15 1 15 5" />
-                <polyline points="15 11 15 15 11 15" />
-                <polyline points="5 15 1 15 1 11" />
-              </svg>
+              <HugeiconsIcon icon={FullScreenIcon} className="size-3.5" strokeWidth={2} />
             </Button>
           </div>
         </div>
