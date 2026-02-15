@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import {
   type BoardMetadata,
@@ -8,7 +10,9 @@ import {
   createShapesBodySchema,
   deleteShapesBodySchema,
   type InputShape,
+  type ScreenshotShapesBody,
   type Snapshot,
+  screenshotShapesBodySchema,
   snapshotSchema,
   type UpdateShape,
   type UpdateShapesBody,
@@ -152,6 +156,69 @@ boards.put("/:id/snapshot", zValidator("json", snapshotSchema as any), async (c)
   await writeJSON(metadataPath, metadata);
 
   return c.json({ success: true });
+});
+
+// Create a screenshot of specific shapes on a board (via WebSocket relay to browser)
+boards.post("/:id/screenshot", zValidator("json", screenshotShapesBodySchema as any), async (c) => {
+  const id = c.req.param("id");
+
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  if (getClientCount() === 0) {
+    return c.json(
+      {
+        error: "No browser clients connected. Open the board in a browser first.",
+      },
+      503,
+    );
+  }
+
+  const { ids } = c.req.valid("json") as ScreenshotShapesBody;
+  const requestId = randomUUID();
+
+  sendToClients({
+    type: "screenshot-shapes:request",
+    requestId,
+    boardId: id,
+    ids,
+  });
+
+  try {
+    const result = await createPendingRequest<{
+      imageDataUrl: string;
+      width?: number;
+      height?: number;
+    }>(requestId, id);
+
+    if (!result.imageDataUrl) {
+      return c.json({ error: "Browser returned an empty screenshot payload" }, 500);
+    }
+
+    if (typeof result.width !== "number" || typeof result.height !== "number") {
+      return c.json({ error: "Browser did not return screenshot dimensions" }, 500);
+    }
+
+    const { bytes, extension } = decodeScreenshotDataUrl(result.imageDataUrl);
+    const filePath = join(tmpdir(), `agent-canvas-screenshot-${id}-${randomUUID()}.${extension}`);
+
+    await writeFile(filePath, bytes);
+
+    return c.json({
+      boardId: id,
+      filePath,
+      width: result.width,
+      height: result.height,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown error";
+    if (message === "TIMEOUT") {
+      return c.json({ error: "Request timed out waiting for browser response" }, 504);
+    }
+    return c.json({ error: message }, 500);
+  }
 });
 
 // Get shapes from a board (via WebSocket relay to browser)
@@ -413,5 +480,30 @@ boards.delete("/:id/shapes", zValidator("json", deleteShapesBodySchema as any), 
     return c.json({ error: message }, 500);
   }
 });
+
+function decodeScreenshotDataUrl(dataUrl: string): { bytes: Buffer; extension: "png" | "jpg" | "webp" | "svg" } {
+  const match = /^data:(image\/(?:png|jpeg|webp|svg\+xml));base64,(.+)$/.exec(dataUrl);
+  if (!match) {
+    throw new Error("Browser returned an invalid screenshot payload");
+  }
+
+  const mimeType = match[1];
+  const base64 = match[2];
+  const bytes = Buffer.from(base64, "base64");
+
+  const extensionByMimeType: Record<string, "png" | "jpg" | "webp" | "svg"> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+  };
+
+  const extension = extensionByMimeType[mimeType];
+  if (!extension) {
+    throw new Error(`Unsupported screenshot mime type: ${mimeType}`);
+  }
+
+  return { bytes, extension };
+}
 
 export { boards };

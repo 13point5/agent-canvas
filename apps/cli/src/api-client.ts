@@ -4,6 +4,7 @@ import type {
   CreateShapesApiResponse,
   DeleteShapesApiResponse,
   GetShapesApiResponse,
+  ScreenshotShapesApiResponse,
   UpdateShapesApiResponse,
 } from "@agent-canvas/shared";
 import axios, { AxiosError } from "axios";
@@ -201,6 +202,19 @@ export async function deleteBoardShapes(id: string, ids: string[]): Promise<Dele
     const client = createClient();
     const response = await client.delete<DeleteShapesApiResponse>(`/api/boards/${id}/shapes`, {
       data: { ids },
+    });
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function screenshotBoardShapes(id: string, ids: string[]): Promise<ScreenshotShapesApiResponse> {
+  try {
+    const client = createClient();
+    const response = await client.post<ScreenshotShapesApiResponse>(`/api/boards/${id}/screenshot`, {
+      ids,
     });
 
     return response.data;

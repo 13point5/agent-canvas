@@ -16,6 +16,7 @@ import {
   getBoardShapes,
   listBoards,
   ServerNotRunningError,
+  screenshotBoardShapes,
   updateBoard,
   updateBoardShapes,
 } from "./api-client";
@@ -400,6 +401,50 @@ shapes
 
       const result = await deleteBoardShapes(options.board, idsArray);
       console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      if (error instanceof ServerNotRunningError || error instanceof ApiError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+// ─── screenshot ───────────────────────────────────────
+
+program
+  .command("screenshot")
+  .description("Capture a screenshot of selected shapes on a board")
+  .requiredOption("--board <id>", "Board ID")
+  .requiredOption("--ids <json>", "JSON array of shape IDs to capture")
+  .option("--json", "Output machine-readable JSON")
+  .action(async (options: { board: string; ids: string; json?: boolean }) => {
+    try {
+      let idsArray: string[];
+      try {
+        const parsed = JSON.parse(options.ids);
+        if (!Array.isArray(parsed) || parsed.some((id) => typeof id !== "string")) {
+          console.error("--ids must be a JSON array of shape ID strings");
+          process.exit(1);
+        }
+        idsArray = parsed;
+      } catch {
+        console.error("--ids must be valid JSON");
+        process.exit(1);
+      }
+
+      if (idsArray.length === 0) {
+        console.error("--ids must include at least one shape ID");
+        process.exit(1);
+      }
+
+      const result = await screenshotBoardShapes(options.board, idsArray);
+
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(result.filePath);
+      }
     } catch (error) {
       if (error instanceof ServerNotRunningError || error instanceof ApiError) {
         console.error(error.message);
