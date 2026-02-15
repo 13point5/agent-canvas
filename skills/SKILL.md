@@ -32,8 +32,59 @@ agent-canvas boards rename "New Name" --id <board-id>
 ### Reading Shapes
 
 ```bash
-# Get all shapes from a board
+# Get shapes from a board (compact YAML-like summaries by default)
 agent-canvas shapes get --board <board-id>
+
+# Get JSON output (machine-readable)
+agent-canvas shapes get --board <board-id> --json
+
+# Get only specific shapes by ID (still minimal summaries)
+agent-canvas shapes get --board <board-id> --ids '["shape:abc", "shape:def"]'
+
+# Get full shape payloads as JSON (for redirecting to a file)
+agent-canvas shapes get --board <board-id> --full --json > shapes.json
+
+# Optional: tune truncation length in minimal mode (default 100)
+agent-canvas shapes get --board <board-id> --max-chars 200
+```
+
+Default `shapes get` output is compact YAML-like text:
+- It is optimized for lower token usage in agent contexts
+- Use `--json` for machine-readable JSON output
+
+Minimal-mode `shapes get` output is intentionally partial:
+- It includes only `id`, `type`, and selected `props`
+- Long values are truncated as `... (+N chars)`
+- `code-diff` summaries include only `oldFile.name` / `newFile.name` (no file contents)
+- `props._partial: true` means props are summarized, not complete
+- Use `--full --json` when you need complete payloads
+
+### Capturing Shape Screenshots
+
+Capture a PNG screenshot of specific shapes by ID. This uses TLDraw export in the browser client and writes the image to a temp file on disk.
+
+```bash
+# Capture selected shapes and print the temp file path
+agent-canvas screenshot --board <board-id> --ids '["shape:abc","shape:def"]'
+```
+
+Flags:
+
+- `--board` — target board ID
+- `--ids` — JSON array of real TLDraw shape IDs (from `shapes get` or create response)
+
+Default output:
+
+- prints only the absolute temp file path (for example `/var/folders/.../agent-canvas-screenshot-<board>-<uuid>.png`)
+
+Quick workflow:
+
+```bash
+# 1) Read board shapes
+agent-canvas shapes get --board <board-id>
+
+# 2) Copy desired IDs from the response and capture
+agent-canvas screenshot --board <board-id> --ids '["shape:abc","shape:def"]'
 ```
 
 ### Creating Shapes
@@ -527,6 +578,7 @@ agent-canvas shapes delete --board <board-id> --ids '["shape:abc", "shape:def"]'
 1. Create a board or list existing boards to get a board ID
 2. Create shapes in batches using `tempId` for cross-referencing
 3. Use `idMap` from the response to reference shapes in subsequent calls
-4. Read shapes with `shapes get` to inspect current state
+4. Read shapes with `shapes get` to inspect current state (use `--full --json` when you need complete payloads)
 5. Update shapes with `shapes update` to change position, props, or text
-6. Delete shapes with `shapes delete` when they are no longer needed
+6. Capture screenshots of selected shapes with `screenshot` when needed
+7. Delete shapes with `shapes delete` when they are no longer needed

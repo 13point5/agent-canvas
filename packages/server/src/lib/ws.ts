@@ -7,6 +7,8 @@ import type {
   DeleteShapesResponse,
   GetShapesRequest,
   GetShapesResponse,
+  ScreenshotShapesRequest,
+  ScreenshotShapesResponse,
   UpdateShapesRequest,
   UpdateShapesResponse,
 } from "@agent-canvas/shared";
@@ -237,7 +239,7 @@ function broadcast(event: BoardEvent) {
 }
 
 export function sendToClients(
-  message: GetShapesRequest | CreateShapesRequest | UpdateShapesRequest | DeleteShapesRequest,
+  message: GetShapesRequest | CreateShapesRequest | UpdateShapesRequest | DeleteShapesRequest | ScreenshotShapesRequest,
 ) {
   const data = JSON.stringify(message);
   for (const ws of clients) {
@@ -323,7 +325,8 @@ export const websocketHandler = {
         | GetShapesResponse
         | CreateShapesResponse
         | UpdateShapesResponse
-        | DeleteShapesResponse;
+        | DeleteShapesResponse
+        | ScreenshotShapesResponse;
 
       if (data.type === "get-shapes:response") {
         resolvePendingRequest(data.requestId, data.shapes, data.error);
@@ -333,6 +336,16 @@ export const websocketHandler = {
         resolvePendingRequest(data.requestId, { updatedIds: data.updatedIds }, data.error);
       } else if (data.type === "delete-shapes:response") {
         resolvePendingRequest(data.requestId, { deletedIds: data.deletedIds }, data.error);
+      } else if (data.type === "screenshot-shapes:response") {
+        resolvePendingRequest(
+          data.requestId,
+          {
+            imageDataUrl: data.imageDataUrl,
+            width: data.width,
+            height: data.height,
+          },
+          data.error,
+        );
       }
     } catch {
       // Ignore malformed messages

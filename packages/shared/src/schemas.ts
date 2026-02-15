@@ -492,6 +492,10 @@ export const deleteShapesBodySchema = z.object({
   ids: z.array(z.string()).min(1),
 });
 
+export const screenshotShapesBodySchema = z.object({
+  ids: z.array(z.string()).min(1),
+});
+
 export const appSettingsSchema = z.object({
   lastActiveBoardId: z.string().optional(),
   sidebarOpen: z.boolean().optional(),
