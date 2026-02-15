@@ -8,6 +8,7 @@ import type {
   fileBackedShapeSchema,
   fileBackedUpdateShapeSchema,
   inputShapeSchema,
+  screenshotShapesBodySchema,
   snapshotSchema,
   updateBoardSchema,
   updateShapeSchema,
@@ -107,4 +108,31 @@ export type DeleteShapesResponse = {
 export type DeleteShapesApiResponse = {
   boardId: string;
   deletedIds: string[];
+};
+
+// ── Screenshot shapes ───────────────────────────────────────────────
+
+export type ScreenshotShapesBody = z.infer<typeof screenshotShapesBodySchema>;
+
+export type ScreenshotShapesRequest = {
+  type: "screenshot-shapes:request";
+  requestId: string;
+  boardId: string;
+  ids: string[];
+};
+
+export type ScreenshotShapesResponse = {
+  type: "screenshot-shapes:response";
+  requestId: string;
+  imageDataUrl: string | null;
+  width?: number;
+  height?: number;
+  error?: string;
+};
+
+export type ScreenshotShapesApiResponse = {
+  boardId: string;
+  filePath: string;
+  width: number;
+  height: number;
 };

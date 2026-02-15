@@ -5,6 +5,8 @@ import type {
   DeleteShapesResponse,
   GetShapesRequest,
   GetShapesResponse,
+  ScreenshotShapesRequest,
+  ScreenshotShapesResponse,
   UpdateShapesRequest,
   UpdateShapesResponse,
 } from "@agent-canvas/shared";
@@ -57,6 +59,11 @@ export function useWebSocket() {
 
           if (data.type === "delete-shapes:request" && ws) {
             handleDeleteShapesRequest(ws, data as DeleteShapesRequest);
+            return;
+          }
+
+          if (data.type === "screenshot-shapes:request" && ws) {
+            handleScreenshotShapesRequest(ws, data as ScreenshotShapesRequest);
             return;
           }
 
@@ -395,6 +402,45 @@ export function useWebSocket() {
       }
     }
 
+    async function handleScreenshotShapesRequest(ws: WebSocket, request: ScreenshotShapesRequest) {
+      const { requestId, boardId, ids } = request;
+
+      try {
+        if (ids.length === 0) {
+          throw new Error("At least one shape id is required");
+        }
+
+        const editor = await useEditorStore.getState().loadBoard(boardId);
+        const missingIds = ids.filter((id) => !editor.getShape(id as TLShapeId));
+
+        if (missingIds.length > 0) {
+          throw new Error(`Shape IDs not found on board: ${missingIds.join(", ")}`);
+        }
+
+        await editor.fonts.loadRequiredFontsForCurrentPage(editor.options.maxFontsToLoadBeforeRender);
+
+        const { blob, width, height } = await editor.toImage(ids as TLShapeId[], { format: "png" });
+        const imageDataUrl = await blobToDataUrl(blob);
+
+        const response: ScreenshotShapesResponse = {
+          type: "screenshot-shapes:response",
+          requestId,
+          imageDataUrl,
+          width,
+          height,
+        };
+        ws.send(JSON.stringify(response));
+      } catch (e) {
+        const response: ScreenshotShapesResponse = {
+          type: "screenshot-shapes:response",
+          requestId,
+          imageDataUrl: null,
+          error: e instanceof Error ? e.message : "Failed to capture screenshot",
+        };
+        ws.send(JSON.stringify(response));
+      }
+    }
+
     connect();
 
     return () => {
@@ -406,6 +452,27 @@ export function useWebSocket() {
       }
     };
   }, []);
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      reject(new Error("Failed to convert screenshot to data URL"));
+    };
+
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("Failed to convert screenshot to data URL"));
+        return;
+      }
+
+      resolve(reader.result);
+    };
+
+    reader.readAsDataURL(blob);
+  });
 }
 
 function calculateArrowBindingAnchor(editor: Editor, targetShape: TLShape, targetPoint: VecLike): VecLike {
