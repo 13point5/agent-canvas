@@ -28,6 +28,7 @@ const AGENT_COUNT_OPTIONS = [1, 2, 3, 4] as const;
 const TERMINAL_SHAPE_WIDTH = 680;
 const TERMINAL_SHAPE_HEIGHT = 420;
 const TERMINAL_SHAPE_GAP = 24;
+const OPEN_CODE_MODEL = "openai/gpt-5.2-codex";
 const AGENT_OPTIONS = [
   { id: "claude-code", label: "Claude Code", iconSrc: "/agent-logos/claude-code.svg" },
   { id: "codex", label: "Codex", iconSrc: "/agent-logos/codex.svg" },
@@ -91,7 +92,7 @@ function buildAgentCommand(agentId: AgentId, prompt: string): string {
     case "codex":
       return `codex ${quotedPrompt}`;
     case "open-code":
-      return `opencode --prompt ${quotedPrompt}`;
+      return `opencode --model ${OPEN_CODE_MODEL} --prompt ${quotedPrompt}`;
     case "cursor":
       return `agent ${quotedPrompt}`;
     default:
@@ -647,20 +648,14 @@ export function BoardChatPromptHud() {
                 <div className="flex items-center gap-1">
                   <div className="isolate flex -space-x-2">
                     {selectedAgents.map((agent) => {
-                      const count = agentSelections[agent.id].count;
                       return (
-                        <span key={agent.id} className="relative inline-flex">
+                        <span key={agent.id} className="inline-flex">
                           <AgentAvatar
                             agentId={agent.id}
                             label={agent.label}
                             selected
                             className="size-7 border-2 border-background"
                           />
-                          {count > 1 ? (
-                            <span className="absolute -right-1 -top-1 rounded-md bg-background px-1 text-[9px] font-semibold leading-4 text-foreground ring-1 ring-border">
-                              {count}x
-                            </span>
-                          ) : null}
                         </span>
                       );
                     })}
