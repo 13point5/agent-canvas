@@ -1,5 +1,6 @@
 import { DefaultToolbar, DefaultToolbarContent, type TLUiOverrides, Tldraw, ToolbarItem } from "tldraw";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
+import { BoardChatPromptHud } from "@/tldraw-config/chat-hud";
 import { codeDiffOverrides } from "@/tldraw-config/code-diff-overrides";
 import { htmlOverrides } from "@/tldraw-config/html-overrides";
 import { HtmlDialogOverlay } from "@/tldraw-config/html-toolbar";
@@ -37,6 +38,7 @@ function CombinedDialogOverlay() {
   return (
     <>
       <SelectionIdsToolbar />
+      <BoardChatPromptHud />
       <MarkdownDialogOverlay />
       <HtmlDialogOverlay />
     </>
