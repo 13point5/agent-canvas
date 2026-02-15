@@ -1,6 +1,26 @@
 # Agent Canvas
 
-A whiteboard for coding agents. Draw diagrams from the CLI programmatically to understand code, iterate on plans, review changes, etc.
+A whiteboard CLI for coding agents like Claude Code, Codex, OpenCode, Amp, Gemini CLI, and more.
+
+Use the `agent-canvas` CLI to orchestrate swarms of agents on the same board, compare multiple implementations of the same feature side-by-side, and keep each agent isolated with git worktrees while you pick the best approach.
+
+## Main Use Cases
+
+### 1) Architecture planning and feature iteration
+
+Ask a coding agent to draw architecture and sequence diagrams so you can:
+
+- plan architecture before implementation
+- understand how an existing feature works end-to-end
+- iterate on design and flow changes quickly
+
+![Architecture and sequence diagrams](docs/images/features/architecture-diagrams.png)
+
+### 2) PR review with logical diff chunks and tested screenshots
+
+Ask a coding agent to lay out PR changes as small, logical chunks of related diffs, then attach screenshots of the tested feature (for example with Playwright or agent-browser).
+
+![PR review grouped diffs and screenshots](docs/images/features/pr-review.png)
 
 ## Prerequisites
 
