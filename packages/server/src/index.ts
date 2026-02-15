@@ -6,6 +6,12 @@ import { websocketHandler } from "@/lib/ws";
 
 export { createApp } from "@/app";
 export {
+  DEFAULT_INSTANCE_ID,
+  getInstanceId,
+  getLockfilePath,
+  INSTANCE_ENV_VAR,
+  LEGACY_LOCKFILE_PATH,
+  LOCKFILE_DIR,
   LOCKFILE_PATH,
   type LockfileData,
   readLockfile,

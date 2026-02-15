@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail -n server,web -c blue,green \"bun run --filter @agent-canvas/server dev\" \"bun run --filter web dev\"",
+    "dev": "bun scripts/dev.ts",
     "build": "bun run --filter @agent-canvas/shared build && bun run --filter @agent-canvas/server build && bun run --filter web build && bun run --filter agent-canvas build",
     "build:link": "bun run build && bun run bundle:web && cd apps/cli && bun link",
     "bundle:web": "rm -rf apps/cli/web && cp -r apps/web/dist apps/cli/web",

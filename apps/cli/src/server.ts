@@ -10,7 +10,8 @@ import { createApp, removeLockfile, websocketHandler, writeLockfile } from "@age
 const DEFAULT_PORT = 3456;
 
 // Parse arguments: port and webDir
-const port = parseInt(process.argv[2], 10) || DEFAULT_PORT;
+const parsedPort = Number.parseInt(process.argv[2] ?? "", 10);
+const port = Number.isNaN(parsedPort) ? DEFAULT_PORT : Math.max(0, parsedPort);
 const webDir = process.argv[3];
 
 if (!webDir) {

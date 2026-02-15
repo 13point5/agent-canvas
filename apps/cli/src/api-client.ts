@@ -16,7 +16,7 @@ import axios, { AxiosError } from "axios";
 export class ServerNotRunningError extends Error {
   constructor() {
     super(
-      "agent-canvas server is not running.\nRun 'agent-canvas open' first, or start the dev server with 'bun run dev'.",
+      "agent-canvas server is not running for this workspace.\nRun 'agent-canvas open' here, start dev with 'bun run dev', or set AGENT_CANVAS_URL.",
     );
     this.name = "ServerNotRunningError";
   }
