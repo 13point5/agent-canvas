@@ -30,6 +30,146 @@ const program = new Command();
 
 program.name("agent-canvas").description("A canvas for your coding agents").version(pkg.version);
 
+const DEFAULT_MAX_SHAPE_CONTENT_CHARS = 100;
+
+const LONG_SHAPE_PROP_KEYS = new Set(["text", "content", "richText", "contents"]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function truncateText(value: string, maxChars: number): string {
+  return value.length <= maxChars ? value : `${value.slice(0, maxChars)}...`;
+}
+
+function toSummaryString(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function summarizeLongValue(value: unknown, maxChars: number): string {
+  return truncateText(toSummaryString(value), maxChars);
+}
+
+function summarizeCodeDiffFile(file: unknown, maxChars: number): Record<string, unknown> | undefined {
+  if (!isRecord(file)) {
+    return undefined;
+  }
+
+  const summary: Record<string, unknown> = {};
+
+  if (typeof file.name === "string") {
+    summary.name = file.name;
+  }
+
+  if ("contents" in file) {
+    summary.contents = summarizeLongValue(file.contents, maxChars);
+  }
+
+  return Object.keys(summary).length > 0 ? summary : undefined;
+}
+
+function summarizeShapeProps(props: unknown, maxChars: number): Record<string, unknown> | undefined {
+  if (!isRecord(props)) {
+    return undefined;
+  }
+
+  const summary: Record<string, unknown> = {};
+  const passthroughKeys = ["name", "w", "h", "geo", "filePath", "url", "assetId"];
+
+  for (const key of passthroughKeys) {
+    if (key in props && props[key] !== undefined) {
+      summary[key] = props[key];
+    }
+  }
+
+  for (const key of LONG_SHAPE_PROP_KEYS) {
+    if (key in props && props[key] !== undefined) {
+      summary[key] = summarizeLongValue(props[key], maxChars);
+    }
+  }
+
+  if ("oldFile" in props && props.oldFile !== undefined) {
+    const oldFile = summarizeCodeDiffFile(props.oldFile, maxChars);
+    if (oldFile) {
+      summary.oldFile = oldFile;
+    }
+  }
+
+  if ("newFile" in props && props.newFile !== undefined) {
+    const newFile = summarizeCodeDiffFile(props.newFile, maxChars);
+    if (newFile) {
+      summary.newFile = newFile;
+    }
+  }
+
+  return Object.keys(summary).length > 0 ? summary : undefined;
+}
+
+function summarizeShape(shape: unknown, maxChars: number): Record<string, unknown> {
+  if (!isRecord(shape)) {
+    return { shape: summarizeLongValue(shape, maxChars) };
+  }
+
+  const summary: Record<string, unknown> = {};
+
+  if (typeof shape.id === "string") {
+    summary.id = shape.id;
+  }
+
+  if (typeof shape.type === "string") {
+    summary.type = shape.type;
+  }
+
+  const props = summarizeShapeProps(shape.props, maxChars);
+  if (props) {
+    summary.props = props;
+  }
+
+  if (Object.keys(summary).length > 0) {
+    return summary;
+  }
+
+  return { shape: summarizeLongValue(shape, maxChars) };
+}
+
+function parseShapeIdsJson(ids: string): string[] {
+  let idsArray: unknown;
+
+  try {
+    idsArray = JSON.parse(ids);
+  } catch {
+    console.error("--ids must be valid JSON");
+    process.exit(1);
+  }
+
+  if (!Array.isArray(idsArray) || idsArray.some((id) => typeof id !== "string")) {
+    console.error("--ids must be a JSON array of strings");
+    process.exit(1);
+  }
+
+  return idsArray;
+}
+
+function filterShapesByIds(shapes: unknown[], ids: string[]): unknown[] {
+  const shapesById = new Map<string, unknown>();
+
+  for (const shape of shapes) {
+    if (isRecord(shape) && typeof shape.id === "string" && !shapesById.has(shape.id)) {
+      shapesById.set(shape.id, shape);
+    }
+  }
+
+  return ids.flatMap((id) => (shapesById.has(id) ? [shapesById.get(id)] : []));
+}
+
 // ─── open ───────────────────────────────────────────
 
 program
@@ -305,12 +445,41 @@ const shapes = program.command("shapes").description("Read and write shapes on a
 
 shapes
   .command("get")
-  .description("Get all shapes from a board")
+  .description("Get shapes from a board (minimal summaries by default)")
   .requiredOption("--board <id>", "Board ID")
-  .action(async (options: { board: string }) => {
+  .option("--ids <json>", "JSON array of shape IDs to return")
+  .option("--full", "Return full shape payloads")
+  .option(
+    "--max-chars <number>",
+    "Max characters for long fields when not using --full",
+    String(DEFAULT_MAX_SHAPE_CONTENT_CHARS),
+  )
+  .action(async (options: { board: string; ids?: string; full?: boolean; maxChars: string }) => {
+    const maxChars = Number.parseInt(options.maxChars, 10);
+    if (!Number.isFinite(maxChars) || maxChars < 1) {
+      console.error("--max-chars must be a positive integer");
+      process.exit(1);
+    }
+
+    const ids = options.ids ? parseShapeIdsJson(options.ids) : undefined;
+
     try {
       const result = await getBoardShapes(options.board);
-      console.log(JSON.stringify(result, null, 2));
+      const filteredShapes = ids ? filterShapesByIds(result.shapes, ids) : result.shapes;
+      const shapesToOutput = options.full
+        ? filteredShapes
+        : filteredShapes.map((shape) => summarizeShape(shape, maxChars));
+
+      console.log(
+        JSON.stringify(
+          {
+            ...result,
+            shapes: shapesToOutput,
+          },
+          null,
+          2,
+        ),
+      );
     } catch (error) {
       if (error instanceof ServerNotRunningError || error instanceof ApiError) {
         console.error(error.message);
@@ -387,17 +556,7 @@ shapes
   .requiredOption("--ids <json>", "JSON array of shape IDs to delete")
   .action(async (options: { board: string; ids: string }) => {
     try {
-      let idsArray: string[];
-      try {
-        idsArray = JSON.parse(options.ids);
-        if (!Array.isArray(idsArray)) {
-          console.error("--ids must be a JSON array");
-          process.exit(1);
-        }
-      } catch {
-        console.error("--ids must be valid JSON");
-        process.exit(1);
-      }
+      const idsArray = parseShapeIdsJson(options.ids);
 
       const result = await deleteBoardShapes(options.board, idsArray);
       console.log(JSON.stringify(result, null, 2));
