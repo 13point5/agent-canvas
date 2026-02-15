@@ -33,7 +33,24 @@ program.name("agent-canvas").description("A canvas for your coding agents").vers
 const DEFAULT_MAX_SHAPE_CONTENT_CHARS = 100;
 const YAML_PLAIN_STRING_PATTERN = /^[A-Za-z0-9_./:-]+$/;
 
-const LONG_SHAPE_PROP_KEYS = new Set(["text", "content", "richText", "contents"]);
+const LONG_SHAPE_PROP_KEYS = new Set([
+  "text",
+  "content",
+  "richText",
+  "contents",
+  "code",
+  "trace",
+  "output",
+  "description",
+  "requestBodyExample",
+  "responseBodyExample",
+  "tests",
+  "logs",
+  "entries",
+  "parameters",
+  "requestFields",
+  "responseFields",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -87,7 +104,24 @@ function summarizeShapeProps(props: unknown, maxChars: number): Record<string, u
   }
 
   const summary: Record<string, unknown> = {};
-  const passthroughKeys = ["name", "w", "h", "geo", "filePath", "url", "assetId"];
+  const passthroughKeys = [
+    "name",
+    "w",
+    "h",
+    "geo",
+    "filePath",
+    "url",
+    "assetId",
+    "method",
+    "path",
+    "language",
+    "prefix",
+    "selectedPath",
+    "isStreaming",
+    "autoScroll",
+    "showInternalFrames",
+    "summary",
+  ];
 
   for (const key of passthroughKeys) {
     if (key in props && props[key] !== undefined) {

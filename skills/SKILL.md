@@ -563,6 +563,183 @@ When the PR adds a new file (or a snippet that has no old-side content), use the
 
 Do not add placeholder comments like `"// file did not exist on main"` in `oldFile.contents`.
 
+## AI Elements Shapes (CLI)
+
+These shapes are optimized for agent-run workflows where the board becomes a live ops timeline.
+
+### Shape Types
+
+- `artifact` — compact card for milestones, decisions, and deployment notes
+- `file-tree` — workspace/file context for investigations and change scope
+- `schema-display` — API contracts and payload expectations
+- `snippet` — exact command or one-line code snippets
+- `stack-trace` — parsed error stacks with clickable frame display
+- `ai-terminal` — terminal/log transcript card (separate from live `terminal`)
+- `test-results` — summarized + grouped test outcomes
+- `web-preview` — embedded preview URL with console log panel
+
+`terminal` still represents the live interactive shell. Use `ai-terminal` when you want a persistent log artifact on the board.
+
+### Quick Multi-Shape Example
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {
+    "type": "artifact",
+    "x": 80,
+    "y": 80,
+    "props": {
+      "name": "Deploy Story",
+      "description": "Incident #8421",
+      "content": "Reproduced, patched, redeployed, and validated."
+    }
+  },
+  {
+    "type": "file-tree",
+    "x": 680,
+    "y": 80,
+    "props": {
+      "name": "Touched Files",
+      "entries": [
+        {"path":"apps/web/src/lib/sentry.ts","type":"file"},
+        {"path":"apps/web/src/lib/vercel.ts","type":"file"},
+        {"path":"tests/e2e/deploy.spec.ts","type":"file"}
+      ],
+      "selectedPath": "apps/web/src/lib/vercel.ts"
+    }
+  },
+  {
+    "type": "stack-trace",
+    "x": 80,
+    "y": 460,
+    "props": {
+      "name": "Runtime Error",
+      "trace": "TypeError: Cannot read properties of undefined (reading 'deployment')\\n    at createDeployment (apps/web/src/lib/vercel.ts:42:17)\\n    at runDeployFlow (apps/web/src/lib/deploy-flow.ts:88:9)",
+      "showInternalFrames": false
+    }
+  },
+  {
+    "type": "ai-terminal",
+    "x": 760,
+    "y": 460,
+    "props": {
+      "name": "Deploy Logs",
+      "output": "[10:14:23] sentry releases propose-version\\n[10:14:24] vercel deploy --prebuilt\\n[10:14:33] Preview: https://acme-git-fix.vercel.app",
+      "isStreaming": false,
+      "autoScroll": true
+    }
+  },
+  {
+    "type": "test-results",
+    "x": 80,
+    "y": 900,
+    "props": {
+      "name": "CI Validation",
+      "summary": {"passed":8,"failed":1,"skipped":1,"total":10,"duration":15420},
+      "tests": [
+        {"suite":"deploy-flow","name":"creates preview deployment","status":"passed","duration":840},
+        {"suite":"deploy-flow","name":"streams build logs","status":"passed","duration":1020},
+        {"suite":"deploy-flow","name":"captures stack trace on build failure","status":"failed","duration":1340,"errorMessage":"Expected error breadcrumb count to be > 0","errorStack":"at tests/e2e/deploy.spec.ts:182:13"}
+      ]
+    }
+  },
+  {
+    "type": "web-preview",
+    "x": 760,
+    "y": 900,
+    "props": {
+      "name": "Preview App",
+      "url": "https://acme-git-fix.vercel.app",
+      "logs": [
+        {"level":"log","message":"App booted successfully","timestamp":"2026-02-15T10:15:03.000Z"},
+        {"level":"warn","message":"Feature flag fallback active","timestamp":"2026-02-15T10:15:07.000Z"}
+      ]
+    }
+  }
+]'
+```
+
+### Schema + Snippet Example
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {
+    "type": "schema-display",
+    "x": 100,
+    "y": 100,
+    "props": {
+      "method": "POST",
+      "path": "/api/deployments",
+      "description": "Create a deployment and stream status updates.",
+      "parameters": [
+        {"name":"projectId","type":"string","required":true,"location":"path","description":"Vercel project id"}
+      ],
+      "requestFields": [
+        {"name":"commitSha","type":"string","required":true,"description":"Git SHA"},
+        {"name":"environment","type":"string","required":true,"description":"preview|production"}
+      ],
+      "responseFields": [
+        {"name":"deploymentId","type":"string","required":true,"description":"Created deployment id"},
+        {"name":"url","type":"string","required":true,"description":"Deployed URL"}
+      ]
+    }
+  },
+  {
+    "type": "snippet",
+    "x": 100,
+    "y": 560,
+    "props": {
+      "prefix": "$",
+      "language": "bash",
+      "code": "vercel deploy --prebuilt --scope team-acme"
+    }
+  }
+]'
+```
+
+## Real-World Agent Canvas Playbooks
+
+Use these patterns for high-signal, demo-friendly workflows where the board shows the full lifecycle of agent work.
+
+### 1) Sentry-to-Fix-to-Deploy Loop
+
+1. Pull issue context from Sentry MCP.
+2. Add `stack-trace` for the exact runtime failure.
+3. Add `file-tree` for suspected touchpoints.
+4. Add focused `code-diff` hunks for the fix.
+5. Stream release/deploy output into `ai-terminal`.
+6. Add `web-preview` of the fresh deployment.
+7. Add `test-results` from CI/targeted suites.
+8. Add an `artifact` card summarizing root cause and final status.
+
+### 2) Vercel Preview Verification Board
+
+1. Use CLI/MCP to create a preview deployment.
+2. Show deployment command in `snippet`.
+3. Show deployment API contract in `schema-display`.
+4. Add live shell `terminal` for interactive debugging.
+5. Add non-interactive `ai-terminal` snapshots at key milestones.
+6. Capture UI screenshots with `agent-canvas screenshot` and place as `image` shapes.
+7. Connect all evidence with `arrow` shapes to tell the story.
+
+### 3) Incident Timeline (Ops Whiteboard)
+
+1. Use one `artifact` per phase: detect, mitigate, validate, close.
+2. Attach `stack-trace` + `ai-terminal` under each phase.
+3. Add `web-preview` or `html` artifact for reproducer dashboards.
+4. Add `test-results` after each mitigation attempt.
+5. Keep a final markdown summary with unresolved follow-ups.
+
+### 4) Multi-Agent Hackathon Demo Flow
+
+1. Agent A investigates (`file-tree`, `stack-trace`).
+2. Agent B patches (`code-diff`, `snippet` commands).
+3. Agent C deploys (`ai-terminal`, `web-preview`).
+4. Agent D validates (`test-results`, screenshots as `image`).
+5. Merge all outputs into one narrative with `artifact` checkpoints.
+
+This makes the board a replayable proof of work, not just a static diagram.
+
 ## PR Review Workflow (Logical Groups + Small Hunks)
 
 Use this workflow for richer code reviews on the whiteboard.

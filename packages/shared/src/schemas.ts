@@ -67,6 +67,11 @@ const geoTypeEnum = z.enum([
   "check-box",
   "heart",
 ]);
+const fileTreeEntryTypeEnum = z.enum(["file", "folder"]);
+const schemaMethodEnum = z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+const schemaParameterLocationEnum = z.enum(["path", "query", "header"]);
+const testResultStatusEnum = z.enum(["passed", "failed", "skipped", "running"]);
+const webPreviewLogLevelEnum = z.enum(["log", "warn", "error"]);
 
 // ── Shared types ─────────────────────────────────────────────────────
 
@@ -411,6 +416,230 @@ export const terminalShapeSchema = z
   })
   .strict();
 
+// ── AI Elements shapes ───────────────────────────────────────────────
+
+const artifactPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    content: z.string().optional(),
+  })
+  .strict();
+
+const fileTreeEntrySchema = z
+  .object({
+    path: z.string(),
+    type: fileTreeEntryTypeEnum,
+  })
+  .strict();
+
+const fileTreePropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    entries: z.array(fileTreeEntrySchema).optional(),
+    selectedPath: z.string().optional(),
+    expandedPaths: z.array(z.string()).optional(),
+  })
+  .strict();
+
+const schemaDisplayParameterSchema = z
+  .object({
+    name: z.string(),
+    type: z.string(),
+    required: z.boolean().optional(),
+    description: z.string().optional(),
+    location: schemaParameterLocationEnum.optional(),
+  })
+  .strict();
+
+const schemaDisplayFieldSchema = z
+  .object({
+    name: z.string(),
+    type: z.string(),
+    required: z.boolean().optional(),
+    description: z.string().optional(),
+  })
+  .strict();
+
+const schemaDisplayPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    method: schemaMethodEnum.optional(),
+    path: z.string().optional(),
+    description: z.string().optional(),
+    parameters: z.array(schemaDisplayParameterSchema).optional(),
+    requestFields: z.array(schemaDisplayFieldSchema).optional(),
+    responseFields: z.array(schemaDisplayFieldSchema).optional(),
+  })
+  .strict();
+
+const snippetPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    prefix: z.string().optional(),
+    code: z.string().optional(),
+    language: z.string().optional(),
+  })
+  .strict();
+
+const stackTracePropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    trace: z.string().optional(),
+    showInternalFrames: z.boolean().optional(),
+  })
+  .strict();
+
+const aiTerminalPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    output: z.string().optional(),
+    isStreaming: z.boolean().optional(),
+    autoScroll: z.boolean().optional(),
+  })
+  .strict();
+
+const testResultSummarySchema = z
+  .object({
+    passed: z.number().int().nonnegative().optional(),
+    failed: z.number().int().nonnegative().optional(),
+    skipped: z.number().int().nonnegative().optional(),
+    total: z.number().int().nonnegative().optional(),
+    duration: z.number().nonnegative().optional(),
+  })
+  .strict();
+
+const testResultCaseSchema = z
+  .object({
+    suite: z.string().optional(),
+    name: z.string(),
+    status: testResultStatusEnum,
+    duration: z.number().nonnegative().optional(),
+    errorMessage: z.string().optional(),
+    errorStack: z.string().optional(),
+  })
+  .strict();
+
+const testResultsPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    summary: testResultSummarySchema.optional(),
+    tests: z.array(testResultCaseSchema).optional(),
+  })
+  .strict();
+
+const webPreviewLogSchema = z
+  .object({
+    level: webPreviewLogLevelEnum,
+    message: z.string(),
+    timestamp: z.string(),
+  })
+  .strict();
+
+const webPreviewPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+    url: z.string().optional(),
+    logs: z.array(webPreviewLogSchema).optional(),
+  })
+  .strict();
+
+export const artifactShapeSchema = z
+  .object({
+    type: z.literal("artifact"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: artifactPropsSchema.optional(),
+  })
+  .strict();
+
+export const fileTreeShapeSchema = z
+  .object({
+    type: z.literal("file-tree"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: fileTreePropsSchema.optional(),
+  })
+  .strict();
+
+export const schemaDisplayShapeSchema = z
+  .object({
+    type: z.literal("schema-display"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: schemaDisplayPropsSchema.optional(),
+  })
+  .strict();
+
+export const snippetShapeSchema = z
+  .object({
+    type: z.literal("snippet"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: snippetPropsSchema.optional(),
+  })
+  .strict();
+
+export const stackTraceShapeSchema = z
+  .object({
+    type: z.literal("stack-trace"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: stackTracePropsSchema.optional(),
+  })
+  .strict();
+
+export const aiTerminalShapeSchema = z
+  .object({
+    type: z.literal("ai-terminal"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: aiTerminalPropsSchema.optional(),
+  })
+  .strict();
+
+export const testResultsShapeSchema = z
+  .object({
+    type: z.literal("test-results"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: testResultsPropsSchema.optional(),
+  })
+  .strict();
+
+export const webPreviewShapeSchema = z
+  .object({
+    type: z.literal("web-preview"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: webPreviewPropsSchema.optional(),
+  })
+  .strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -424,6 +653,14 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   htmlShapeSchema,
   codeDiffShapeSchema,
   terminalShapeSchema,
+  artifactShapeSchema,
+  fileTreeShapeSchema,
+  schemaDisplayShapeSchema,
+  snippetShapeSchema,
+  stackTraceShapeSchema,
+  aiTerminalShapeSchema,
+  testResultsShapeSchema,
+  webPreviewShapeSchema,
 ]);
 
 export const fileBackedShapeSchema = z.discriminatedUnion("type", [markdownShapeSchema, htmlShapeSchema]);
@@ -534,6 +771,86 @@ const terminalUpdateSchema = z
   })
   .strict();
 
+const artifactUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("artifact"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: artifactPropsSchema.partial().optional(),
+  })
+  .strict();
+
+const fileTreeUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("file-tree"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: fileTreePropsSchema.partial().optional(),
+  })
+  .strict();
+
+const schemaDisplayUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("schema-display"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: schemaDisplayPropsSchema.partial().optional(),
+  })
+  .strict();
+
+const snippetUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("snippet"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: snippetPropsSchema.partial().optional(),
+  })
+  .strict();
+
+const stackTraceUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("stack-trace"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: stackTracePropsSchema.partial().optional(),
+  })
+  .strict();
+
+const aiTerminalUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("ai-terminal"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: aiTerminalPropsSchema.partial().optional(),
+  })
+  .strict();
+
+const testResultsUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("test-results"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: testResultsPropsSchema.partial().optional(),
+  })
+  .strict();
+
+const webPreviewUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("web-preview"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: webPreviewPropsSchema.partial().optional(),
+  })
+  .strict();
+
 export const updateShapeSchema = z.discriminatedUnion("type", [
   geoUpdateSchema,
   textUpdateSchema,
@@ -545,6 +862,14 @@ export const updateShapeSchema = z.discriminatedUnion("type", [
   htmlUpdateSchema,
   codeDiffUpdateSchema,
   terminalUpdateSchema,
+  artifactUpdateSchema,
+  fileTreeUpdateSchema,
+  schemaDisplayUpdateSchema,
+  snippetUpdateSchema,
+  stackTraceUpdateSchema,
+  aiTerminalUpdateSchema,
+  testResultsUpdateSchema,
+  webPreviewUpdateSchema,
 ]);
 
 export const fileBackedUpdateShapeSchema = z.discriminatedUnion("type", [markdownUpdateSchema, htmlUpdateSchema]);

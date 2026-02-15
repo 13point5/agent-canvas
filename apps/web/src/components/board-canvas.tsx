@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
 import { cn } from "@/lib/utils";
+import { aiElementsOverrides } from "@/tldraw-config/ai-elements-overrides";
 import { BoardChatPromptHud } from "@/tldraw-config/chat-hud";
 import { codeDiffOverrides } from "@/tldraw-config/code-diff-overrides";
 import { htmlOverrides } from "@/tldraw-config/html-overrides";
@@ -63,12 +64,35 @@ import { markdownOverrides, openMarkdownDialog } from "@/tldraw-config/markdown-
 import { MarkdownDialogOverlay } from "@/tldraw-config/markdown-toolbar";
 import { SelectionIdsToolbar } from "@/tldraw-config/selection-ids-toolbar";
 import { terminalOverrides } from "@/tldraw-config/terminal-overrides";
+import {
+  AiTerminalShapeUtil,
+  ArtifactShapeUtil,
+  FileTreeShapeUtil,
+  SchemaDisplayShapeUtil,
+  SnippetShapeUtil,
+  StackTraceShapeUtil,
+  TestResultsShapeUtil,
+  WebPreviewShapeUtil,
+} from "@/tldraw-shapes/ai-elements";
 import { CodeDiffShapeUtil } from "@/tldraw-shapes/code-diff";
 import { HtmlShapeUtil } from "@/tldraw-shapes/html";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
 import { TerminalShapeUtil } from "@/tldraw-shapes/terminal";
 
-const customShapeUtils = [MarkdownShapeUtil, HtmlShapeUtil, CodeDiffShapeUtil, TerminalShapeUtil];
+const customShapeUtils = [
+  MarkdownShapeUtil,
+  HtmlShapeUtil,
+  CodeDiffShapeUtil,
+  TerminalShapeUtil,
+  ArtifactShapeUtil,
+  FileTreeShapeUtil,
+  SchemaDisplayShapeUtil,
+  SnippetShapeUtil,
+  StackTraceShapeUtil,
+  AiTerminalShapeUtil,
+  TestResultsShapeUtil,
+  WebPreviewShapeUtil,
+];
 
 const overflowToolOrder = [
   "text",
@@ -91,6 +115,14 @@ const overflowToolOrder = [
   "highlight",
   "laser",
   "frame",
+  "artifact",
+  "file-tree",
+  "schema-display",
+  "snippet",
+  "stack-trace",
+  "ai-terminal",
+  "test-results",
+  "web-preview",
   "html",
   "code-diff",
 ];
@@ -116,6 +148,14 @@ const toolLabels: Record<string, string> = {
   highlight: "Highlight",
   laser: "Laser",
   frame: "Frame",
+  artifact: "Artifact",
+  "file-tree": "File Tree",
+  "schema-display": "Schema Display",
+  snippet: "Snippet",
+  "stack-trace": "Stack Trace",
+  "ai-terminal": "AI Terminal",
+  "test-results": "Test Results",
+  "web-preview": "Web Preview",
   html: "HTML Artifact",
   "code-diff": "Code Diff",
 };
@@ -141,6 +181,14 @@ const overflowToolIcons: Record<string, React.ComponentProps<typeof HugeiconsIco
   highlight: HighlighterIcon,
   laser: FlashIcon,
   frame: ShapesIcon,
+  artifact: CodeIcon,
+  "file-tree": ShapesIcon,
+  "schema-display": CodeIcon,
+  snippet: CursorTextIcon,
+  "stack-trace": CancelSquareIcon,
+  "ai-terminal": ComputerTerminal01Icon,
+  "test-results": CheckmarkSquare01Icon,
+  "web-preview": ComputerTerminal01Icon,
   html: CodeIcon,
   "code-diff": GitCompareIcon,
 };
@@ -155,6 +203,7 @@ const combinedOverrides: TLUiOverrides = {
     htmlOverrides.tools?.(editor, tools, helpers);
     codeDiffOverrides.tools?.(editor, tools, helpers);
     terminalOverrides.tools?.(editor, tools, helpers);
+    aiElementsOverrides.tools?.(editor, tools, helpers);
     return tools;
   },
   translations: {
@@ -164,6 +213,7 @@ const combinedOverrides: TLUiOverrides = {
       ...(htmlOverrides.translations as Record<string, Record<string, string>>)?.en,
       ...(codeDiffOverrides.translations as Record<string, Record<string, string>>)?.en,
       ...(terminalOverrides.translations as Record<string, Record<string, string>>)?.en,
+      ...(aiElementsOverrides.translations as Record<string, Record<string, string>>)?.en,
     },
   },
 };
