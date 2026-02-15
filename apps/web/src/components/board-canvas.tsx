@@ -33,10 +33,16 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Markdown } from "@react-symbols/icons";
-import { useState } from "react";
-import { GeoShapeGeoStyle, type TLUiOverrides, Tldraw, useEditor, useTools, useValue } from "tldraw";
+import { useEffect, useState } from "react";
+import { DefaultMinimap, GeoShapeGeoStyle, type TLUiOverrides, Tldraw, useEditor, useTools, useValue } from "tldraw";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
 import { BoardChatPromptHud } from "@/tldraw-config/chat-hud";
 import { cn } from "@/lib/utils";
@@ -131,6 +137,7 @@ const overflowToolIcons: Record<string, React.ComponentProps<typeof HugeiconsIco
 
 const activeToolClasses = "border border-transparent bg-[#5f5f5f] text-white shadow-none ring-0 hover:bg-[#5f5f5f]";
 const inactiveToolClasses = "border border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/70";
+const MINIMAP_ZOOM_STEP = 0.25;
 
 const combinedOverrides: TLUiOverrides = {
   tools(editor, tools, helpers) {
@@ -158,7 +165,174 @@ function CombinedDialogOverlay() {
       <BoardChatPromptHud />
       <MarkdownDialogOverlay />
       <HtmlDialogOverlay />
+      <MinimalMinimap />
     </>
+  );
+}
+
+function MinimalMinimap() {
+  const editor = useEditor();
+  const zoom = useValue("minimal-minimap.zoom", () => editor.getZoomLevel(), [editor]);
+  const hasSelection = useValue("minimal-minimap.has-selection", () => editor.getSelectedShapeIds().length > 0, [
+    editor,
+  ]);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem("minimap");
+    return stored == null ? true : stored === "true";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("minimap", String(collapsed));
+  }, [collapsed]);
+
+  const zoomLabel = `${Math.floor(zoom * 100)}%`;
+  const zoomMenuAlignOffset = collapsed ? -8 : -44;
+
+  const stepZoom = (delta: number) => {
+    const { x: cameraX, y: cameraY, z: currentZoom } = editor.getCamera();
+    const { zoomSteps } = editor.getCameraOptions();
+    const baseZoom = editor.getBaseZoom();
+    const minZoom = zoomSteps.length > 0 ? zoomSteps[0] * baseZoom : currentZoom;
+    const maxZoom = zoomSteps.length > 0 ? zoomSteps[zoomSteps.length - 1] * baseZoom : currentZoom;
+    const targetZoom = Math.min(maxZoom, Math.max(minZoom, currentZoom + delta));
+    if (targetZoom === currentZoom) return;
+
+    const point = editor.getViewportScreenCenter();
+    editor.setCamera(
+      {
+        x: cameraX + (point.x / targetZoom - point.x) - (point.x / currentZoom - point.x),
+        y: cameraY + (point.y / targetZoom - point.y) - (point.y / currentZoom - point.y),
+        z: targetZoom,
+      },
+      { animation: { duration: editor.options.animationMediumMs } },
+    );
+  };
+
+  const zoomIn = () => stepZoom(MINIMAP_ZOOM_STEP);
+
+  const zoomOut = () => stepZoom(-MINIMAP_ZOOM_STEP);
+
+  const zoomTo100 = () => {
+    editor.resetZoom(undefined, {
+      animation: { duration: editor.options.animationMediumMs },
+    });
+  };
+
+  const zoomToFit = () => {
+    editor.zoomToFit({
+      animation: { duration: editor.options.animationMediumMs },
+    });
+  };
+
+  const zoomToSelection = () => {
+    if (!hasSelection) return;
+    editor.zoomToSelection({
+      animation: { duration: editor.options.animationMediumMs },
+    });
+  };
+
+  const handleResetZoom = () => {
+    editor.resetZoom(editor.getViewportScreenCenter(), {
+      animation: { duration: editor.options.animationMediumMs },
+    });
+  };
+
+  return (
+    <div
+      className={cn(
+        "absolute bottom-3 left-3 z-40 rounded-xl border border-border/80 bg-background/80 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/70 pointer-events-auto",
+        collapsed ? "w-auto" : "w-[196px]",
+      )}
+    >
+      <div className="flex items-center gap-1">
+        {!collapsed ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground pointer-events-auto"
+            aria-label="Zoom out"
+            title="Zoom out"
+            onClick={zoomOut}
+          >
+            <span className="text-lg leading-none">−</span>
+          </Button>
+        ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 min-w-14 px-2 font-medium tabular-nums text-xs text-foreground pointer-events-auto"
+              title="Zoom (double-click to reset to 100%)"
+              onDoubleClick={handleResetZoom}
+            >
+              {zoomLabel}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="top"
+            align="start"
+            alignOffset={zoomMenuAlignOffset}
+            sideOffset={16}
+            className="w-56 min-w-56 z-[500]"
+          >
+            <DropdownMenuItem onSelect={zoomIn} className="cursor-pointer">
+              <span>Zoom in</span>
+              <DropdownMenuShortcut>⌘ =</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={zoomOut} className="cursor-pointer">
+              <span>Zoom out</span>
+              <DropdownMenuShortcut>⌘ -</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={zoomTo100} className="cursor-pointer">
+              <span>Zoom to 100%</span>
+              <DropdownMenuShortcut>⇧ 0</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={zoomToFit} className="cursor-pointer">
+              <span>Zoom to fit</span>
+              <DropdownMenuShortcut>⇧ 1</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={zoomToSelection} disabled={!hasSelection} className="cursor-pointer">
+              <span>Zoom to selection</span>
+              <DropdownMenuShortcut>⇧ 2</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {!collapsed ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground pointer-events-auto"
+            aria-label="Zoom in"
+            title="Zoom in"
+            onClick={zoomIn}
+          >
+            <span className="text-lg leading-none">+</span>
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground pointer-events-auto"
+          aria-label={collapsed ? "Expand minimap" : "Collapse minimap"}
+          title={collapsed ? "Expand minimap" : "Collapse minimap"}
+          onClick={() => setCollapsed((value) => !value)}
+        >
+          <HugeiconsIcon icon={collapsed ? ArrowRight01Icon : ArrowLeft01Icon} strokeWidth={2} className="size-4" />
+        </Button>
+      </div>
+      {!collapsed ? (
+        <div className="mt-2 [&_.tlui-minimap]:h-[112px] [&_.tlui-minimap]:min-h-[112px] [&_.tlui-minimap]:p-0 [&_.tlui-minimap__canvas]:rounded-md [&_.tlui-minimap__canvas]:border [&_.tlui-minimap__canvas]:border-border/70">
+          <DefaultMinimap />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -413,6 +587,7 @@ export function BoardCanvas({ boardId }: BoardCanvasProps) {
         components={{
           MenuPanel: null,
           HelperButtons: null,
+          NavigationPanel: null,
           Toolbar: MinimalToolbar,
           InFrontOfTheCanvas: CombinedDialogOverlay,
         }}
