@@ -31,6 +31,7 @@ const program = new Command();
 program.name("agent-canvas").description("A canvas for your coding agents").version(pkg.version);
 
 const DEFAULT_MAX_SHAPE_CONTENT_CHARS = 100;
+const YAML_PLAIN_STRING_PATTERN = /^[A-Za-z0-9_./:-]+$/;
 
 const LONG_SHAPE_PROP_KEYS = new Set(["text", "content", "richText", "contents"]);
 
@@ -38,8 +39,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function truncateText(value: string, maxChars: number): string {
-  return value.length <= maxChars ? value : `${value.slice(0, maxChars)}...`;
+function truncateText(value: string, maxChars: number): { value: string; omittedChars: number } {
+  const omittedChars = value.length - maxChars;
+  if (omittedChars <= 0) {
+    return { value, omittedChars: 0 };
+  }
+
+  return {
+    value: `${value.slice(0, maxChars)}... (+${omittedChars} chars)`,
+    omittedChars,
+  };
 }
 
 function toSummaryString(value: unknown): string {
@@ -54,11 +63,11 @@ function toSummaryString(value: unknown): string {
   }
 }
 
-function summarizeLongValue(value: unknown, maxChars: number): string {
+function summarizeLongValue(value: unknown, maxChars: number): { value: string; omittedChars: number } {
   return truncateText(toSummaryString(value), maxChars);
 }
 
-function summarizeCodeDiffFile(file: unknown, maxChars: number): Record<string, unknown> | undefined {
+function summarizeCodeDiffFile(file: unknown): Record<string, unknown> | undefined {
   if (!isRecord(file)) {
     return undefined;
   }
@@ -67,10 +76,6 @@ function summarizeCodeDiffFile(file: unknown, maxChars: number): Record<string, 
 
   if (typeof file.name === "string") {
     summary.name = file.name;
-  }
-
-  if ("contents" in file) {
-    summary.contents = summarizeLongValue(file.contents, maxChars);
   }
 
   return Object.keys(summary).length > 0 ? summary : undefined;
@@ -92,30 +97,33 @@ function summarizeShapeProps(props: unknown, maxChars: number): Record<string, u
 
   for (const key of LONG_SHAPE_PROP_KEYS) {
     if (key in props && props[key] !== undefined) {
-      summary[key] = summarizeLongValue(props[key], maxChars);
+      const valueSummary = summarizeLongValue(props[key], maxChars);
+      summary[key] = valueSummary.value;
     }
   }
 
   if ("oldFile" in props && props.oldFile !== undefined) {
-    const oldFile = summarizeCodeDiffFile(props.oldFile, maxChars);
+    const oldFile = summarizeCodeDiffFile(props.oldFile);
     if (oldFile) {
       summary.oldFile = oldFile;
     }
   }
 
   if ("newFile" in props && props.newFile !== undefined) {
-    const newFile = summarizeCodeDiffFile(props.newFile, maxChars);
+    const newFile = summarizeCodeDiffFile(props.newFile);
     if (newFile) {
       summary.newFile = newFile;
     }
   }
+
+  summary._partial = true;
 
   return Object.keys(summary).length > 0 ? summary : undefined;
 }
 
 function summarizeShape(shape: unknown, maxChars: number): Record<string, unknown> {
   if (!isRecord(shape)) {
-    return { shape: summarizeLongValue(shape, maxChars) };
+    return { shape: summarizeLongValue(shape, maxChars).value };
   }
 
   const summary: Record<string, unknown> = {};
@@ -137,7 +145,7 @@ function summarizeShape(shape: unknown, maxChars: number): Record<string, unknow
     return summary;
   }
 
-  return { shape: summarizeLongValue(shape, maxChars) };
+  return { shape: summarizeLongValue(shape, maxChars).value };
 }
 
 function parseShapeIdsJson(ids: string): string[] {
@@ -168,6 +176,92 @@ function filterShapesByIds(shapes: unknown[], ids: string[]): unknown[] {
   }
 
   return ids.flatMap((id) => (shapesById.has(id) ? [shapesById.get(id)] : []));
+}
+
+function formatYamlScalar(value: unknown): string {
+  if (value === null) {
+    return "null";
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (typeof value === "string") {
+    if (value.length === 0) {
+      return '""';
+    }
+
+    const lowerValue = value.toLowerCase();
+    const looksLikeReservedKeyword = lowerValue === "null" || lowerValue === "true" || lowerValue === "false";
+    const looksLikeNumber = /^-?\d+(\.\d+)?$/.test(value);
+
+    if (!looksLikeReservedKeyword && !looksLikeNumber && YAML_PLAIN_STRING_PATTERN.test(value)) {
+      return value;
+    }
+
+    return JSON.stringify(value);
+  }
+
+  return JSON.stringify(value);
+}
+
+function toYamlLikeLines(value: unknown, indent = 0): string[] {
+  const padding = " ".repeat(indent);
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return [`${padding}[]`];
+    }
+
+    const lines: string[] = [];
+
+    for (const item of value) {
+      if (Array.isArray(item) || isRecord(item)) {
+        lines.push(`${padding}-`);
+        lines.push(...toYamlLikeLines(item, indent + 2));
+      } else {
+        lines.push(`${padding}- ${formatYamlScalar(item)}`);
+      }
+    }
+
+    return lines;
+  }
+
+  if (isRecord(value)) {
+    const entries = Object.entries(value).filter(([, itemValue]) => itemValue !== undefined);
+    if (entries.length === 0) {
+      return [`${padding}{}`];
+    }
+
+    const lines: string[] = [];
+    for (const [key, itemValue] of entries) {
+      if (Array.isArray(itemValue) || isRecord(itemValue)) {
+        if (Array.isArray(itemValue) && itemValue.length === 0) {
+          lines.push(`${padding}${key}: []`);
+          continue;
+        }
+
+        if (isRecord(itemValue) && Object.keys(itemValue).length === 0) {
+          lines.push(`${padding}${key}: {}`);
+          continue;
+        }
+
+        lines.push(`${padding}${key}:`);
+        lines.push(...toYamlLikeLines(itemValue, indent + 2));
+      } else {
+        lines.push(`${padding}${key}: ${formatYamlScalar(itemValue)}`);
+      }
+    }
+
+    return lines;
+  }
+
+  return [`${padding}${formatYamlScalar(value)}`];
+}
+
+function toYamlLikeString(value: unknown): string {
+  return toYamlLikeLines(value).join("\n");
 }
 
 // ─── open ───────────────────────────────────────────
@@ -445,16 +539,17 @@ const shapes = program.command("shapes").description("Read and write shapes on a
 
 shapes
   .command("get")
-  .description("Get shapes from a board (minimal summaries by default)")
+  .description("Get shapes from a board (compact YAML-like output by default)")
   .requiredOption("--board <id>", "Board ID")
   .option("--ids <json>", "JSON array of shape IDs to return")
   .option("--full", "Return full shape payloads")
+  .option("--json", "Return JSON output instead of compact YAML-like text")
   .option(
     "--max-chars <number>",
     "Max characters for long fields when not using --full",
     String(DEFAULT_MAX_SHAPE_CONTENT_CHARS),
   )
-  .action(async (options: { board: string; ids?: string; full?: boolean; maxChars: string }) => {
+  .action(async (options: { board: string; ids?: string; full?: boolean; json?: boolean; maxChars: string }) => {
     const maxChars = Number.parseInt(options.maxChars, 10);
     if (!Number.isFinite(maxChars) || maxChars < 1) {
       console.error("--max-chars must be a positive integer");
@@ -469,17 +564,16 @@ shapes
       const shapesToOutput = options.full
         ? filteredShapes
         : filteredShapes.map((shape) => summarizeShape(shape, maxChars));
+      const payload = {
+        ...result,
+        shapes: shapesToOutput,
+      };
 
-      console.log(
-        JSON.stringify(
-          {
-            ...result,
-            shapes: shapesToOutput,
-          },
-          null,
-          2,
-        ),
-      );
+      if (options.json) {
+        console.log(JSON.stringify(payload, null, 2));
+      } else {
+        console.log(toYamlLikeString(payload));
+      }
     } catch (error) {
       if (error instanceof ServerNotRunningError || error instanceof ApiError) {
         console.error(error.message);
