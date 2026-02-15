@@ -104,22 +104,46 @@ export function MermaidBlock({ code, id, onPinToPanel, compact = true }: Mermaid
 
   return (
     <>
-      <div className="relative group overflow-hidden rounded-md border border-border bg-card">
-        <div
-          className={`overflow-auto p-2 [&_svg]:w-full [&_svg]:h-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:my-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 ${compact ? "max-h-80" : ""}`}
-        >
+      <div className="overflow-hidden rounded-md border border-border bg-card">
+        <div className="relative group">
           <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG sanitized by DOMPurify
-            dangerouslySetInnerHTML={{ __html: svg }}
-          />
-        </div>
-        <div className="absolute top-2 right-5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {onPinToPanel && (
+            className={`overflow-auto p-2 [&_svg]:w-full [&_svg]:h-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:my-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 ${compact ? "max-h-80" : ""}`}
+          >
+            <div
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG sanitized by DOMPurify
+              dangerouslySetInnerHTML={{ __html: svg }}
+            />
+          </div>
+          <div className="absolute top-2 right-5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {onPinToPanel && (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => onPinToPanel(id)}
+                title="Pin to side panel"
+                className="bg-background/80"
+              >
+                <svg
+                  aria-hidden="true"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2" y="2" width="12" height="12" rx="1" />
+                  <line x1="10" y1="2" x2="10" y2="14" />
+                </svg>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon-xs"
-              onClick={() => onPinToPanel(id)}
-              title="Pin to side panel"
+              onClick={() => setDialogOpen(true)}
+              title="View full size"
               className="bg-background/80"
             >
               <svg
@@ -133,35 +157,13 @@ export function MermaidBlock({ code, id, onPinToPanel, compact = true }: Mermaid
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <rect x="2" y="2" width="12" height="12" rx="1" />
-                <line x1="10" y1="2" x2="10" y2="14" />
+                <polyline points="1 5 1 1 5 1" />
+                <polyline points="11 1 15 1 15 5" />
+                <polyline points="15 11 15 15 11 15" />
+                <polyline points="5 15 1 15 1 11" />
               </svg>
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => setDialogOpen(true)}
-            title="View full size"
-            className="bg-background/80"
-          >
-            <svg
-              aria-hidden="true"
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="1 5 1 1 5 1" />
-              <polyline points="11 1 15 1 15 5" />
-              <polyline points="15 11 15 15 11 15" />
-              <polyline points="5 15 1 15 1 11" />
-            </svg>
-          </Button>
+          </div>
         </div>
       </div>
 
