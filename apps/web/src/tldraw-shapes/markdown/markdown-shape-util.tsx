@@ -64,10 +64,21 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
         style={{
           width: shape.props.w,
           height: shape.props.h,
-          pointerEvents: isEditing ? "all" : "none",
+          pointerEvents: "all",
           overflow: "hidden",
           borderRadius: 8,
         }}
+        onDoubleClick={
+          isEditing
+            ? undefined
+            : (e: React.MouseEvent) => {
+                this.editor.markEventAsHandled(e);
+                if (!this.editor.canEditShape(shape, { type: "double-click" })) return;
+                this.editor.markHistoryStoppingPoint("editing shape");
+                this.editor.setEditingShape(shape.id);
+                this.editor.setCurrentTool("select.editing_shape");
+              }
+        }
         onPointerDown={
           isEditing
             ? (e: React.PointerEvent) => {
