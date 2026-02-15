@@ -6,6 +6,7 @@ import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MermaidBlock, ParsedMarkdown } from "@/lib/parse-markdown";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ interface MarkdownPanelProps {
   parsed: ParsedMarkdown;
   mermaidBlocks: MermaidBlock[];
   onPinDiagram?: (id: string) => void;
+  onPinImage?: (id: string) => void;
   onScrollContainerChange?: (node: HTMLDivElement | null) => void;
   onContentRootChange?: (node: HTMLDivElement | null) => void;
   overlay?: React.ReactNode;
@@ -32,6 +34,7 @@ export function MarkdownPanel({
   parsed,
   mermaidBlocks,
   onPinDiagram,
+  onPinImage,
   onScrollContainerChange,
   onContentRootChange,
   overlay,
@@ -166,7 +169,7 @@ export function MarkdownPanel({
       );
     },
     img: ({ src, alt, node: _node, ...props }) => (
-      <MarkdownImage src={src} alt={alt} boardId={boardId} filePath={filePath} {...props} />
+      <MarkdownImage src={src} alt={alt} boardId={boardId} filePath={filePath} onPinToPanel={onPinImage} {...props} />
     ),
     ul: ({ children, ...props }) => (
       <ul className="my-1 ml-4 list-disc space-y-0.5" {...props}>
@@ -220,13 +223,20 @@ function MarkdownImage({
   alt,
   boardId,
   filePath,
+  onPinToPanel,
   className,
   onError,
   ...props
-}: React.ImgHTMLAttributes<HTMLImageElement> & { boardId?: string; filePath?: string }) {
+}: React.ImgHTMLAttributes<HTMLImageElement> & {
+  boardId?: string;
+  filePath?: string;
+  onPinToPanel?: (id: string) => void;
+}) {
   const [failed, setFailed] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const resolution = useMemo(() => resolveImageSource(src, boardId, filePath), [boardId, filePath, src]);
+  const pinId = resolution.src;
 
   if (!resolution.src || failed) {
     const attempted = src?.trim() || "(empty image reference)";
@@ -239,16 +249,85 @@ function MarkdownImage({
   }
 
   return (
-    <img
-      {...props}
-      src={resolution.src}
-      alt={alt ?? ""}
-      className={cn("my-3 max-w-full rounded-md border border-border bg-card/40", className)}
-      onError={(event) => {
-        setFailed(true);
-        onError?.(event);
-      }}
-    />
+    <>
+      <span className="group relative my-3 block overflow-hidden rounded-md border border-border bg-card/40">
+        <img
+          {...props}
+          src={resolution.src}
+          alt={alt ?? ""}
+          className={cn("block max-w-full", className)}
+          onError={(event) => {
+            setFailed(true);
+            onError?.(event);
+          }}
+        />
+        <span className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          {onPinToPanel && pinId && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => onPinToPanel(pinId)}
+              title="Pin to side panel"
+              className="pointer-events-auto bg-background/80"
+            >
+              <svg
+                aria-hidden="true"
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="2" y="2" width="12" height="12" rx="1" />
+                <line x1="10" y1="2" x2="10" y2="14" />
+              </svg>
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => setDialogOpen(true)}
+            title="View full size"
+            className="pointer-events-auto bg-background/80"
+          >
+            <svg
+              aria-hidden="true"
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="1 5 1 1 5 1" />
+              <polyline points="11 1 15 1 15 5" />
+              <polyline points="15 11 15 15 11 15" />
+              <polyline points="5 15 1 15 1 11" />
+            </svg>
+          </Button>
+        </span>
+      </span>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-fit max-w-[calc(100vw-4rem)] max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{alt?.trim() || "Image"}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            <img
+              src={resolution.src}
+              alt={alt ?? ""}
+              className="block h-auto w-auto max-h-[80vh] max-w-[calc(100vw-6rem)] rounded-md border border-border bg-card/40"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
