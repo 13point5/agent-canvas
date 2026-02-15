@@ -7,6 +7,7 @@ import { getBoardAssetsDir } from "@/lib/storage";
 import { getClientCount } from "@/lib/ws";
 import { boards } from "@/routes/boards";
 import { settings } from "@/routes/settings";
+import { system } from "@/routes/system";
 
 export function createApp(webDir?: string) {
   const app = new Hono();
@@ -31,6 +32,7 @@ export function createApp(webDir?: string) {
   // API routes
   app.route("/api/boards", boards);
   app.route("/api/settings", settings);
+  app.route("/api/system", system);
 
   // Static files (SPA) - served from bundled web assets
   if (webDir) {

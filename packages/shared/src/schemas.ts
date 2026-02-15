@@ -496,7 +496,16 @@ export const screenshotShapesBodySchema = z.object({
   ids: z.array(z.string()).min(1),
 });
 
+const boardFolderOptionSchema = z
+  .object({
+    name: z.string(),
+    path: z.string(),
+  })
+  .strict();
+
 export const appSettingsSchema = z.object({
   lastActiveBoardId: z.string().optional(),
   sidebarOpen: z.boolean().optional(),
+  boardFolders: z.record(z.string(), z.array(boardFolderOptionSchema)).optional(),
+  boardSelectedFolderPath: z.record(z.string(), z.string()).optional(),
 });

@@ -1,9 +1,11 @@
+import type { AppSettings } from "@agent-canvas/shared";
 import { Folder01Icon, Infinity01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { ChatStatus } from "ai";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { useToasts } from "tldraw";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { createShapeId, useEditor, useToasts } from "tldraw";
 
 import {
   PromptInput,
@@ -17,10 +19,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSettings, useUpdateSettings } from "@/hooks/api/use-settings";
+import { registerPendingTerminalLaunch } from "@/lib/pending-terminal-launch";
 import { cn } from "@/lib/utils";
 
 const SUBMIT_RESET_DELAY_MS = 180;
 const AGENT_COUNT_OPTIONS = [1, 2, 3, 4] as const;
+const TERMINAL_SHAPE_WIDTH = 680;
+const TERMINAL_SHAPE_HEIGHT = 420;
+const TERMINAL_SHAPE_GAP = 24;
 const AGENT_OPTIONS = [
   { id: "claude-code", label: "Claude Code", iconSrc: "/agent-logos/claude-code.svg" },
   { id: "codex", label: "Codex", iconSrc: "/agent-logos/codex.svg" },
@@ -38,7 +45,16 @@ type AgentSelections = Record<AgentId, AgentSelection>;
 type FolderOption = {
   id: string;
   name: string;
-  handle: FileSystemDirectoryHandle;
+  path: string;
+};
+
+type PersistedFolderOption = {
+  name: string;
+  path: string;
+};
+type BoardFolderSettings = {
+  boardFolders?: Record<string, PersistedFolderOption[]>;
+  boardSelectedFolderPath?: Record<string, string>;
 };
 
 const DEFAULT_AGENT_SELECTIONS: AgentSelections = {
@@ -61,6 +77,83 @@ const AGENT_ICON_SIZE_CLASS_BY_ID: Record<AgentId, string> = {
   "claude-code": "size-3.5",
   "open-code": "size-3.5",
 };
+
+function quoteForShell(input: string): string {
+  return `'${input.replaceAll("'", "'\\''")}'`;
+}
+
+function buildAgentCommand(agentId: AgentId, prompt: string): string {
+  const quotedPrompt = quoteForShell(prompt);
+
+  switch (agentId) {
+    case "claude-code":
+      return `claude ${quotedPrompt}`;
+    case "codex":
+      return `codex ${quotedPrompt}`;
+    case "open-code":
+      return `opencode --prompt ${quotedPrompt}`;
+    case "cursor":
+      return `agent ${quotedPrompt}`;
+    default:
+      return `echo ${quoteForShell(`Unsupported agent: ${agentId}`)}`;
+  }
+}
+
+function arePersistedFolderListsEqual(a: PersistedFolderOption[], b: PersistedFolderOption[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    if (a[index]?.name !== b[index]?.name || a[index]?.path !== b[index]?.path) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function persistBoardFoldersPatch({
+  boardId,
+  settings,
+  folders,
+  selectedFolderId,
+}: {
+  boardId: string;
+  settings: BoardFolderSettings | undefined;
+  folders: FolderOption[];
+  selectedFolderId: string | null;
+}): BoardFolderSettings | null {
+  const persistedFolders = folders.map((folder) => ({ name: folder.name, path: folder.path }));
+  const selectedFolder = selectedFolderId ? (folders.find((folder) => folder.id === selectedFolderId) ?? null) : null;
+  const selectedFolderPath = selectedFolder?.path ?? null;
+
+  const currentBoardFolders = settings?.boardFolders?.[boardId] ?? [];
+  const currentSelectedFolderPath = settings?.boardSelectedFolderPath?.[boardId] ?? null;
+  if (
+    arePersistedFolderListsEqual(currentBoardFolders, persistedFolders) &&
+    currentSelectedFolderPath === selectedFolderPath
+  ) {
+    return null;
+  }
+
+  const nextBoardFolders = { ...(settings?.boardFolders ?? {}) };
+  if (persistedFolders.length > 0) {
+    nextBoardFolders[boardId] = persistedFolders;
+  } else {
+    delete nextBoardFolders[boardId];
+  }
+
+  const nextBoardSelectedFolderPath = { ...(settings?.boardSelectedFolderPath ?? {}) };
+  if (selectedFolderPath) {
+    nextBoardSelectedFolderPath[boardId] = selectedFolderPath;
+  } else {
+    delete nextBoardSelectedFolderPath[boardId];
+  }
+
+  return {
+    boardFolders: nextBoardFolders,
+    boardSelectedFolderPath: nextBoardSelectedFolderPath,
+  };
+}
 
 function AgentAvatar({
   agentId,
@@ -91,13 +184,18 @@ function AgentAvatar({
 }
 
 export function BoardChatPromptHud() {
+  const { boardId } = useParams<{ boardId: string }>();
+  const editor = useEditor();
   const { addToast } = useToasts();
+  const { data: settings } = useSettings();
+  const { mutate: updateSettings } = useUpdateSettings();
   const [status, setStatus] = useState<ChatStatus>("ready");
   const [agentMenuOpen, setAgentMenuOpen] = useState(false);
   const [folderMenuOpen, setFolderMenuOpen] = useState(false);
   const [folders, setFolders] = useState<FolderOption[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [agentSelections, setAgentSelections] = useState<AgentSelections>(DEFAULT_AGENT_SELECTIONS);
+  const settingsWithFolders = settings as (AppSettings & BoardFolderSettings) | undefined;
 
   const selectedAgents = useMemo(
     () => AGENT_OPTIONS.filter((agent) => agentSelections[agent.id].enabled),
@@ -107,12 +205,6 @@ export function BoardChatPromptHud() {
     () => selectedAgents.reduce((total, agent) => total + agentSelections[agent.id].count, 0),
     [agentSelections, selectedAgents],
   );
-  const routingSummary = useMemo(() => {
-    if (selectedAgents.length === 0) {
-      return "No agents selected";
-    }
-    return selectedAgents.map((agent) => `${agent.label} ${agentSelections[agent.id].count}x`).join(", ");
-  }, [agentSelections, selectedAgents]);
   const selectedFolder = useMemo(
     () => folders.find((folder) => folder.id === selectedFolderId) ?? null,
     [folders, selectedFolderId],
@@ -123,60 +215,135 @@ export function BoardChatPromptHud() {
     }
     return selectedFolder.name;
   }, [selectedFolder]);
+  const selectedFolderPath = selectedFolder?.path ?? null;
+  const persistedFoldersForBoard = useMemo(() => {
+    if (!boardId) {
+      return [] as PersistedFolderOption[];
+    }
+    return settingsWithFolders?.boardFolders?.[boardId] ?? [];
+  }, [boardId, settingsWithFolders?.boardFolders]);
+  const persistedSelectedFolderPathForBoard = useMemo(() => {
+    if (!boardId) {
+      return null;
+    }
+    return settingsWithFolders?.boardSelectedFolderPath?.[boardId] ?? null;
+  }, [boardId, settingsWithFolders?.boardSelectedFolderPath]);
+
+  const persistFolders = useCallback(
+    (nextFolders: FolderOption[], nextSelectedFolderId: string | null) => {
+      if (!boardId) {
+        return;
+      }
+      const patch = persistBoardFoldersPatch({
+        boardId,
+        settings: settingsWithFolders,
+        folders: nextFolders,
+        selectedFolderId: nextSelectedFolderId,
+      });
+      if (!patch) {
+        return;
+      }
+      updateSettings(patch as Partial<AppSettings>);
+    },
+    [boardId, settingsWithFolders, updateSettings],
+  );
+
+  useEffect(() => {
+    if (!boardId) {
+      setFolders([]);
+      setSelectedFolderId(null);
+      return;
+    }
+
+    const hydratedFolders: FolderOption[] = persistedFoldersForBoard.map((folder) => ({
+      id: folder.path,
+      name: folder.name,
+      path: folder.path,
+    }));
+    setFolders(hydratedFolders);
+
+    if (
+      persistedSelectedFolderPathForBoard &&
+      hydratedFolders.some((folder) => folder.path === persistedSelectedFolderPathForBoard)
+    ) {
+      setSelectedFolderId(persistedSelectedFolderPathForBoard);
+      return;
+    }
+    setSelectedFolderId(hydratedFolders[0]?.id ?? null);
+  }, [boardId, persistedFoldersForBoard, persistedSelectedFolderPathForBoard]);
 
   const handleFolderMenuOpenChange = useCallback((open: boolean) => {
     setFolderMenuOpen(open);
   }, []);
 
-  const handlePickFolder = useCallback(async () => {
-    const picker = (
-      window as Window & {
-        showDirectoryPicker?: (options?: { mode?: "read" | "readwrite" }) => Promise<FileSystemDirectoryHandle>;
-      }
-    ).showDirectoryPicker;
-    if (!picker) {
-      addToast({
-        title: "Folder picker unavailable",
-        description: "This browser does not support system folder picking.",
-        severity: "error",
-      });
-      return;
-    }
+  const handleSelectFolder = useCallback(
+    (folderId: string) => {
+      setSelectedFolderId(folderId);
+      persistFolders(folders, folderId);
+    },
+    [folders, persistFolders],
+  );
 
+  const handlePickFolder = useCallback(async () => {
     try {
-      const handle = await picker({ mode: "readwrite" });
+      const response = await fetch("/api/system/pick-folder", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error || "Could not open folder picker.");
+      }
+
+      const payload = (await response.json()) as {
+        canceled?: boolean;
+        name?: string;
+        path?: string;
+      };
+      if (payload.canceled) {
+        return;
+      }
+      if (!payload.path || !payload.name) {
+        throw new Error("Folder picker did not return a valid folder.");
+      }
+      const folderPath = payload.path;
+      const folderName = payload.name;
+
       let nextSelectedId: string | null = null;
+      let nextFolders: FolderOption[] | null = null;
 
       setFolders((current) => {
-        const existing = current.find((folder) => folder.name === handle.name);
+        const existing = current.find((folder) => folder.path === folderPath);
         if (existing) {
           nextSelectedId = existing.id;
+          nextFolders = current;
           return current;
         }
 
         const nextFolder: FolderOption = {
-          id: crypto.randomUUID(),
-          name: handle.name,
-          handle,
+          id: folderPath,
+          name: folderName,
+          path: folderPath,
         };
         nextSelectedId = nextFolder.id;
-        return [...current, nextFolder];
+        nextFolders = [...current, nextFolder];
+        return nextFolders;
       });
 
       if (nextSelectedId) {
         setSelectedFolderId(nextSelectedId);
       }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
+      if (nextFolders) {
+        persistFolders(nextFolders, nextSelectedId);
       }
+    } catch (error) {
       addToast({
         title: "Could not select folder",
-        description: "Try again or choose a different folder.",
+        description: error instanceof Error ? error.message : "Try again or choose a different folder.",
         severity: "error",
       });
     }
-  }, [addToast]);
+  }, [addToast, persistFolders]);
 
   const handleAgentMenuOpenChange = useCallback((open: boolean) => {
     setAgentMenuOpen(open);
@@ -220,7 +387,7 @@ export function BoardChatPromptHud() {
         });
         return;
       }
-      if (!selectedFolderId) {
+      if (!selectedFolderPath) {
         addToast({
           title: "Select a folder",
           description: "Pick a folder from the folder dropdown before sending the prompt.",
@@ -229,19 +396,98 @@ export function BoardChatPromptHud() {
         return;
       }
 
-      setStatus("submitted");
-      await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, SUBMIT_RESET_DELAY_MS);
-      });
-      setStatus("ready");
+      const launchTargets: Array<{
+        agentId: AgentId;
+        agentLabel: string;
+        instanceIndex: number;
+      }> = [];
+      for (const agent of selectedAgents) {
+        const count = agentSelections[agent.id].count;
+        for (let index = 1; index <= count; index += 1) {
+          launchTargets.push({
+            agentId: agent.id,
+            agentLabel: agent.label,
+            instanceIndex: index,
+          });
+        }
+      }
 
-      addToast({
-        title: "Prompt captured",
-        description: `Routing: ${routingSummary} · Folder: ${selectedFolderLabel}`,
-        severity: "info",
-      });
+      if (launchTargets.length === 0) {
+        addToast({
+          title: "No terminal launches requested",
+          description: "Enable at least one agent before submitting.",
+          severity: "error",
+        });
+        return;
+      }
+
+      setStatus("submitted");
+
+      try {
+        const columnCount = Math.max(1, Math.ceil(Math.sqrt(launchTargets.length)));
+        const rowCount = Math.ceil(launchTargets.length / columnCount);
+        const totalWidth = columnCount * TERMINAL_SHAPE_WIDTH + (columnCount - 1) * TERMINAL_SHAPE_GAP;
+        const totalHeight = rowCount * TERMINAL_SHAPE_HEIGHT + (rowCount - 1) * TERMINAL_SHAPE_GAP;
+        const center = editor.getViewportPageBounds().center;
+        const originX = center.x - totalWidth / 2;
+        const originY = center.y - totalHeight / 2;
+
+        const plannedSessions = launchTargets.map((target, index) => {
+          const col = index % columnCount;
+          const row = Math.floor(index / columnCount);
+          const sessionId = createShapeId();
+          const startupCommand = buildAgentCommand(target.agentId, prompt);
+          const shapeName =
+            agentSelections[target.agentId].count > 1
+              ? `${target.agentLabel} ${target.instanceIndex}`
+              : target.agentLabel;
+
+          return {
+            id: sessionId,
+            startupCommand,
+            name: shapeName,
+            x: originX + col * (TERMINAL_SHAPE_WIDTH + TERMINAL_SHAPE_GAP),
+            y: originY + row * (TERMINAL_SHAPE_HEIGHT + TERMINAL_SHAPE_GAP),
+          };
+        });
+
+        for (const session of plannedSessions) {
+          registerPendingTerminalLaunch(session.id, {
+            cwd: selectedFolderPath,
+            startupCommand: session.startupCommand,
+          });
+          editor.createShape({
+            id: session.id,
+            type: "terminal",
+            x: session.x,
+            y: session.y,
+            props: {
+              w: TERMINAL_SHAPE_WIDTH,
+              h: TERMINAL_SHAPE_HEIGHT,
+              name: session.name,
+            },
+          });
+        }
+
+        addToast({
+          title: "Launched terminal swarm",
+          description: `Started ${plannedSessions.length} terminal${plannedSessions.length > 1 ? "s" : ""} in ${selectedFolderLabel}.`,
+          severity: "info",
+        });
+      } catch (error) {
+        addToast({
+          title: "Could not launch terminals",
+          description: error instanceof Error ? error.message : "Try again.",
+          severity: "error",
+        });
+      } finally {
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, SUBMIT_RESET_DELAY_MS);
+        });
+        setStatus("ready");
+      }
     },
-    [addToast, routingSummary, selectedAgents.length, selectedFolderId, selectedFolderLabel],
+    [addToast, agentSelections, editor, selectedAgents, selectedFolderLabel, selectedFolderPath],
   );
 
   return (
@@ -311,7 +557,7 @@ export function BoardChatPromptHud() {
                             "h-8 w-full justify-between rounded-lg px-2 text-left text-xs font-normal",
                             selectedFolderId === folder.id && "bg-accent/60",
                           )}
-                          onClick={() => setSelectedFolderId(folder.id)}
+                          onClick={() => handleSelectFolder(folder.id)}
                         >
                           <span className="truncate">{folder.name}</span>
                           <CheckIcon
