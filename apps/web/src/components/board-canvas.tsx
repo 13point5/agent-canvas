@@ -5,6 +5,7 @@ import { htmlOverrides } from "@/tldraw-config/html-overrides";
 import { HtmlDialogOverlay } from "@/tldraw-config/html-toolbar";
 import { markdownOverrides } from "@/tldraw-config/markdown-overrides";
 import { MarkdownDialogOverlay } from "@/tldraw-config/markdown-toolbar";
+import { SelectionIdsToolbar } from "@/tldraw-config/selection-ids-toolbar";
 import { CodeDiffShapeUtil } from "@/tldraw-shapes/code-diff";
 import { HtmlShapeUtil } from "@/tldraw-shapes/html";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
@@ -31,6 +32,7 @@ const combinedOverrides: TLUiOverrides = {
 function CombinedDialogOverlay() {
   return (
     <>
+      <SelectionIdsToolbar />
       <MarkdownDialogOverlay />
       <HtmlDialogOverlay />
     </>
