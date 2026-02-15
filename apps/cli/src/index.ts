@@ -417,8 +417,7 @@ program
   .description("Capture a screenshot of selected shapes on a board")
   .requiredOption("--board <id>", "Board ID")
   .requiredOption("--ids <json>", "JSON array of shape IDs to capture")
-  .option("--json", "Output machine-readable JSON")
-  .action(async (options: { board: string; ids: string; json?: boolean }) => {
+  .action(async (options: { board: string; ids: string }) => {
     try {
       let idsArray: string[];
       try {
@@ -439,12 +438,7 @@ program
       }
 
       const result = await screenshotBoardShapes(options.board, idsArray);
-
-      if (options.json) {
-        console.log(JSON.stringify(result, null, 2));
-      } else {
-        console.log(result.filePath);
-      }
+      console.log(result.filePath);
     } catch (error) {
       if (error instanceof ServerNotRunningError || error instanceof ApiError) {
         console.error(error.message);
