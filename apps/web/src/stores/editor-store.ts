@@ -1,14 +1,16 @@
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { Editor, TLStoreSnapshot } from "tldraw";
-import { loadSnapshot, Tldraw } from "tldraw";
+import { Tldraw } from "tldraw";
 import { create } from "zustand";
 import { boardsApi } from "@/api/client";
+import { loadSnapshotSafely } from "@/lib/load-snapshot-safely";
 import { CodeDiffShapeUtil } from "@/tldraw-shapes/code-diff";
 import { HtmlShapeUtil } from "@/tldraw-shapes/html";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
+import { TerminalShapeUtil } from "@/tldraw-shapes/terminal";
 
-const customShapeUtils = [MarkdownShapeUtil, HtmlShapeUtil, CodeDiffShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil, HtmlShapeUtil, CodeDiffShapeUtil, TerminalShapeUtil];
 
 const MAX_CACHED_EDITORS = 10;
 
@@ -138,7 +140,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
           .getSnapshot(boardId)
           .then(({ snapshot }) => {
             if (snapshot) {
-              loadSnapshot(editor.store, snapshot as TLStoreSnapshot);
+              loadSnapshotSafely(editor, snapshot as TLStoreSnapshot, `board ${boardId} (offscreen)`);
             }
             resolve(editor);
           })

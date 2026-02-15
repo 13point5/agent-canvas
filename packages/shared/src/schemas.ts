@@ -324,6 +324,26 @@ export const codeDiffShapeSchema = z
   })
   .strict();
 
+// ── Terminal shape ──────────────────────────────────────────────────
+
+const terminalPropsSchema = z
+  .object({
+    w: z.number().optional(),
+    h: z.number().optional(),
+    name: z.string().optional(),
+  })
+  .strict();
+
+export const terminalShapeSchema = z
+  .object({
+    type: z.literal("terminal"),
+    x: z.number(),
+    y: z.number(),
+    tempId: z.string().optional(),
+    props: terminalPropsSchema.optional(),
+  })
+  .strict();
+
 // ── Discriminated union + request body ───────────────────────────────
 
 export const inputShapeSchema = z.discriminatedUnion("type", [
@@ -336,6 +356,7 @@ export const inputShapeSchema = z.discriminatedUnion("type", [
   markdownShapeSchema,
   htmlShapeSchema,
   codeDiffShapeSchema,
+  terminalShapeSchema,
 ]);
 
 export const fileBackedShapeSchema = z.discriminatedUnion("type", [markdownShapeSchema, htmlShapeSchema]);
@@ -436,6 +457,16 @@ const codeDiffUpdateSchema = z
   })
   .strict();
 
+const terminalUpdateSchema = z
+  .object({
+    id: z.string(),
+    type: z.literal("terminal"),
+    x: z.number().optional(),
+    y: z.number().optional(),
+    props: terminalPropsSchema.partial().optional(),
+  })
+  .strict();
+
 export const updateShapeSchema = z.discriminatedUnion("type", [
   geoUpdateSchema,
   textUpdateSchema,
@@ -446,6 +477,7 @@ export const updateShapeSchema = z.discriminatedUnion("type", [
   markdownUpdateSchema,
   htmlUpdateSchema,
   codeDiffUpdateSchema,
+  terminalUpdateSchema,
 ]);
 
 export const fileBackedUpdateShapeSchema = z.discriminatedUnion("type", [markdownUpdateSchema, htmlUpdateSchema]);
