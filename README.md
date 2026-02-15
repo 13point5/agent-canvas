@@ -77,8 +77,14 @@ agent-canvas shapes create --board <board-id> --shapes '[
   {"type": "geo", "x": 100, "y": 100, "props": {"w": 200, "h": 100, "geo": "rectangle", "text": "Hello"}}
 ]'
 
-# Read shapes back
+# Read shapes back (minimal summaries by default)
 agent-canvas shapes get --board <board-id>
+
+# Read only specific shapes (minimal summaries)
+agent-canvas shapes get --board <board-id> --ids '["shape:abc", "shape:def"]'
+
+# Read full shape payloads (for file-based analysis)
+agent-canvas shapes get --board <board-id> --full > shapes.json
 
 # Stop the server
 agent-canvas close
@@ -100,6 +106,8 @@ To run CLI commands against the dev server:
 ```bash
 bun run cli -- boards list
 bun run cli -- shapes get --board <board-id>
+bun run cli -- shapes get --board <board-id> --ids '["shape:abc"]'
+bun run cli -- shapes get --board <board-id> --full > shapes.json
 ```
 
 ## Project Structure
