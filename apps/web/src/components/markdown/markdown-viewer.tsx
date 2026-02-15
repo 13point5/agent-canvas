@@ -10,6 +10,7 @@ import { MarkdownPanel } from "./markdown-panel";
 interface MarkdownViewerProps {
   name: string;
   content: string;
+  filePath: string;
   comments: MarkdownComment[];
   width: number;
   height: number;
@@ -54,6 +55,7 @@ const SELECTION_CONTEXT_CHARS = 24;
 export function MarkdownViewer({
   name,
   content,
+  filePath,
   comments,
   width,
   height,
@@ -277,6 +279,52 @@ export function MarkdownViewer({
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [isFullscreen]);
+
+  // Ensure Cmd/Ctrl+C copies selected markdown text (not the shape) while editing.
+  useEffect(() => {
+    if (!isEditing || !contentRootEl) return;
+
+    const getCopyText = () =>
+      getSelectedTextWithin(contentRootEl) || getAnchorTextWithin(contentRootEl, composerAnchor ?? pendingSelection);
+
+    const handleCopyShortcut = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+      if (event.key.toLowerCase() !== "c") return;
+      if (isTextInputTarget(event.target)) return;
+
+      const copyText = getCopyText();
+      if (!copyText) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      void writeTextToClipboard(copyText);
+    };
+
+    const handleCopyEvent = (event: ClipboardEvent) => {
+      if (isTextInputTarget(event.target)) return;
+
+      const copyText = getCopyText();
+      if (!copyText) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      if (event.clipboardData) {
+        event.clipboardData.setData("text/plain", copyText);
+      } else {
+        void writeTextToClipboard(copyText);
+      }
+    };
+
+    window.addEventListener("keydown", handleCopyShortcut, true);
+    document.addEventListener("copy", handleCopyEvent, true);
+    return () => {
+      window.removeEventListener("keydown", handleCopyShortcut, true);
+      document.removeEventListener("copy", handleCopyEvent, true);
+    };
+  }, [composerAnchor, contentRootEl, isEditing, pendingSelection]);
 
   useEffect(() => {
     if (!expandedCommentId) return;
@@ -733,6 +781,7 @@ export function MarkdownViewer({
   const markdownPanel = (
     <MarkdownPanel
       markdown={content}
+      filePath={filePath}
       parsed={parsed}
       mermaidBlocks={parsed.mermaidBlocks}
       onScrollContainerChange={handleScrollContainerChange}
@@ -934,6 +983,61 @@ function estimateCommentCardHeight(comment: MarkdownComment, cardWidth: number):
   const bodyLength = comment.body.trim().length;
   const bodyLines = Math.max(1, Math.ceil(bodyLength / charsPerLine));
   return 60 + bodyLines * 22;
+}
+
+function isTextInputTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tagName = target.tagName;
+  return tagName === "INPUT" || tagName === "TEXTAREA";
+}
+
+function getSelectedTextWithin(root: HTMLElement): string | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+
+  const range = selection.getRangeAt(0);
+  if (!isNodeInside(root, range.startContainer) || !isNodeInside(root, range.endContainer)) {
+    return null;
+  }
+
+  const text = selection.toString();
+  return text ? text : null;
+}
+
+function getAnchorTextWithin(root: HTMLElement, anchor: TextSelectionAnchor | null): string | null {
+  if (!anchor) return null;
+
+  const range = resolveTextAnchorRange(anchor, root);
+  const text = range?.toString() ?? anchor.quote;
+  return text ? text : null;
+}
+
+function isNodeInside(root: HTMLElement, node: Node): boolean {
+  const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+  return !!element && root.contains(element);
+}
+
+async function writeTextToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Fall through to legacy copy command.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  textarea.style.pointerEvents = "none";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
 }
 
 function makeCommentId(): string {

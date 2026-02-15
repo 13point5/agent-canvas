@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   type BoardMetadata,
   type CreateShapesBody,
@@ -39,6 +40,132 @@ import {
 import { getClientCount, sendToClients } from "@/lib/ws";
 
 const boards = new Hono();
+const IMAGE_FILE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif"]);
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+
+function stripQueryAndHash(value: string): string {
+  const queryIndex = value.indexOf("?");
+  const hashIndex = value.indexOf("#");
+
+  const cutIndex =
+    queryIndex >= 0 && hashIndex >= 0 ? Math.min(queryIndex, hashIndex) : queryIndex >= 0 ? queryIndex : hashIndex;
+
+  return cutIndex >= 0 ? value.slice(0, cutIndex) : value;
+}
+
+function looksLikeWindowsAbsolutePath(value: string): boolean {
+  return /^[a-zA-Z]:[\\/]/.test(value);
+}
+
+function isExternalReference(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (looksLikeWindowsAbsolutePath(trimmed)) return false;
+  if (trimmed.startsWith("#")) return false;
+  if (trimmed.startsWith("//")) return true;
+
+  const schemeMatch = /^([a-zA-Z][a-zA-Z\d+.-]*):/.exec(trimmed);
+  if (!schemeMatch) return false;
+
+  const scheme = schemeMatch[1].toLowerCase();
+  return scheme !== "file";
+}
+
+function hasWorkspacePackageJson(dir: string): boolean {
+  const packageJsonPath = join(dir, "package.json");
+  if (!existsSync(packageJsonPath)) return false;
+
+  try {
+    const parsed = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as { workspaces?: unknown };
+    return parsed.workspaces !== undefined;
+  } catch {
+    return false;
+  }
+}
+
+function findWorkspaceRoot(startDir: string): string | null {
+  let current = startDir;
+  while (true) {
+    if (hasWorkspacePackageJson(current)) {
+      return current;
+    }
+
+    const parent = dirname(current);
+    if (parent === current) {
+      return null;
+    }
+    current = parent;
+  }
+}
+
+function getPathResolutionRoots(): string[] {
+  const roots = new Set<string>();
+
+  roots.add(process.cwd());
+  roots.add(resolve(process.cwd(), ".."));
+  roots.add(resolve(process.cwd(), "../.."));
+  roots.add(resolve(process.cwd(), "../../.."));
+  roots.add(resolve(MODULE_DIR, "../../../.."));
+
+  const workspaceRootFromCwd = findWorkspaceRoot(process.cwd());
+  if (workspaceRootFromCwd) {
+    roots.add(workspaceRootFromCwd);
+  }
+
+  const workspaceRootFromModule = findWorkspaceRoot(MODULE_DIR);
+  if (workspaceRootFromModule) {
+    roots.add(workspaceRootFromModule);
+  }
+
+  return Array.from(roots);
+}
+
+function firstExistingOrFirst(paths: string[]): string {
+  const existing = paths.find((path) => existsSync(path));
+  return existing ?? paths[0] ?? "";
+}
+
+function resolveReferencedFilePath(target: string, basePath?: string): string {
+  const cleanedTarget = stripQueryAndHash(target.trim());
+  if (!cleanedTarget) {
+    throw new Error("target query parameter is required");
+  }
+
+  if (isExternalReference(cleanedTarget)) {
+    throw new Error("External references are not local files");
+  }
+
+  if (cleanedTarget.startsWith("file://")) {
+    return normalize(fileURLToPath(cleanedTarget));
+  }
+
+  if (looksLikeWindowsAbsolutePath(cleanedTarget)) {
+    return normalize(cleanedTarget);
+  }
+
+  if (isAbsolute(cleanedTarget)) {
+    return normalize(cleanedTarget);
+  }
+
+  const resolutionRoots = getPathResolutionRoots();
+
+  if (!basePath) {
+    const targetCandidates = resolutionRoots.map((root) => normalize(resolve(root, cleanedTarget)));
+    return firstExistingOrFirst(targetCandidates);
+  }
+
+  const normalizedBasePathRaw = basePath.startsWith("file://") ? fileURLToPath(basePath) : basePath;
+  const basePathCandidates =
+    isAbsolute(normalizedBasePathRaw) || looksLikeWindowsAbsolutePath(normalizedBasePathRaw)
+      ? [normalize(normalizedBasePathRaw)]
+      : resolutionRoots.map((root) => normalize(resolve(root, normalizedBasePathRaw)));
+
+  const targetCandidates = basePathCandidates.map((candidateBasePath) =>
+    normalize(resolve(dirname(candidateBasePath), cleanedTarget)),
+  );
+
+  return firstExistingOrFirst(targetCandidates);
+}
 
 // List all boards
 boards.get("/", async (c) => {
@@ -135,6 +262,54 @@ boards.get("/:id/snapshot", async (c) => {
   const snapshot = await readJSON<Snapshot>(join(getBoardDir(id), "snapshot.json"));
 
   return c.json({ snapshot });
+});
+
+// Serve local referenced files for markdown/html shapes.
+boards.get("/:id/files/content", async (c) => {
+  const id = c.req.param("id");
+  const metadata = await readJSON<BoardMetadata>(join(getBoardDir(id), "metadata.json"));
+  if (!metadata) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
+  const target = c.req.query("target");
+  const basePath = c.req.query("basePath");
+  if (!target) {
+    return c.json({ error: "Missing required query parameter: target" }, 400);
+  }
+
+  let resolvedPath: string;
+  try {
+    resolvedPath = resolveReferencedFilePath(target, basePath);
+  } catch (error) {
+    return c.json(
+      {
+        error: error instanceof Error ? error.message : "Failed to resolve referenced file path",
+      },
+      400,
+    );
+  }
+
+  if (!existsSync(resolvedPath)) {
+    return c.json({ error: `Referenced file not found: ${resolvedPath}` }, 404);
+  }
+
+  const ext = resolvedPath.split(".").pop()?.toLowerCase();
+  if (!ext || !IMAGE_FILE_EXTENSIONS.has(ext)) {
+    return c.json({ error: "Only image file references are supported for inline rendering" }, 400);
+  }
+
+  const file = Bun.file(resolvedPath);
+  if (!(await file.exists())) {
+    return c.json({ error: `Referenced file not found: ${resolvedPath}` }, 404);
+  }
+
+  return new Response(file, {
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "Cache-Control": "no-cache",
+    },
+  });
 });
 
 // Save snapshot
