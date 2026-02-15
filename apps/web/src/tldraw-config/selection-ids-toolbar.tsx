@@ -1,24 +1,25 @@
+import { AtIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback } from "react";
-import {
-  Box,
-  type TLShapeId,
-  TldrawUiButtonIcon,
-  TldrawUiContextualToolbar,
-  TldrawUiToolbarButton,
-  useEditor,
-  useToasts,
-  useValue,
-} from "tldraw";
+import { Box, type TLShapeId, TldrawUiContextualToolbar, useEditor, useToasts, useValue } from "tldraw";
+
+import { Button } from "@/components/ui/button";
 
 function SelectionIdsToolbarInner({ selectedShapeIds }: { selectedShapeIds: TLShapeId[] }) {
   const editor = useEditor();
   const { addToast } = useToasts();
 
   const getSelectionBounds = useCallback(() => {
-    const fullBounds = editor.getSelectionScreenBounds();
-    if (!fullBounds) return undefined;
+    const pageBounds = editor.getSelectionPageBounds();
+    if (!pageBounds) return undefined;
 
-    return new Box(fullBounds.x, fullBounds.y, fullBounds.width, 0);
+    const topLeft = editor.pageToScreen({ x: pageBounds.x, y: pageBounds.y });
+    const bottomRight = editor.pageToScreen({
+      x: pageBounds.maxX,
+      y: pageBounds.maxY,
+    });
+
+    return new Box(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, 0);
   }, [editor]);
 
   const handleCopyShapeIds = useCallback(async () => {
@@ -42,17 +43,18 @@ function SelectionIdsToolbarInner({ selectedShapeIds }: { selectedShapeIds: TLSh
 
   return (
     <TldrawUiContextualToolbar getSelectionBounds={getSelectionBounds} label="Selection tools">
-      <TldrawUiToolbarButton
-        type="menu"
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Copy selected shape IDs"
         title="Copy selected shape IDs"
         data-testid="tool.selection-copy-shape-ids"
         onClick={() => {
           void handleCopyShapeIds();
         }}
       >
-        <TldrawUiButtonIcon small icon="clipboard-copy" />
-        <span>Copy IDs</span>
-      </TldrawUiToolbarButton>
+        <HugeiconsIcon icon={AtIcon} strokeWidth={2} className="size-4" />
+      </Button>
     </TldrawUiContextualToolbar>
   );
 }
@@ -61,13 +63,8 @@ export function SelectionIdsToolbar() {
   const editor = useEditor();
 
   const selectedShapeIds = useValue("selected shape ids", () => editor.getSelectedShapeIds(), [editor]);
-  const showToolbar = useValue(
-    "show selection ids toolbar",
-    () => editor.isInAny("select.idle", "select.pointing_shape"),
-    [editor],
-  );
 
-  if (!showToolbar || selectedShapeIds.length < 2) return null;
+  if (selectedShapeIds.length < 1) return null;
 
   return <SelectionIdsToolbarInner selectedShapeIds={selectedShapeIds} />;
 }
