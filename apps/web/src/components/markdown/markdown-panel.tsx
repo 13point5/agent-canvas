@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
 import type { MermaidBlock, ParsedMarkdown } from "@/lib/parse-markdown";
+import { cn } from "@/lib/utils";
 
 import { MermaidBlock as MermaidBlockComponent } from "./mermaid-block";
 
@@ -17,15 +18,36 @@ interface MarkdownPanelProps {
   parsed: ParsedMarkdown;
   mermaidBlocks: MermaidBlock[];
   onPinDiagram?: (id: string) => void;
+  onScrollContainerChange?: (node: HTMLDivElement | null) => void;
+  onContentRootChange?: (node: HTMLDivElement | null) => void;
+  overlay?: React.ReactNode;
 }
 
-export function MarkdownPanel({ markdown, parsed, mermaidBlocks, onPinDiagram }: MarkdownPanelProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+export function MarkdownPanel({
+  markdown,
+  parsed,
+  mermaidBlocks,
+  onPinDiagram,
+  onScrollContainerChange,
+  onContentRootChange,
+  overlay,
+}: MarkdownPanelProps) {
+  const setScrollRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      onScrollContainerChange?.(node);
+    },
+    [onScrollContainerChange],
+  );
 
-  // Map mermaid code content → block for direct lookup (no counter needed)
-  const mermaidByCode = useMemo(() => new Map(mermaidBlocks.map((b) => [b.code, b])), [mermaidBlocks]);
+  const setContentRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      onContentRootChange?.(node);
+    },
+    [onContentRootChange],
+  );
 
-  // Derived mapping: heading text -> section id
+  const mermaidByCode = useMemo(() => new Map(mermaidBlocks.map((block) => [block.code, block])), [mermaidBlocks]);
+
   const sectionMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const section of parsed.sections) {
@@ -35,12 +57,17 @@ export function MarkdownPanel({ markdown, parsed, mermaidBlocks, onPinDiagram }:
   }, [parsed]);
 
   const components: Components = {
-    // Our `code` component handles its own wrapping — skip the default <pre>
     pre: ({ children }) => <>{children}</>,
 
     h1: ({ children, ...props }) => renderHeading("h1", children, props, sectionMap),
     h2: ({ children, ...props }) => renderHeading("h2", children, props, sectionMap),
     h3: ({ children, ...props }) => renderHeading("h3", children, props, sectionMap),
+
+    p: ({ children, ...props }) => (
+      <p className="my-2 leading-7" {...props}>
+        {children}
+      </p>
+    ),
 
     code: ({ className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className ?? "");
@@ -53,7 +80,6 @@ export function MarkdownPanel({ markdown, parsed, mermaidBlocks, onPinDiagram }:
         return <MermaidBlockComponent id={block.id} code={block.code} onPinToPanel={onPinDiagram} />;
       }
 
-      // Inline code
       if (!match) {
         return (
           <code className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-sm" {...props}>
@@ -62,7 +88,6 @@ export function MarkdownPanel({ markdown, parsed, mermaidBlocks, onPinDiagram }:
         );
       }
 
-      // Fenced code block
       return (
         <pre className="my-2 overflow-auto rounded-md border border-border bg-muted/30 p-3">
           <code className={`font-mono text-sm ${className ?? ""}`} {...props}>
@@ -72,7 +97,6 @@ export function MarkdownPanel({ markdown, parsed, mermaidBlocks, onPinDiagram }:
       );
     },
 
-    // Style other markdown elements
     table: ({ children, ...props }) => (
       <div className="my-3 overflow-auto">
         <table className="w-full border-collapse text-sm" {...props}>
@@ -110,22 +134,24 @@ export function MarkdownPanel({ markdown, parsed, mermaidBlocks, onPinDiagram }:
         {children}
       </ol>
     ),
+    li: ({ children, ...props }) => <li {...props}>{children}</li>,
     hr: () => <hr className="my-4 border-border" />,
   } as Components;
 
   return (
-    <div ref={scrollRef} className="h-full overflow-auto px-4 py-3">
-      <div className="prose-sm max-w-prose mx-auto text-foreground">
+    <div ref={setScrollRef} className="relative h-full overflow-auto px-4 py-3">
+      <div ref={setContentRef} className={cn("prose-sm max-w-prose mx-auto text-foreground")}>
         <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} components={components}>
           {markdown}
         </ReactMarkdown>
       </div>
+      {overlay}
     </div>
   );
 }
 
 function renderHeading(
-  Tag: "h1" | "h2" | "h3",
+  tag: "h1" | "h2" | "h3",
   children: React.ReactNode,
   props: Record<string, unknown>,
   sectionMap: Map<string, string>,
@@ -139,8 +165,9 @@ function renderHeading(
     h3: "text-base font-semibold mt-2 mb-1",
   };
 
+  const Tag = tag;
   return (
-    <Tag className={`${sizeClasses[Tag]} text-foreground`} data-section-id={sectionId} {...props}>
+    <Tag className={cn(sizeClasses[tag], "text-foreground")} data-section-id={sectionId} {...props}>
       {children}
     </Tag>
   );

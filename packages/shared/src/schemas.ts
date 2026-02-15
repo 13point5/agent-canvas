@@ -254,6 +254,64 @@ const imageShapeSchema = z
 
 // ── Markdown shape ──────────────────────────────────────────────────
 
+const markdownCommentAuthorSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("user"),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("agent"),
+      name: z.string().min(1),
+    })
+    .strict(),
+]);
+
+const markdownCommentTargetSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("shape"),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("text"),
+      start: z.number().int().min(0),
+      end: z.number().int().min(0),
+      quote: z.string(),
+      prefix: z.string().optional(),
+      suffix: z.string().optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("line"),
+      line: z.number().int().min(1),
+      lineText: z.string().optional(),
+      previousLineText: z.string().nullable().optional(),
+      nextLineText: z.string().nullable().optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("diagram"),
+      diagramId: z.string().min(1),
+    })
+    .strict(),
+]);
+
+const markdownCommentSchema = z
+  .object({
+    id: z.string().min(1),
+    target: markdownCommentTargetSchema,
+    body: z.string(),
+    author: markdownCommentAuthorSchema,
+    createdAt: z.string().datetime(),
+    resolvedAt: z.string().datetime().nullable(),
+  })
+  .strict();
+
 const markdownPropsSchema = z
   .object({
     w: z.number().optional(),
@@ -261,6 +319,7 @@ const markdownPropsSchema = z
     name: z.string().optional(),
     content: z.string().optional(),
     filePath: z.string().optional(),
+    comments: z.array(markdownCommentSchema).optional(),
   })
   .strict();
 

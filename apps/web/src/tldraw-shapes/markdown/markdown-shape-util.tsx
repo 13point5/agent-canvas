@@ -1,6 +1,6 @@
 import { BaseBoxShapeUtil, createShapePropsMigrationSequence, HTMLContainer } from "tldraw";
 import { MarkdownViewer } from "@/components/markdown/markdown-viewer";
-import type { MarkdownShape } from "./markdown-shape-props";
+import type { MarkdownComment, MarkdownShape } from "./markdown-shape-props";
 import { markdownShapeProps } from "./markdown-shape-props";
 
 export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
@@ -19,6 +19,14 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
           }
         },
       },
+      {
+        id: "com.tldraw.shape.markdown/2",
+        up(props: Record<string, unknown>) {
+          if (props.comments === undefined) {
+            props.comments = [];
+          }
+        },
+      },
     ],
   });
 
@@ -29,6 +37,7 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
       name: "",
       content: "",
       filePath: "",
+      comments: [],
     };
   }
 
@@ -42,6 +51,13 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
 
   override component(shape: MarkdownShape) {
     const isEditing = this.editor.getEditingShapeId() === shape.id;
+    const handleCommentsChange = (comments: MarkdownComment[]) => {
+      this.editor.updateShape({
+        id: shape.id,
+        type: shape.type,
+        props: { comments },
+      });
+    };
 
     return (
       <HTMLContainer
@@ -77,9 +93,11 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
         <MarkdownViewer
           name={shape.props.name}
           content={shape.props.content}
+          comments={shape.props.comments}
           width={shape.props.w}
           height={shape.props.h}
           isEditing={isEditing}
+          onCommentsChange={handleCommentsChange}
         />
       </HTMLContainer>
     );
