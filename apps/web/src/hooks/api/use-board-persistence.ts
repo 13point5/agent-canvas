@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 import type { Editor, TLStoreSnapshot } from "tldraw";
-import { getSnapshot, loadSnapshot } from "tldraw";
+import { getSnapshot } from "tldraw";
 import { boardsApi, boardsMutations } from "@/api/client";
+import { loadSnapshotSafely } from "@/lib/load-snapshot-safely";
 import { useEditorStore } from "@/stores/editor-store";
 
 export function useBoardPersistence(boardId: string) {
@@ -30,7 +31,7 @@ export function useBoardPersistence(boardId: string) {
       // Load existing snapshot
       boardsApi.getSnapshot(boardId).then(({ snapshot }) => {
         if (snapshot) {
-          loadSnapshot(editor.store, snapshot as TLStoreSnapshot);
+          loadSnapshotSafely(editor, snapshot as TLStoreSnapshot, `board ${boardId}`);
         }
       });
 

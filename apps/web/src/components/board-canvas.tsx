@@ -5,17 +5,20 @@ import { htmlOverrides } from "@/tldraw-config/html-overrides";
 import { HtmlDialogOverlay } from "@/tldraw-config/html-toolbar";
 import { markdownOverrides } from "@/tldraw-config/markdown-overrides";
 import { MarkdownDialogOverlay } from "@/tldraw-config/markdown-toolbar";
+import { terminalOverrides } from "@/tldraw-config/terminal-overrides";
 import { CodeDiffShapeUtil } from "@/tldraw-shapes/code-diff";
 import { HtmlShapeUtil } from "@/tldraw-shapes/html";
 import { MarkdownShapeUtil } from "@/tldraw-shapes/markdown";
+import { TerminalShapeUtil } from "@/tldraw-shapes/terminal";
 
-const customShapeUtils = [MarkdownShapeUtil, HtmlShapeUtil, CodeDiffShapeUtil];
+const customShapeUtils = [MarkdownShapeUtil, HtmlShapeUtil, CodeDiffShapeUtil, TerminalShapeUtil];
 
 const combinedOverrides: TLUiOverrides = {
   tools(editor, tools, helpers) {
     markdownOverrides.tools?.(editor, tools, helpers);
     htmlOverrides.tools?.(editor, tools, helpers);
     codeDiffOverrides.tools?.(editor, tools, helpers);
+    terminalOverrides.tools?.(editor, tools, helpers);
     return tools;
   },
   translations: {
@@ -24,6 +27,7 @@ const combinedOverrides: TLUiOverrides = {
       ...(markdownOverrides.translations as Record<string, Record<string, string>>)?.en,
       ...(htmlOverrides.translations as Record<string, Record<string, string>>)?.en,
       ...(codeDiffOverrides.translations as Record<string, Record<string, string>>)?.en,
+      ...(terminalOverrides.translations as Record<string, Record<string, string>>)?.en,
     },
   },
 };
@@ -44,6 +48,7 @@ function CustomToolbar() {
       <ToolbarItem tool="markdown" />
       <ToolbarItem tool="html" />
       <ToolbarItem tool="code-diff" />
+      <ToolbarItem tool="terminal" />
     </DefaultToolbar>
   );
 }
