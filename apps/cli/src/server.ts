@@ -8,7 +8,17 @@
 import { createApp, removeLockfile, websocketHandler, writeLockfile } from "@agent-canvas/server";
 
 const DEFAULT_PORT = 3456;
-type SocketData = { kind: "board" } | { kind: "terminal"; sessionId: string; cols: number; rows: number };
+type SocketData =
+  | { kind: "board" }
+  | {
+      kind: "terminal";
+      sessionId: string;
+      cols: number;
+      rows: number;
+      cwd?: string;
+      startupCommand?: string;
+      forceFresh?: boolean;
+    };
 
 // Parse arguments: port and webDir
 const parsedPort = Number.parseInt(process.argv[2] ?? "", 10);
@@ -41,12 +51,18 @@ const server = Bun.serve<SocketData>({
       const cols = Number.parseInt(url.searchParams.get("cols") ?? "", 10);
       const rows = Number.parseInt(url.searchParams.get("rows") ?? "", 10);
       const sessionId = url.searchParams.get("session") || `terminal-${crypto.randomUUID()}`;
+      const cwd = url.searchParams.get("cwd") ?? undefined;
+      const startupCommand = url.searchParams.get("command") ?? undefined;
+      const forceFresh = url.searchParams.get("fresh") === "1";
       const upgraded = server.upgrade(req, {
         data: {
           kind: "terminal",
           sessionId,
           cols: Number.isFinite(cols) ? cols : 80,
           rows: Number.isFinite(rows) ? rows : 24,
+          cwd,
+          startupCommand,
+          forceFresh,
         },
       });
       if (upgraded) {

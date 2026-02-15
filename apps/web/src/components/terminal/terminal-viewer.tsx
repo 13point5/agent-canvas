@@ -1,5 +1,6 @@
 import { FitAddon, type IDisposable, init, Terminal } from "ghostty-web";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { consumePendingTerminalLaunch } from "@/lib/pending-terminal-launch";
 
 interface TerminalViewerProps {
   name: string;
@@ -72,10 +73,20 @@ export function TerminalViewer({ name, width, height, sessionId, isEditing }: Te
         window.addEventListener("resize", handleWindowResize);
 
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const session = encodeURIComponent(sessionId);
-        socket = new WebSocket(
-          `${protocol}//${window.location.host}/ws/terminal?session=${session}&cols=${terminal.cols}&rows=${terminal.rows}`,
-        );
+        const params = new URLSearchParams({
+          session: sessionId,
+          cols: String(terminal.cols),
+          rows: String(terminal.rows),
+        });
+
+        const pendingLaunch = consumePendingTerminalLaunch(sessionId);
+        if (pendingLaunch) {
+          params.set("cwd", pendingLaunch.cwd);
+          params.set("command", pendingLaunch.startupCommand);
+          params.set("fresh", "1");
+        }
+
+        socket = new WebSocket(`${protocol}//${window.location.host}/ws/terminal?${params.toString()}`);
 
         socket.onopen = () => {
           if (!isDisposed) {

@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 import type {
   BoardEvent,
   CreateShapesRequest,
@@ -16,7 +17,17 @@ import type { ServerWebSocket } from "bun";
 import { boardEvents } from "./events";
 import { resolvePendingRequest } from "./pending-requests";
 
-type SocketData = { kind: "board" } | { kind: "terminal"; sessionId: string; cols: number; rows: number };
+type SocketData =
+  | { kind: "board" }
+  | {
+      kind: "terminal";
+      sessionId: string;
+      cols: number;
+      rows: number;
+      cwd?: string;
+      startupCommand?: string;
+      forceFresh?: boolean;
+    };
 type AppWebSocket = ServerWebSocket<SocketData>;
 type TerminalProcess = ReturnType<typeof Bun.spawn>;
 
@@ -124,10 +135,67 @@ function scheduleTerminalGc(session: TerminalSession) {
   }, TERMINAL_IDLE_TIMEOUT_MS);
 }
 
-function createTerminalSession(sessionId: string, cols: number, rows: number): TerminalSession {
+function destroyTerminalSession(session: TerminalSession) {
+  clearTerminalGcTimer(session);
+  terminalSessionsById.delete(session.id);
+
+  for (const ws of session.clients) {
+    terminalSessionBySocket.delete(ws);
+    if (ws.readyState === WEBSOCKET_OPEN) {
+      ws.close();
+    }
+  }
+  session.clients.clear();
+
+  try {
+    session.process.kill();
+  } catch {
+    // Process may already be closed.
+  }
+}
+
+function resolveTerminalCwd(rawCwd?: string): string {
+  const fallbackCwd = process.env.HOME || process.cwd();
+  if (!rawCwd) {
+    return fallbackCwd;
+  }
+
+  const resolvedPath = resolve(rawCwd);
+  if (!existsSync(resolvedPath)) {
+    throw new Error(`Directory does not exist: ${resolvedPath}`);
+  }
+
+  const stats = statSync(resolvedPath);
+  if (!stats.isDirectory()) {
+    throw new Error(`Path is not a directory: ${resolvedPath}`);
+  }
+
+  return resolvedPath;
+}
+
+function normalizeStartupCommand(rawCommand?: string): string | null {
+  if (!rawCommand) {
+    return null;
+  }
+
+  const trimmed = rawCommand.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.slice(0, 20_000);
+}
+
+function createTerminalSession(
+  sessionId: string,
+  cols: number,
+  rows: number,
+  options?: { cwd?: string; startupCommand?: string },
+): TerminalSession {
   const shell = getDefaultShell();
   const shellArgs = getShellArgs(shell);
   const decoder = new TextDecoder();
+  const startupCommand = normalizeStartupCommand(options?.startupCommand);
 
   const session = {
     id: sessionId,
@@ -138,7 +206,7 @@ function createTerminalSession(sessionId: string, cols: number, rows: number): T
   } satisfies TerminalSession;
 
   session.process = Bun.spawn([shell, ...shellArgs], {
-    cwd: process.env.HOME || process.cwd(),
+    cwd: resolveTerminalCwd(options?.cwd),
     env: {
       ...process.env,
       TERM: "xterm-256color",
@@ -157,6 +225,10 @@ function createTerminalSession(sessionId: string, cols: number, rows: number): T
       },
     },
   });
+
+  if (startupCommand) {
+    session.process.terminal?.write(`${startupCommand}\r`);
+  }
 
   void session.process.exited.then((exitCode) => {
     clearTerminalGcTimer(session);
@@ -178,13 +250,22 @@ function createTerminalSession(sessionId: string, cols: number, rows: number): T
   return session;
 }
 
-function getOrCreateTerminalSession(sessionId: string, cols: number, rows: number): TerminalSession {
+function getOrCreateTerminalSession(
+  sessionId: string,
+  cols: number,
+  rows: number,
+  options?: { cwd?: string; startupCommand?: string; forceFresh?: boolean },
+): TerminalSession {
   const existing = terminalSessionsById.get(sessionId);
   if (existing) {
-    return existing;
+    if (options?.forceFresh) {
+      destroyTerminalSession(existing);
+    } else {
+      return existing;
+    }
   }
 
-  const session = createTerminalSession(sessionId, cols, rows);
+  const session = createTerminalSession(sessionId, cols, rows, options);
   terminalSessionsById.set(sessionId, session);
   return session;
 }
@@ -268,7 +349,11 @@ export const websocketHandler = {
   open(ws: AppWebSocket) {
     if (ws.data?.kind === "terminal") {
       try {
-        const session = getOrCreateTerminalSession(ws.data.sessionId, ws.data.cols, ws.data.rows);
+        const session = getOrCreateTerminalSession(ws.data.sessionId, ws.data.cols, ws.data.rows, {
+          cwd: ws.data.cwd,
+          startupCommand: ws.data.startupCommand,
+          forceFresh: ws.data.forceFresh,
+        });
         attachSocketToTerminalSession(ws, session, ws.data.cols, ws.data.rows);
         return;
       } catch (error) {
