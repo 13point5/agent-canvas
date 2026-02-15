@@ -77,18 +77,32 @@ agent-canvas shapes create --board <board-id> --shapes '[
   {"type": "geo", "x": 100, "y": 100, "props": {"w": 200, "h": 100, "geo": "rectangle", "text": "Hello"}}
 ]'
 
-# Read shapes back (minimal summaries by default)
+# Read shapes back (compact YAML-like summaries by default)
 agent-canvas shapes get --board <board-id>
+
+# Read shapes as JSON (machine-readable)
+agent-canvas shapes get --board <board-id> --json
 
 # Read only specific shapes (minimal summaries)
 agent-canvas shapes get --board <board-id> --ids '["shape:abc", "shape:def"]'
 
-# Read full shape payloads (for file-based analysis)
-agent-canvas shapes get --board <board-id> --full > shapes.json
+# Read full shape payloads as JSON (for file-based analysis)
+agent-canvas shapes get --board <board-id> --full --json > shapes.json
 
 # Stop the server
 agent-canvas close
 ```
+
+Default `shapes get` output is compact YAML-like text:
+- It is optimized for lower token usage in agent contexts
+- Use `--json` for machine-readable JSON output
+
+Minimal-mode `shapes get` output is intentionally partial:
+- It includes only `id`, `type`, and selected `props`
+- Long values are truncated as `... (+N chars)`
+- `code-diff` summaries include only `oldFile.name` / `newFile.name` (no file contents)
+- `props._partial: true` means props are summarized, not complete
+- Use `--full --json` when you need complete shape payloads
 
 ## Development Mode
 
@@ -106,8 +120,9 @@ To run CLI commands against the dev server:
 ```bash
 bun run cli -- boards list
 bun run cli -- shapes get --board <board-id>
+bun run cli -- shapes get --board <board-id> --json
 bun run cli -- shapes get --board <board-id> --ids '["shape:abc"]'
-bun run cli -- shapes get --board <board-id> --full > shapes.json
+bun run cli -- shapes get --board <board-id> --full --json > shapes.json
 ```
 
 ## Project Structure
