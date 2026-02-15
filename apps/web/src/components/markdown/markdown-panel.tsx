@@ -1,10 +1,12 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
+import { useParams } from "react-router-dom";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MermaidBlock, ParsedMarkdown } from "@/lib/parse-markdown";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +17,7 @@ const rehypePlugins = [rehypeKatex];
 
 interface MarkdownPanelProps {
   markdown: string;
+  filePath?: string;
   parsed: ParsedMarkdown;
   mermaidBlocks: MermaidBlock[];
   onPinDiagram?: (id: string) => void;
@@ -25,6 +28,7 @@ interface MarkdownPanelProps {
 
 export function MarkdownPanel({
   markdown,
+  filePath,
   parsed,
   mermaidBlocks,
   onPinDiagram,
@@ -32,6 +36,9 @@ export function MarkdownPanel({
   onContentRootChange,
   overlay,
 }: MarkdownPanelProps) {
+  const { boardId } = useParams<{ boardId: string }>();
+  const [blockedReference, setBlockedReference] = useState<{ href: string; reason: string } | null>(null);
+
   const setScrollRef = useCallback(
     (node: HTMLDivElement | null) => {
       onScrollContainerChange?.(node);
@@ -119,10 +126,47 @@ export function MarkdownPanel({
         {children}
       </blockquote>
     ),
-    a: ({ children, href, ...props }) => (
-      <a href={href} className="text-chart-1 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>
-        {children}
-      </a>
+    a: ({ children, href, node: _node, ...props }) => {
+      const link = href?.trim() ?? "";
+      if (!link) {
+        return <span>{children}</span>;
+      }
+
+      if (link.startsWith("#")) {
+        return (
+          <a href={link} className="text-chart-1 hover:underline" {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      if (isExternalReference(link)) {
+        return (
+          <a href={link} className="text-chart-1 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      return (
+        <a
+          href={link}
+          className="text-chart-1 hover:underline"
+          onClick={(event) => {
+            event.preventDefault();
+            setBlockedReference({
+              href: link,
+              reason: getBlockedReferenceReason(filePath),
+            });
+          }}
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    },
+    img: ({ src, alt, node: _node, ...props }) => (
+      <MarkdownImage src={src} alt={alt} boardId={boardId} filePath={filePath} {...props} />
     ),
     ul: ({ children, ...props }) => (
       <ul className="my-1 ml-4 list-disc space-y-0.5" {...props}>
@@ -146,7 +190,65 @@ export function MarkdownPanel({
         </ReactMarkdown>
       </div>
       {overlay}
+
+      <Dialog
+        open={blockedReference !== null}
+        onOpenChange={(open) => {
+          if (!open) setBlockedReference(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Can&apos;t Open File Link Yet</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Opening local file links from markdown isn&apos;t supported yet. {blockedReference?.reason}
+          </p>
+          {blockedReference && (
+            <pre className="max-h-40 overflow-auto rounded-md border border-border bg-muted/30 p-2 text-xs">
+              {blockedReference.href}
+            </pre>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function MarkdownImage({
+  src,
+  alt,
+  boardId,
+  filePath,
+  className,
+  onError,
+  ...props
+}: React.ImgHTMLAttributes<HTMLImageElement> & { boardId?: string; filePath?: string }) {
+  const [failed, setFailed] = useState(false);
+
+  const resolution = useMemo(() => resolveImageSource(src, boardId, filePath), [boardId, filePath, src]);
+
+  if (!resolution.src || failed) {
+    const attempted = src?.trim() || "(empty image reference)";
+    return (
+      <span className="my-3 block rounded-md border border-dashed border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900">
+        <span className="block font-medium">Could not resolve image reference</span>
+        <span className="mt-1 block break-all">{attempted}</span>
+      </span>
+    );
+  }
+
+  return (
+    <img
+      {...props}
+      src={resolution.src}
+      alt={alt ?? ""}
+      className={cn("my-3 max-w-full rounded-md border border-border bg-card/40", className)}
+      onError={(event) => {
+        setFailed(true);
+        onError?.(event);
+      }}
+    />
   );
 }
 
@@ -182,4 +284,55 @@ function extractText(node: React.ReactNode): string {
     return extractText((node as { props: { children?: React.ReactNode } }).props.children);
   }
   return "";
+}
+
+function getBlockedReferenceReason(filePath?: string): string {
+  if (!filePath) {
+    return "This shape does not include a source file path to resolve relative links.";
+  }
+  if (!isAbsoluteLocalPath(filePath)) {
+    return "The source file path is not absolute, so relative links cannot be resolved safely.";
+  }
+  return `Source file: ${filePath}`;
+}
+
+function resolveImageSource(
+  src: string | undefined,
+  boardId: string | undefined,
+  filePath: string | undefined,
+): { src: string | null } {
+  const raw = src?.trim();
+  if (!raw) return { src: null };
+  if (raw.startsWith("#")) return { src: null };
+  if (isExternalReference(raw)) return { src: raw };
+  if (!boardId) return { src: null };
+
+  return {
+    src: buildReferencedFileUrl(boardId, raw, filePath?.trim() || undefined),
+  };
+}
+
+function buildReferencedFileUrl(boardId: string, target: string, basePath?: string): string {
+  const params = new URLSearchParams();
+  params.set("target", target);
+  if (basePath) {
+    params.set("basePath", basePath);
+  }
+  return `/api/boards/${boardId}/files/content?${params.toString()}`;
+}
+
+function isAbsoluteLocalPath(value: string): boolean {
+  return value.startsWith("/") || value.startsWith("\\\\") || /^[a-zA-Z]:[\\/]/.test(value);
+}
+
+function isExternalReference(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (isAbsoluteLocalPath(trimmed)) return false;
+  if (trimmed.startsWith("//")) return true;
+
+  const schemeMatch = /^([a-zA-Z][a-zA-Z\d+.-]*):/.exec(trimmed);
+  if (!schemeMatch) return false;
+
+  return schemeMatch[1].toLowerCase() !== "file";
 }

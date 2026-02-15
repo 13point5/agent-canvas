@@ -21,6 +21,7 @@ export function MarkdownDialogOverlay() {
   const [markdown, setMarkdown] = useState("");
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export function MarkdownDialogOverlay() {
     setMarkdown("");
     setFileContent(null);
     setFileName(null);
+    setUploadedFilePath(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -42,6 +44,7 @@ export function MarkdownDialogOverlay() {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
+    setUploadedFilePath(file.webkitRelativePath || file.name);
     setName(file.name.replace(/\.(md|markdown|txt)$/i, ""));
     const reader = new FileReader();
     reader.onload = () => {
@@ -59,11 +62,11 @@ export function MarkdownDialogOverlay() {
       type: "markdown",
       x: center.x,
       y: center.y,
-      props: { name, content: resolvedMarkdown, filePath: "" },
+      props: { name, content: resolvedMarkdown, filePath: uploadedFilePath ?? "" },
     });
     setOpen(false);
     reset();
-  }, [editor, name, resolvedMarkdown, reset]);
+  }, [editor, name, resolvedMarkdown, reset, uploadedFilePath]);
 
   const handleOpenChange = useCallback(
     (value: boolean) => {
@@ -91,6 +94,7 @@ export function MarkdownDialogOverlay() {
                 onClick={() => {
                   setFileName(null);
                   setFileContent(null);
+                  setUploadedFilePath(null);
                   setName("");
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}

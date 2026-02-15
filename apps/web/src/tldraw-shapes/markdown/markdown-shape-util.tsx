@@ -104,6 +104,7 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
         <MarkdownViewer
           name={shape.props.name}
           content={shape.props.content}
+          filePath={shape.props.filePath}
           comments={shape.props.comments}
           width={shape.props.w}
           height={shape.props.h}
