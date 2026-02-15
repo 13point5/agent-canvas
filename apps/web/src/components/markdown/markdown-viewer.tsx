@@ -555,6 +555,7 @@ export function MarkdownViewer({
 
   const openCommentCount = openTextComments.length;
   const borderClass = isEditing ? "border border-chart-1" : "border border-border";
+  const interactiveOverlayClass = isEditing ? "pointer-events-auto" : "pointer-events-none";
 
   const floatingLayer = (
     <div className="pointer-events-none absolute left-0 top-0 z-10 w-full">
@@ -577,7 +578,7 @@ export function MarkdownViewer({
         <button
           type="button"
           title="Add comment"
-          className="pointer-events-auto absolute z-30 flex size-9 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition hover:bg-muted"
+          className={`${interactiveOverlayClass} absolute z-30 flex size-9 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition hover:bg-muted`}
           style={{
             top: selectionButtonTop,
             left: selectionButtonLeft,
@@ -605,7 +606,7 @@ export function MarkdownViewer({
 
       {composerAnchor && composerTop !== null && (
         <div
-          className="pointer-events-auto absolute z-40 flex min-h-[188px] flex-col rounded-xl border border-border bg-card/95 p-3 shadow-lg"
+          className={`${interactiveOverlayClass} absolute z-40 flex min-h-[188px] flex-col rounded-xl border border-border bg-card/95 p-3 shadow-lg`}
           style={{
             top: composerTop,
             left: marginLane.left,
@@ -639,7 +640,7 @@ export function MarkdownViewer({
             key={key}
             type="button"
             title={`${getAuthorLabel(comment)} • ${formatDateTime(comment.createdAt)}`}
-            className="pointer-events-auto absolute flex size-[26px] items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-sm transition hover:bg-muted data-[active=true]:border-chart-1 data-[active=true]:bg-chart-1/10"
+            className={`${interactiveOverlayClass} absolute flex size-[26px] items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-sm transition hover:bg-muted data-[active=true]:border-chart-1 data-[active=true]:bg-chart-1/10`}
             data-active={expandedCommentId === comment.id}
             style={{
               top,
@@ -670,7 +671,7 @@ export function MarkdownViewer({
         ) : (
           <div
             key={key}
-            className="pointer-events-auto absolute rounded-xl border border-border bg-card/95 p-3 shadow-sm data-[active=true]:border-chart-1 data-[active=true]:bg-chart-1/10"
+            className={`${interactiveOverlayClass} absolute rounded-xl border border-border bg-card/95 p-3 shadow-sm data-[active=true]:border-chart-1 data-[active=true]:bg-chart-1/10`}
             data-active={expandedCommentId === comment.id}
             style={{
               top,
@@ -699,7 +700,7 @@ export function MarkdownViewer({
 
       {marginLane.compact && expandedComment && expandedCommentLayout && (
         <div
-          className="pointer-events-auto absolute rounded-xl border border-border bg-card/95 p-3 shadow-sm"
+          className={`${interactiveOverlayClass} absolute rounded-xl border border-border bg-card/95 p-3 shadow-sm`}
           style={{
             top: expandedCommentLayout.top,
             left: expandedCommentLayout.left,
@@ -809,7 +810,10 @@ export function MarkdownViewer({
   );
 
   const viewerContent = (
-    <div className={`relative flex h-full flex-col overflow-hidden ${isEditing ? "select-text cursor-auto" : ""}`}>
+    <div
+      className={`relative flex h-full flex-col overflow-hidden ${isEditing ? "select-text cursor-auto" : ""}`}
+      style={{ pointerEvents: isEditing ? "auto" : "none" }}
+    >
       {editOverlay}
       {header}
       {panelLayout}
