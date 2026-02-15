@@ -264,6 +264,290 @@ function toYamlLikeString(value: unknown): string {
   return toYamlLikeLines(value).join("\n");
 }
 
+type MarkdownCommentAuthor = { type: "user" } | { type: "agent"; name: string };
+
+type MarkdownCommentTarget =
+  | { type: "shape" }
+  | {
+      type: "text";
+      start: number;
+      end: number;
+      quote: string;
+      prefix?: string;
+      suffix?: string;
+    }
+  | {
+      type: "line";
+      line: number;
+      lineText?: string;
+      previousLineText?: string | null;
+      nextLineText?: string | null;
+    }
+  | { type: "diagram"; diagramId: string };
+
+type MarkdownCommentMessage = {
+  id: string;
+  body: string;
+  author: MarkdownCommentAuthor;
+  createdAt: string;
+  editedAt?: string | null;
+};
+
+type MarkdownCommentThread = {
+  id: string;
+  target: MarkdownCommentTarget;
+  messages: MarkdownCommentMessage[];
+  resolvedAt: string | null;
+};
+
+type CommentAddOptions = {
+  board: string;
+  shape: string;
+  body: string;
+  comment?: string;
+  target?: string;
+  author: string;
+  agent?: string;
+  json?: boolean;
+};
+
+function asOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function asOptionalNullableString(value: unknown): string | null | undefined {
+  if (typeof value === "string" || value === null) return value;
+  return undefined;
+}
+
+function asNonEmptyString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`${fieldName} must be a non-empty string`);
+  }
+  return value;
+}
+
+function asInteger(value: unknown, fieldName: string, minimum: number): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < minimum) {
+    throw new Error(`${fieldName} must be an integer >= ${minimum}`);
+  }
+  return value;
+}
+
+function parseCommentAuthor(rawAuthor: unknown): MarkdownCommentAuthor {
+  if (!isRecord(rawAuthor)) {
+    return { type: "user" };
+  }
+
+  if (rawAuthor.type === "agent") {
+    if (typeof rawAuthor.name !== "string" || rawAuthor.name.trim().length === 0) {
+      return { type: "user" };
+    }
+    return {
+      type: "agent",
+      name: rawAuthor.name,
+    };
+  }
+
+  return { type: "user" };
+}
+
+function parseCommentTarget(rawTarget: unknown): MarkdownCommentTarget {
+  if (!isRecord(rawTarget) || typeof rawTarget.type !== "string") {
+    throw new Error("target must be an object with a string type field");
+  }
+
+  switch (rawTarget.type) {
+    case "shape":
+      return { type: "shape" };
+    case "text": {
+      const prefix = asOptionalString(rawTarget.prefix);
+      const suffix = asOptionalString(rawTarget.suffix);
+
+      return {
+        type: "text",
+        start: asInteger(rawTarget.start, "target.start", 0),
+        end: asInteger(rawTarget.end, "target.end", 0),
+        quote: asNonEmptyString(rawTarget.quote, "target.quote"),
+        ...(prefix !== undefined ? { prefix } : {}),
+        ...(suffix !== undefined ? { suffix } : {}),
+      };
+    }
+    case "line": {
+      const lineText = asOptionalString(rawTarget.lineText);
+      const previousLineText = asOptionalNullableString(rawTarget.previousLineText);
+      const nextLineText = asOptionalNullableString(rawTarget.nextLineText);
+
+      return {
+        type: "line",
+        line: asInteger(rawTarget.line, "target.line", 1),
+        ...(lineText !== undefined ? { lineText } : {}),
+        ...(previousLineText !== undefined ? { previousLineText } : {}),
+        ...(nextLineText !== undefined ? { nextLineText } : {}),
+      };
+    }
+    case "diagram":
+      return {
+        type: "diagram",
+        diagramId: asNonEmptyString(rawTarget.diagramId, "target.diagramId"),
+      };
+    default:
+      throw new Error("target.type must be one of: shape, text, line, diagram");
+  }
+}
+
+function parseCommentTargetJson(targetJson: string): MarkdownCommentTarget {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(targetJson);
+  } catch {
+    throw new Error("--target must be valid JSON");
+  }
+
+  return parseCommentTarget(parsed);
+}
+
+function parseCommentThread(rawComment: unknown, index: number): MarkdownCommentThread {
+  if (!isRecord(rawComment)) {
+    throw new Error(`Existing comment at index ${index} is not an object`);
+  }
+
+  const commentId = asNonEmptyString(rawComment.id, `comments[${index}].id`);
+  const target = parseCommentTarget(rawComment.target);
+
+  if (Array.isArray(rawComment.messages)) {
+    const messages: MarkdownCommentMessage[] = rawComment.messages.map((rawMessage, messageIndex) => {
+      if (!isRecord(rawMessage)) {
+        throw new Error(`comments[${index}].messages[${messageIndex}] is not an object`);
+      }
+
+      const messageId = asNonEmptyString(rawMessage.id, `comments[${index}].messages[${messageIndex}].id`);
+      const body = typeof rawMessage.body === "string" ? rawMessage.body : "";
+      const createdAt =
+        typeof rawMessage.createdAt === "string" && rawMessage.createdAt.length > 0
+          ? rawMessage.createdAt
+          : new Date().toISOString();
+      const editedAt = asOptionalNullableString(rawMessage.editedAt);
+
+      return {
+        id: messageId,
+        body,
+        author: parseCommentAuthor(rawMessage.author),
+        createdAt,
+        ...(editedAt !== undefined ? { editedAt } : {}),
+      };
+    });
+
+    return {
+      id: commentId,
+      target,
+      messages,
+      resolvedAt: typeof rawComment.resolvedAt === "string" ? rawComment.resolvedAt : null,
+    };
+  }
+
+  // Backward compatibility: single-message comments from older boards.
+  const fallbackCreatedAt =
+    typeof rawComment.createdAt === "string" && rawComment.createdAt.length > 0
+      ? rawComment.createdAt
+      : new Date().toISOString();
+
+  return {
+    id: commentId,
+    target,
+    messages: [
+      {
+        id: `${commentId}-message-0`,
+        body: typeof rawComment.body === "string" ? rawComment.body : "",
+        author: parseCommentAuthor(rawComment.author),
+        createdAt: fallbackCreatedAt,
+        editedAt: null,
+      },
+    ],
+    resolvedAt: typeof rawComment.resolvedAt === "string" ? rawComment.resolvedAt : null,
+  };
+}
+
+function parseCommentThreads(rawComments: unknown): MarkdownCommentThread[] {
+  if (!Array.isArray(rawComments)) {
+    return [];
+  }
+
+  return rawComments.map((rawComment, index) => parseCommentThread(rawComment, index));
+}
+
+function resolveMessageAuthor(authorType: string, agentName: string | undefined): MarkdownCommentAuthor {
+  const normalizedType = authorType.trim().toLowerCase();
+  if (normalizedType === "user") {
+    return { type: "user" };
+  }
+
+  if (normalizedType === "agent") {
+    const resolvedName = (agentName ?? process.env.AGENT_CANVAS_AGENT_NAME ?? "Codex").trim();
+    if (!resolvedName) {
+      throw new Error("Agent author requires a non-empty name (--agent <name> or AGENT_CANVAS_AGENT_NAME)");
+    }
+    return {
+      type: "agent",
+      name: resolvedName,
+    };
+  }
+
+  throw new Error("--author must be either 'user' or 'agent'");
+}
+
+function makeId(prefix: string): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function buildCommentMessage(body: string, author: MarkdownCommentAuthor): MarkdownCommentMessage {
+  const trimmed = body.trim();
+  if (!trimmed) {
+    throw new Error("--body must contain non-whitespace text");
+  }
+
+  return {
+    id: makeId("message"),
+    body: trimmed,
+    author,
+    createdAt: new Date().toISOString(),
+    editedAt: null,
+  };
+}
+
+function getMarkdownShapeFromShapes(
+  shapes: unknown[],
+  shapeId: string,
+): {
+  id: string;
+  comments: MarkdownCommentThread[];
+} {
+  const found = shapes.find((shape) => isRecord(shape) && shape.id === shapeId);
+  if (!found) {
+    throw new Error(`Shape not found: ${shapeId}`);
+  }
+
+  if (!isRecord(found)) {
+    throw new Error(`Shape ${shapeId} is malformed`);
+  }
+
+  if (found.type !== "markdown") {
+    throw new Error(`Shape ${shapeId} is not a markdown shape`);
+  }
+
+  const props = isRecord(found.props) ? found.props : {};
+  const comments = parseCommentThreads(props.comments);
+
+  return {
+    id: shapeId,
+    comments,
+  };
+}
+
 // ─── open ───────────────────────────────────────────
 
 program
@@ -707,6 +991,121 @@ program
       console.log(result.filePath);
     } catch (error) {
       if (error instanceof ServerNotRunningError || error instanceof ApiError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      throw error;
+    }
+  });
+
+// ─── comments ─────────────────────────────────────
+
+const comments = program.command("comments").description("Manage markdown comments");
+
+comments
+  .command("add")
+  .description(
+    "Add a comment message to a markdown shape. Creates a new thread with --target, or appends to an existing thread with --comment.",
+  )
+  .requiredOption("--board <id>", "Board ID")
+  .requiredOption("--shape <id>", "Markdown shape ID")
+  .requiredOption("--body <text>", "Comment message body")
+  .option("--comment <id>", "Existing comment thread ID (append a message)")
+  .option("--target <json>", 'JSON target for a new thread, e.g. \'{"type":"text","start":10,"end":30,"quote":"abc"}\'')
+  .option("--author <type>", "Message author type: user or agent", "agent")
+  .option("--agent <name>", "Agent name for --author agent (defaults to AGENT_CANVAS_AGENT_NAME or Codex)")
+  .option("--json", "Output machine-readable JSON")
+  .action(async (options: CommentAddOptions) => {
+    try {
+      if (options.comment && options.target) {
+        console.error("--comment and --target are mutually exclusive");
+        process.exit(1);
+      }
+
+      if (!options.comment && !options.target) {
+        console.error("--target is required when creating a new thread");
+        process.exit(1);
+      }
+
+      const author = resolveMessageAuthor(options.author, options.agent);
+      const newMessage = buildCommentMessage(options.body, author);
+
+      const { shapes: shapeSnapshots } = await getBoardShapes(options.board);
+      const markdownShape = getMarkdownShapeFromShapes(shapeSnapshots, options.shape);
+
+      let action: "thread_created" | "message_added";
+      let nextComments: MarkdownCommentThread[];
+      let threadId: string;
+
+      if (options.comment) {
+        const existingThreadIndex = markdownShape.comments.findIndex((comment) => comment.id === options.comment);
+        if (existingThreadIndex < 0) {
+          console.error(`Comment thread not found on shape ${options.shape}: ${options.comment}`);
+          process.exit(1);
+        }
+
+        threadId = options.comment;
+        nextComments = markdownShape.comments.map((comment, index) => {
+          if (index !== existingThreadIndex) return comment;
+          return {
+            ...comment,
+            messages: [...comment.messages, newMessage],
+          };
+        });
+        action = "message_added";
+      } else {
+        const target = parseCommentTargetJson(options.target ?? "");
+        threadId = makeId("comment");
+
+        nextComments = [
+          ...markdownShape.comments,
+          {
+            id: threadId,
+            target,
+            messages: [newMessage],
+            resolvedAt: null,
+          },
+        ];
+        action = "thread_created";
+      }
+
+      const updateResult = await updateBoardShapes(options.board, [
+        {
+          id: markdownShape.id,
+          type: "markdown",
+          props: {
+            comments: nextComments,
+          },
+        },
+      ]);
+
+      const result = {
+        boardId: options.board,
+        shapeId: markdownShape.id,
+        threadId,
+        messageId: newMessage.id,
+        action,
+        updatedIds: updateResult.updatedIds,
+      };
+
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(
+          `${action === "thread_created" ? "Created comment thread" : "Added message"} ${threadId} on markdown shape ${markdownShape.id}`,
+        );
+        if (author.type === "agent") {
+          console.log(`Author: agent (${author.name})`);
+        } else {
+          console.log("Author: user");
+        }
+      }
+    } catch (error) {
+      if (error instanceof ServerNotRunningError || error instanceof ApiError) {
+        console.error(error.message);
+        process.exit(1);
+      }
+      if (error instanceof Error) {
         console.error(error.message);
         process.exit(1);
       }

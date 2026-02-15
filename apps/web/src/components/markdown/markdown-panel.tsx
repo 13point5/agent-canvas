@@ -188,7 +188,7 @@ export function MarkdownPanel({
   } as Components;
 
   return (
-    <div ref={setScrollRef} className="relative h-full overflow-auto px-4 py-3">
+    <div ref={setScrollRef} className="relative h-full overflow-auto bg-white px-4 py-3">
       <div ref={setContentRef} className={cn("prose-sm max-w-prose mx-auto text-foreground")}>
         <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} components={components}>
           {markdown}

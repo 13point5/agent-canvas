@@ -92,6 +92,24 @@ agent-canvas shapes get --board <board-id> --ids '["shape:abc", "shape:def"]'
 # Read full shape payloads as JSON (for file-based analysis)
 agent-canvas shapes get --board <board-id> --full --json > shapes.json
 
+# Add an agent comment thread to a markdown shape
+agent-canvas comments add \
+  --board <board-id> \
+  --shape <markdown-shape-id> \
+  --target '{"type":"text","start":10,"end":30,"quote":"selected text"}' \
+  --body "Please tighten this section" \
+  --author agent \
+  --agent "Codex"
+
+# Add another message to an existing thread
+agent-canvas comments add \
+  --board <board-id> \
+  --shape <markdown-shape-id> \
+  --comment <thread-id> \
+  --body "I pushed a revision for this" \
+  --author agent \
+  --agent "Codex"
+
 # Stop the server
 agent-canvas close
 ```
