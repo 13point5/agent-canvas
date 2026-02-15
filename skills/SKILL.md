@@ -36,6 +36,34 @@ agent-canvas boards rename "New Name" --id <board-id>
 agent-canvas shapes get --board <board-id>
 ```
 
+### Capturing Shape Screenshots
+
+Capture a PNG screenshot of specific shapes by ID. This uses TLDraw export in the browser client and writes the image to a temp file on disk.
+
+```bash
+# Capture selected shapes and print the temp file path
+agent-canvas screenshot --board <board-id> --ids '["shape:abc","shape:def"]'
+```
+
+Flags:
+
+- `--board` — target board ID
+- `--ids` — JSON array of real TLDraw shape IDs (from `shapes get` or create response)
+
+Default output:
+
+- prints only the absolute temp file path (for example `/var/folders/.../agent-canvas-screenshot-<board>-<uuid>.png`)
+
+Quick workflow:
+
+```bash
+# 1) Read board shapes
+agent-canvas shapes get --board <board-id>
+
+# 2) Copy desired IDs from the response and capture
+agent-canvas screenshot --board <board-id> --ids '["shape:abc","shape:def"]'
+```
+
 ### Creating Shapes
 
 Pass a JSON array of shape objects. Each shape follows TLDraw's shape format.
@@ -529,4 +557,5 @@ agent-canvas shapes delete --board <board-id> --ids '["shape:abc", "shape:def"]'
 3. Use `idMap` from the response to reference shapes in subsequent calls
 4. Read shapes with `shapes get` to inspect current state
 5. Update shapes with `shapes update` to change position, props, or text
-6. Delete shapes with `shapes delete` when they are no longer needed
+6. Capture screenshots of selected shapes with `screenshot` when needed
+7. Delete shapes with `shapes delete` when they are no longer needed
