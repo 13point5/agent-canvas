@@ -5,6 +5,7 @@ interface TerminalViewerProps {
   name: string;
   width: number;
   height: number;
+  sessionId: string;
   isEditing: boolean;
 }
 
@@ -19,7 +20,7 @@ async function ensureGhosttyInitialized() {
   await ghosttyInitPromise;
 }
 
-export function TerminalViewer({ name, width, height, isEditing }: TerminalViewerProps) {
+export function TerminalViewer({ name, width, height, sessionId, isEditing }: TerminalViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const [connectionState, setConnectionState] = useState<ConnectionState>("disconnected");
@@ -47,8 +48,9 @@ export function TerminalViewer({ name, width, height, isEditing }: TerminalViewe
 
         const terminal = new Terminal({
           cursorBlink: true,
-          fontSize: 13,
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+          fontSize: 14,
+          fontFamily:
+            '"MesloLGS NF", "JetBrainsMono Nerd Font", "JetBrains Mono", "Hack Nerd Font", "CaskaydiaCove Nerd Font", Menlo, Monaco, "SFMono-Regular", monospace',
           theme: {
             background: "#090f1b",
             foreground: "#e2e8f0",
@@ -70,8 +72,9 @@ export function TerminalViewer({ name, width, height, isEditing }: TerminalViewe
         window.addEventListener("resize", handleWindowResize);
 
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const session = encodeURIComponent(sessionId);
         socket = new WebSocket(
-          `${protocol}//${window.location.host}/ws/terminal?cols=${terminal.cols}&rows=${terminal.rows}`,
+          `${protocol}//${window.location.host}/ws/terminal?session=${session}&cols=${terminal.cols}&rows=${terminal.rows}`,
         );
 
         socket.onopen = () => {
@@ -143,7 +146,7 @@ export function TerminalViewer({ name, width, height, isEditing }: TerminalViewe
       terminalRef.current?.dispose();
       terminalRef.current = null;
     };
-  }, []);
+  }, [sessionId]);
 
   useEffect(() => {
     if (isEditing) {

@@ -112,7 +112,13 @@ export class TerminalShapeUtil extends BaseBoxShapeUtil<TerminalShape> {
             : undefined
         }
       >
-        <TerminalViewer name={shape.props.name} width={shape.props.w} height={shape.props.h} isEditing={isEditing} />
+        <TerminalViewer
+          name={shape.props.name}
+          width={shape.props.w}
+          height={shape.props.h}
+          sessionId={shape.id}
+          isEditing={isEditing}
+        />
       </HTMLContainer>
     );
   }

@@ -4,7 +4,7 @@ import { removeLockfile, writeLockfile } from "@/lib/lockfile";
 import { getBoardsDir, listDirs } from "@/lib/storage";
 import { websocketHandler } from "@/lib/ws";
 
-type SocketData = { kind: "board" } | { kind: "terminal"; cols: number; rows: number };
+type SocketData = { kind: "board" } | { kind: "terminal"; sessionId: string; cols: number; rows: number };
 
 export { createApp } from "@/app";
 export {
@@ -63,9 +63,11 @@ if (isMain) {
       if (url.pathname === "/ws/terminal") {
         const cols = Number.parseInt(url.searchParams.get("cols") ?? "", 10);
         const rows = Number.parseInt(url.searchParams.get("rows") ?? "", 10);
+        const sessionId = url.searchParams.get("session") || `terminal-${crypto.randomUUID()}`;
         const upgraded = server.upgrade(req, {
           data: {
             kind: "terminal",
+            sessionId,
             cols: Number.isFinite(cols) ? cols : 80,
             rows: Number.isFinite(rows) ? rows : 24,
           },
