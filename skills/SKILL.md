@@ -100,12 +100,20 @@ Block-level structures — bullet lists and ordered lists:
           "content": [
             {
               "type": "listItem",
-              "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "First" }] }]
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "First" }]
+                }
+              ]
             },
             {
               "type": "listItem",
               "content": [
-                { "type": "paragraph", "content": [{ "type": "text", "text": "Second" }] }
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Second" }]
+                }
               ]
             }
           ]
@@ -128,13 +136,19 @@ Block-level structures — bullet lists and ordered lists:
             {
               "type": "listItem",
               "content": [
-                { "type": "paragraph", "content": [{ "type": "text", "text": "Step 1" }] }
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Step 1" }]
+                }
               ]
             },
             {
               "type": "listItem",
               "content": [
-                { "type": "paragraph", "content": [{ "type": "text", "text": "Step 2" }] }
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Step 2" }]
+                }
               ]
             }
           ]
@@ -166,7 +180,13 @@ You can combine this with bold for emphasis:
       "content": [
         {
           "type": "paragraph",
-          "content": [{ "type": "text", "text": "Section Title", "marks": [{ "type": "bold" }] }]
+          "content": [
+            {
+              "type": "text",
+              "text": "Section Title",
+              "marks": [{ "type": "bold" }]
+            }
+          ]
         }
       ]
     },
@@ -373,6 +393,83 @@ agent-canvas shapes create --board <board-id> --shapes '[
   {"type": "html", "x": 100, "y": 100, "props": {"name": "Counter", "html": "<div style=\"text-align:center;padding:20px;font-family:sans-serif\"><h2 id=\"count\">0</h2><button onclick=\"document.getElementById('"'"'count'"'"').textContent=++window.n\">+1</button><script>window.n=0<\/script></div>"}}
 ]'
 ```
+
+### Code Diff (Small-Hunk Code Reviews)
+
+Use `code-diff` shapes to compare focused code snippets. This is the preferred shape for PR review because it supports old/new content side by side with syntax highlighting (based on file extension).
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {
+    "type": "code-diff",
+    "x": 100,
+    "y": 100,
+    "props": {
+      "w": 560,
+      "h": 300,
+      "oldFile": {
+        "name": "apps/web/src/tldraw-config/markdown-overrides.ts",
+        "contents": "label: \"tool.markdown\" as \"tool.select\","
+      },
+      "newFile": {
+        "name": "apps/web/src/tldraw-config/markdown-overrides.ts",
+        "contents": "label: \"tool.markdown\","
+      }
+    }
+  }
+]'
+```
+
+Code diff props:
+
+- `w`, `h` — optional width/height (default 600×400)
+- `oldFile.name`, `newFile.name` — file path with extension (for language detection)
+- `oldFile.contents`, `newFile.contents` — snippet text to compare
+
+#### New File / Added-Hunk Convention
+
+When the PR adds a new file (or a snippet that has no old-side content), use the same file path on both sides and keep old contents empty:
+
+```json
+{
+  "type": "code-diff",
+  "props": {
+    "oldFile": {
+      "name": "apps/web/src/tldraw-shapes/code-diff/code-diff-shape-util.tsx",
+      "contents": ""
+    },
+    "newFile": {
+      "name": "apps/web/src/tldraw-shapes/code-diff/code-diff-shape-util.tsx",
+      "contents": "export class CodeDiffShapeUtil extends BaseBoxShapeUtil<CodeDiffShape> { ... }"
+    }
+  }
+}
+```
+
+Do not add placeholder comments like `"// file did not exist on main"` in `oldFile.contents`.
+
+## PR Review Workflow (Logical Groups + Small Hunks)
+
+Use this workflow for richer code reviews on the whiteboard.
+
+1. Diff against `main` and identify logical pieces of work (not file-by-file dumps).
+2. For each logical group, create a short heading text shape.
+3. Add multiple small `code-diff` shapes per group, each scoped to a focused hunk (for example 5-40 lines).
+4. It is expected to have multiple shapes from the same file in one group if they represent different concerns.
+5. Add targeted context snippets from untouched files when needed to explain behavior.
+6. Connect related snippets with arrow shapes and short rationale labels.
+7. Add shapes in small batches (a few at a time), then inspect and reposition to avoid overlap.
+8. Keep filenames in `oldFile.name/newFile.name` as real paths with extensions (`.ts`, `.tsx`, etc.) for proper rendering.
+9. Deduplicate visually redundant snippets and avoid exact duplicate payloads.
+
+### Rich Review Add-ons (Screenshots + Diagrams)
+
+Use screenshots and architecture diagrams to improve review comprehension.
+
+- Capture relevant UI snapshots with `agent-browser` (or equivalent), using pan/zoom controls to frame the right area.
+- Add screenshots as `image` shapes and place them near the matching logical group.
+- Add arrows from group headings/snippets to each screenshot to make relevance explicit.
+- Add architecture diagrams and sequence diagrams as shape compositions (for example `geo` + `arrow` + `text`) and place them near the relevant review group or as a board-level summary.
 
 ## Updating Shapes
 
