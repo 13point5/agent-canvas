@@ -1,3 +1,5 @@
+import { ArrowRight01Icon, Cancel01Icon, FullScreenIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -103,16 +105,11 @@ export function DiagramsPanel({
               className="flex w-full items-center gap-2 bg-secondary/30 px-3 py-1 transition-colors hover:bg-accent/40 cursor-pointer select-none"
               onClick={() => toggleCollapse(item.key)}
             >
-              <svg
-                aria-hidden="true"
-                className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${isCollapsed ? "" : "rotate-90"}`}
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M4 2l4 4-4 4" />
-              </svg>
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                className={`size-3 shrink-0 text-muted-foreground transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+                strokeWidth={2}
+              />
               <span className="truncate text-xs font-medium text-muted-foreground">{item.title}</span>
               <Button
                 variant="ghost"
@@ -128,20 +125,7 @@ export function DiagramsPanel({
                   onUnpinImage(item.src);
                 }}
               >
-                <svg
-                  aria-hidden="true"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="4" y1="4" x2="12" y2="12" />
-                  <line x1="12" y1="4" x2="4" y2="12" />
-                </svg>
+                <HugeiconsIcon icon={Cancel01Icon} className="size-3" strokeWidth={2} />
               </Button>
             </button>
 
@@ -163,22 +147,7 @@ export function DiagramsPanel({
                           setFullscreenImageTitle(item.title);
                         }}
                       >
-                        <svg
-                          aria-hidden="true"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="1 5 1 1 5 1" />
-                          <polyline points="11 1 15 1 15 5" />
-                          <polyline points="15 11 15 15 11 15" />
-                          <polyline points="5 15 1 15 1 11" />
-                        </svg>
+                        <HugeiconsIcon icon={FullScreenIcon} className="size-3.5" strokeWidth={2} />
                       </Button>
                     </div>
                   </div>
