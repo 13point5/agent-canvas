@@ -12,6 +12,14 @@ const markdownCommentAuthorProps = T.union("type", {
   }),
 });
 
+const markdownCommentMessageProps = T.object({
+  id: T.string,
+  body: T.string,
+  author: markdownCommentAuthorProps,
+  createdAt: T.string,
+  editedAt: T.optional(T.nullable(T.string)),
+});
+
 const markdownCommentTargetProps = T.union("type", {
   shape: T.object({
     type: T.literal("shape"),
@@ -40,13 +48,18 @@ const markdownCommentTargetProps = T.union("type", {
 const markdownCommentProps = T.object({
   id: T.string,
   target: markdownCommentTargetProps,
-  body: T.string,
-  author: markdownCommentAuthorProps,
-  createdAt: T.string,
+  messages: T.arrayOf(markdownCommentMessageProps),
   resolvedAt: T.nullable(T.string),
 });
 
 export type MarkdownCommentAuthor = { type: "user" } | { type: "agent"; name: string };
+export type MarkdownCommentMessage = {
+  id: string;
+  body: string;
+  author: MarkdownCommentAuthor;
+  createdAt: string;
+  editedAt?: string | null;
+};
 
 export type MarkdownShapeCommentTarget = { type: "shape" };
 export type MarkdownTextCommentTarget = {
@@ -74,9 +87,7 @@ export type MarkdownCommentTarget =
 export type MarkdownComment = {
   id: string;
   target: MarkdownCommentTarget;
-  body: string;
-  author: MarkdownCommentAuthor;
-  createdAt: string;
+  messages: MarkdownCommentMessage[];
   resolvedAt: string | null;
 };
 

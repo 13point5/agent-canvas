@@ -1,8 +1,10 @@
 import {
+  ArrowRight01Icon,
   Cancel01Icon,
   Comment01Icon,
   CommentAdd01Icon,
   FullScreenIcon,
+  Tick01Icon,
   ViewSidebarRightIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -13,7 +15,12 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { parseMarkdown } from "@/lib/parse-markdown";
-import type { MarkdownComment, MarkdownTextCommentTarget } from "@/tldraw-shapes/markdown/markdown-shape-props";
+import type {
+  MarkdownComment,
+  MarkdownCommentAuthor,
+  MarkdownCommentMessage,
+  MarkdownTextCommentTarget,
+} from "@/tldraw-shapes/markdown/markdown-shape-props";
 import { DiagramsPanel } from "./diagrams-panel";
 import { MarkdownPanel } from "./markdown-panel";
 
@@ -40,7 +47,7 @@ type PositionedComment = {
   key: string;
   top: number;
   slot: number;
-  comment: MarkdownComment;
+  comment: MarkdownComment & { target: MarkdownTextCommentTarget };
 };
 
 type HighlightRect = {
@@ -61,6 +68,7 @@ const COMMENT_SELECTION_BUTTON_SIZE = 36;
 const COMMENT_BUTTON_TO_ICON_GAP = 2;
 const COMMENT_LINE_GROUP_TOLERANCE = 12;
 const SELECTION_CONTEXT_CHARS = 24;
+const COMMENT_INTERACTIVE_SELECTOR = '[data-comment-interactive="true"]';
 
 export function MarkdownViewer({
   name,
@@ -83,12 +91,19 @@ export function MarkdownViewer({
   const [composerAnchor, setComposerAnchor] = useState<TextSelectionAnchor | null>(null);
   const [commentBody, setCommentBody] = useState("");
   const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
+  const [editingMessageKey, setEditingMessageKey] = useState<string | null>(null);
+  const [editingMessageBody, setEditingMessageBody] = useState("");
+  const [replyingCommentId, setReplyingCommentId] = useState<string | null>(null);
+  const [replyBody, setReplyBody] = useState("");
+  const [commentCardHeights, setCommentCardHeights] = useState<Record<string, number>>({});
 
   const [scrollContainerEl, setScrollContainerEl] = useState<HTMLDivElement | null>(null);
   const [contentRootEl, setContentRootEl] = useState<HTMLDivElement | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
 
   const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const commentCardResizeObserversRef = useRef<Map<string, ResizeObserver>>(new Map());
 
   const applyComments = useCallback(
     (updater: (current: MarkdownComment[]) => MarkdownComment[]) => {
@@ -110,6 +125,118 @@ export function MarkdownViewer({
       );
     },
     [applyComments],
+  );
+
+  const handleStartEditMessage = useCallback((commentId: string, message: MarkdownCommentMessage) => {
+    setEditingMessageKey(makeMessageKey(commentId, message.id));
+    setEditingMessageBody(message.body);
+  }, []);
+
+  const handleCancelEditMessage = useCallback(() => {
+    setEditingMessageKey(null);
+    setEditingMessageBody("");
+  }, []);
+
+  const handleSaveEditMessage = useCallback(
+    (commentId: string, messageId: string) => {
+      const nextBody = editingMessageBody.trim();
+      if (!nextBody) return;
+
+      applyComments((current) =>
+        current.map((comment) => {
+          if (comment.id !== commentId) return comment;
+          return {
+            ...comment,
+            messages: comment.messages.map((message) => {
+              if (message.id !== messageId) return message;
+              return {
+                ...message,
+                body: nextBody,
+                editedAt: new Date().toISOString(),
+              };
+            }),
+          };
+        }),
+      );
+
+      setEditingMessageKey(null);
+      setEditingMessageBody("");
+    },
+    [applyComments, editingMessageBody],
+  );
+
+  const handleStartReply = useCallback((commentId: string) => {
+    setReplyingCommentId(commentId);
+    setReplyBody("");
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingCommentId(null);
+    setReplyBody("");
+  }, []);
+
+  const handleCommentCardMeasure = useCallback((commentId: string, node: HTMLDivElement | null) => {
+    const observers = commentCardResizeObserversRef.current;
+    const existingObserver = observers.get(commentId);
+    if (existingObserver) {
+      existingObserver.disconnect();
+      observers.delete(commentId);
+    }
+
+    if (!node) return;
+
+    const measure = () => {
+      const nextHeight = Math.ceil(node.getBoundingClientRect().height);
+      if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
+
+      setCommentCardHeights((current) => {
+        if (current[commentId] === nextHeight) return current;
+        return {
+          ...current,
+          [commentId]: nextHeight,
+        };
+      });
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    observers.set(commentId, observer);
+  }, []);
+
+  const handleSubmitReply = useCallback(
+    (commentId: string) => {
+      const body = replyBody.trim();
+      if (!body) return;
+
+      const now = new Date().toISOString();
+      const messageId = makeCommentMessageId();
+
+      applyComments((current) =>
+        current.map((comment) => {
+          if (comment.id !== commentId) return comment;
+          return {
+            ...comment,
+            resolvedAt: null,
+            messages: [
+              ...comment.messages,
+              {
+                id: messageId,
+                body,
+                author: { type: "user" },
+                createdAt: now,
+                editedAt: null,
+              },
+            ],
+          };
+        }),
+      );
+
+      setReplyingCommentId(null);
+      setReplyBody("");
+    },
+    [applyComments, replyBody],
   );
 
   const clearNativeSelection = useCallback(() => {
@@ -145,10 +272,14 @@ export function MarkdownViewer({
     const body = commentBody.trim();
     if (!body) return;
 
+    const now = new Date().toISOString();
+    const commentId = makeCommentId();
+    const messageId = makeCommentMessageId();
+
     applyComments((current) => [
       ...current,
       {
-        id: makeCommentId(),
+        id: commentId,
         target: {
           type: "text",
           start: composerAnchor.start,
@@ -157,9 +288,15 @@ export function MarkdownViewer({
           prefix: composerAnchor.prefix,
           suffix: composerAnchor.suffix,
         },
-        body,
-        author: { type: "user" },
-        createdAt: new Date().toISOString(),
+        messages: [
+          {
+            id: messageId,
+            body,
+            author: { type: "user" },
+            createdAt: now,
+            editedAt: null,
+          },
+        ],
         resolvedAt: null,
       },
     ]);
@@ -212,19 +349,53 @@ export function MarkdownViewer({
     setPinnedImageSources((prev) => prev.filter((value) => value !== src));
   }, []);
 
-  const openTextComments = useMemo(
+  const textComments = useMemo(
     () =>
       comments.filter(
-        (comment): comment is MarkdownComment & { target: MarkdownTextCommentTarget } =>
-          comment.resolvedAt === null && comment.target.type === "text",
+        (comment): comment is MarkdownComment & { target: MarkdownTextCommentTarget } => comment.target.type === "text",
       ),
     [comments],
   );
+
+  const openTextComments = useMemo(() => textComments.filter((comment) => comment.resolvedAt === null), [textComments]);
 
   useEffect(() => {
     if (!composerAnchor) return;
     commentInputRef.current?.focus();
   }, [composerAnchor]);
+
+  useEffect(() => {
+    if (!replyingCommentId) return;
+    replyInputRef.current?.focus();
+  }, [replyingCommentId]);
+
+  useEffect(() => {
+    const observers = commentCardResizeObserversRef.current;
+    return () => {
+      for (const observer of observers.values()) {
+        observer.disconnect();
+      }
+      observers.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    setCommentCardHeights((current) => {
+      const liveIds = new Set(textComments.map((comment) => comment.id));
+      let changed = false;
+      const next: Record<string, number> = {};
+
+      for (const [commentId, height] of Object.entries(current)) {
+        if (liveIds.has(commentId)) {
+          next[commentId] = height;
+        } else {
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
+    });
+  }, [textComments]);
 
   useEffect(() => {
     if (pinnedDiagramIds.length > 0 || pinnedImageSources.length > 0) return;
@@ -370,9 +541,9 @@ export function MarkdownViewer({
 
   useEffect(() => {
     if (!expandedCommentId) return;
-    if (openTextComments.some((comment) => comment.id === expandedCommentId)) return;
+    if (textComments.some((comment) => comment.id === expandedCommentId)) return;
     setExpandedCommentId(null);
-  }, [expandedCommentId, openTextComments]);
+  }, [expandedCommentId, textComments]);
 
   const effectiveViewportWidth = viewportWidth || scrollContainerEl?.clientWidth || 0;
 
@@ -491,9 +662,13 @@ export function MarkdownViewer({
   const positionedComments = useMemo<PositionedComment[]>(() => {
     if (!contentRootEl || !scrollContainerEl || effectiveViewportWidth <= 0) return [];
 
-    const candidates: Array<{ key: string; targetTop: number; comment: MarkdownComment }> = [];
+    const candidates: Array<{
+      key: string;
+      targetTop: number;
+      comment: MarkdownComment & { target: MarkdownTextCommentTarget };
+    }> = [];
 
-    for (const comment of openTextComments) {
+    for (const comment of textComments) {
       const range = resolveTextAnchorRange(comment.target, contentRootEl);
       if (!range) continue;
 
@@ -512,7 +687,7 @@ export function MarkdownViewer({
       const rows: Array<{
         anchorTop: number;
         top: number;
-        items: Array<{ key: string; comment: MarkdownComment }>;
+        items: Array<{ key: string; comment: MarkdownComment & { target: MarkdownTextCommentTarget } }>;
       }> = [];
 
       let nextTop = 8;
@@ -555,7 +730,7 @@ export function MarkdownViewer({
 
     const rows: Array<{
       anchorTop: number;
-      items: Array<{ key: string; comment: MarkdownComment }>;
+      items: Array<{ key: string; comment: MarkdownComment & { target: MarkdownTextCommentTarget } }>;
     }> = [];
 
     for (const candidate of candidates) {
@@ -594,7 +769,9 @@ export function MarkdownViewer({
           comment: item.comment,
         });
 
-        cursorTop += estimateCommentCardHeight(item.comment, marginLane.width) + COMMENT_CARD_STACK_GAP;
+        cursorTop +=
+          (commentCardHeights[item.comment.id] ?? estimateCommentCardHeight(item.comment, marginLane.width)) +
+          COMMENT_CARD_STACK_GAP;
       }
 
       nextTop = cursorTop + COMMENT_ICON_STACK_GAP;
@@ -602,17 +779,18 @@ export function MarkdownViewer({
 
     return positioned;
   }, [
+    commentCardHeights,
     contentRootEl,
     effectiveViewportWidth,
     marginLane.compact,
     marginLane.width,
-    openTextComments,
     scrollContainerEl,
+    textComments,
   ]);
 
   const expandedComment = useMemo(
-    () => openTextComments.find((comment) => comment.id === expandedCommentId) ?? null,
-    [expandedCommentId, openTextComments],
+    () => textComments.find((comment) => comment.id === expandedCommentId) ?? null,
+    [expandedCommentId, textComments],
   );
 
   const expandedCommentAnchorTop = useMemo(
@@ -649,6 +827,214 @@ export function MarkdownViewer({
   const borderClass = isEditing ? "border border-chart-1" : "border border-border";
   const interactiveOverlayClass = isEditing ? "pointer-events-auto" : "pointer-events-none";
 
+  const handleViewerPointerDownCapture = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!expandedCommentId) return;
+      if (!(event.target instanceof Element)) {
+        setExpandedCommentId(null);
+        return;
+      }
+      if (event.target.closest(COMMENT_INTERACTIVE_SELECTOR)) return;
+      setExpandedCommentId(null);
+    },
+    [expandedCommentId],
+  );
+
+  const renderCommentCard = useCallback(
+    (
+      comment: MarkdownComment & { target: MarkdownTextCommentTarget },
+      options?: {
+        active?: boolean;
+        onAfterResolve?: () => void;
+      },
+    ) => {
+      const isResolved = comment.resolvedAt !== null;
+      const isReplying = replyingCommentId === comment.id;
+      const canSubmitReply = isReplying && replyBody.trim().length > 0;
+      const latestMessage = getLatestCommentMessage(comment);
+
+      if (isResolved && !options?.active) {
+        return (
+          <button
+            type="button"
+            data-comment-interactive="true"
+            className="w-full rounded-xl border border-border/70 bg-white px-2 py-1.5 text-left shadow-sm transition hover:bg-muted/30"
+            onClick={() => setExpandedCommentId(comment.id)}
+          >
+            <div className="flex items-center gap-2">
+              <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <HugeiconsIcon icon={Tick01Icon} className="size-3.5" strokeWidth={2.4} />
+              </span>
+              <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                {latestMessage?.body.trim() || "No messages in thread"}
+              </p>
+              {comment.resolvedAt && (
+                <span className="shrink-0 text-[11px] text-muted-foreground">{formatDateTime(comment.resolvedAt)}</span>
+              )}
+              <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground">
+                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" strokeWidth={2} />
+              </span>
+            </div>
+          </button>
+        );
+      }
+
+      return (
+        <div
+          data-comment-interactive="true"
+          className={`rounded-xl border bg-white p-3 shadow-sm ${
+            options?.active
+              ? "border-chart-1 ring-1 ring-chart-1/45"
+              : isResolved
+                ? "border-border/70"
+                : "border-border"
+          }`}
+        >
+          {comment.messages.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No messages</p>
+          ) : (
+            <div className="overflow-hidden rounded-lg bg-muted/45 divide-y divide-border/60">
+              {comment.messages.map((message) => {
+                const messageKey = makeMessageKey(comment.id, message.id);
+                const isEditingMessage = editingMessageKey === messageKey;
+
+                return (
+                  <div key={message.id} className="px-2.5 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[11px] font-medium">
+                        {getAuthorLabel(message.author)}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {formatDateTime(message.editedAt ?? message.createdAt)}
+                      </span>
+                      {message.editedAt && (
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase">Edited</span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        className="ml-auto h-6 px-2 text-[11px]"
+                        onClick={() => handleStartEditMessage(comment.id, message)}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+
+                    {isEditingMessage ? (
+                      <>
+                        <Textarea
+                          value={editingMessageBody}
+                          onChange={(event) => setEditingMessageBody(event.target.value)}
+                          className="mt-2 min-h-[86px] resize-none bg-background/90 text-sm"
+                        />
+                        <div className="mt-2 flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={handleCancelEditMessage}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="xs"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() => handleSaveEditMessage(comment.id, message.id)}
+                            disabled={editingMessageBody.trim().length === 0}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed">{message.body}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {isReplying && !isResolved && (
+            <div className="mt-2 rounded-lg bg-muted/45 p-2">
+              <Textarea
+                ref={replyInputRef}
+                value={replyBody}
+                onChange={(event) => setReplyBody(event.target.value)}
+                onKeyDown={(event) => {
+                  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                    event.preventDefault();
+                    handleSubmitReply(comment.id);
+                  }
+                }}
+                placeholder="Reply"
+                className="min-h-[78px] resize-none bg-background/90 text-sm"
+              />
+            </div>
+          )}
+
+          <div className="mt-2 flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="xs"
+              className="h-7 min-w-0 flex-1 gap-1.5 px-2 text-[11px]"
+              disabled={isResolved}
+              onClick={() => {
+                if (isResolved) return;
+                if (!isReplying) {
+                  handleStartReply(comment.id);
+                  return;
+                }
+                if (canSubmitReply) {
+                  handleSubmitReply(comment.id);
+                  return;
+                }
+                handleCancelReply();
+              }}
+            >
+              <HugeiconsIcon icon={Comment01Icon} className="size-3.5" strokeWidth={2} />
+              Reply
+            </Button>
+            <Button
+              variant="outline"
+              size="xs"
+              className="h-7 min-w-0 flex-1 gap-1.5 px-2 text-[11px]"
+              onClick={() => {
+                if (!isResolved) {
+                  if (replyingCommentId === comment.id) {
+                    handleCancelReply();
+                  }
+                  if (expandedCommentId === comment.id) {
+                    setExpandedCommentId(null);
+                    options?.onAfterResolve?.();
+                  }
+                }
+                handleToggleCommentResolved(comment.id, !isResolved);
+              }}
+            >
+              <HugeiconsIcon icon={Tick01Icon} className="size-3.5" strokeWidth={2} />
+              {isResolved ? "Reopen" : "Resolve"}
+            </Button>
+          </div>
+        </div>
+      );
+    },
+    [
+      expandedCommentId,
+      editingMessageBody,
+      editingMessageKey,
+      handleCancelEditMessage,
+      handleCancelReply,
+      handleSaveEditMessage,
+      handleStartReply,
+      handleStartEditMessage,
+      handleSubmitReply,
+      handleToggleCommentResolved,
+      replyBody,
+      replyingCommentId,
+    ],
+  );
+
   const floatingLayer = (
     <div className="pointer-events-none absolute left-0 top-0 z-10 w-full">
       {highlightRects.map((rect) => (
@@ -684,7 +1070,8 @@ export function MarkdownViewer({
 
       {composerAnchor && composerTop !== null && (
         <div
-          className={`${interactiveOverlayClass} absolute z-40 flex min-h-[188px] flex-col rounded-xl border border-border bg-card/95 p-3 shadow-lg`}
+          data-comment-interactive="true"
+          className={`${interactiveOverlayClass} absolute z-40 flex min-h-[188px] flex-col rounded-xl border border-border bg-white p-3 shadow-lg`}
           style={{
             top: composerTop,
             left: marginLane.left,
@@ -717,9 +1104,11 @@ export function MarkdownViewer({
           <button
             key={key}
             type="button"
-            title={`${getAuthorLabel(comment)} • ${formatDateTime(comment.createdAt)}`}
-            className={`${interactiveOverlayClass} absolute flex size-[26px] items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-sm transition hover:bg-muted data-[active=true]:border-chart-1 data-[active=true]:bg-chart-1/10`}
+            title={formatCommentSummary(comment)}
+            data-comment-interactive="true"
+            className={`${interactiveOverlayClass} absolute flex size-[26px] items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition hover:bg-muted data-[active=true]:border-chart-1 data-[active=true]:ring-1 data-[active=true]:ring-chart-1/45 data-[resolved=true]:opacity-70`}
             data-active={expandedCommentId === comment.id}
+            data-resolved={comment.resolvedAt !== null}
             style={{
               top,
               left:
@@ -737,60 +1126,29 @@ export function MarkdownViewer({
         ) : (
           <div
             key={key}
-            className={`${interactiveOverlayClass} absolute rounded-xl border border-border bg-card/95 p-3 shadow-sm data-[active=true]:border-chart-1 data-[active=true]:bg-chart-1/10`}
-            data-active={expandedCommentId === comment.id}
+            className={`${interactiveOverlayClass} absolute`}
             style={{
               top,
               left: marginLane.left,
               width: marginLane.width,
             }}
+            ref={(node) => handleCommentCardMeasure(comment.id, node)}
           >
-            <div className="flex items-center gap-2">
-              <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[11px] font-medium">
-                {getAuthorLabel(comment)}
-              </span>
-              <span className="text-[11px] text-muted-foreground">{formatDateTime(comment.createdAt)}</span>
-              <Button
-                variant="ghost"
-                size="xs"
-                className="ml-auto h-6 px-2 text-[11px]"
-                onClick={() => handleToggleCommentResolved(comment.id, true)}
-              >
-                Resolve
-              </Button>
-            </div>
-            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed">{comment.body}</p>
+            {renderCommentCard(comment, { active: expandedCommentId === comment.id })}
           </div>
         ),
       )}
 
       {marginLane.compact && expandedComment && expandedCommentLayout && (
         <div
-          className={`${interactiveOverlayClass} absolute rounded-xl border border-border bg-card/95 p-3 shadow-sm`}
+          className={`${interactiveOverlayClass} absolute`}
           style={{
             top: expandedCommentLayout.top,
             left: expandedCommentLayout.left,
             width: expandedCommentLayout.width,
           }}
         >
-          <div className="flex items-center gap-2">
-            <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[11px] font-medium">
-              {getAuthorLabel(expandedComment)}
-            </span>
-            <span className="text-[11px] text-muted-foreground">{formatDateTime(expandedComment.createdAt)}</span>
-            <Button
-              variant="ghost"
-              size="xs"
-              className="ml-auto h-6 px-2 text-[11px]"
-              onClick={() => {
-                handleToggleCommentResolved(expandedComment.id, true);
-                setExpandedCommentId(null);
-              }}
-            >
-              Resolve
-            </Button>
-          </div>
-          <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed">{expandedComment.body}</p>
+          {renderCommentCard(expandedComment, { active: true, onAfterResolve: () => setExpandedCommentId(null) })}
         </div>
       )}
     </div>
@@ -889,6 +1247,7 @@ export function MarkdownViewer({
     <div
       className={`relative flex h-full flex-col overflow-hidden ${isEditing ? "select-text cursor-auto" : ""}`}
       style={{ pointerEvents: isEditing ? "auto" : "none" }}
+      onPointerDownCapture={handleViewerPointerDownCapture}
     >
       {editOverlay}
       {header}
@@ -899,7 +1258,7 @@ export function MarkdownViewer({
   if (!isFullscreen) {
     return (
       <div
-        className={`relative flex h-full flex-col overflow-hidden rounded-lg ${borderClass} bg-card shadow-sm`}
+        className={`relative flex h-full flex-col overflow-hidden rounded-lg ${borderClass} bg-white shadow-sm`}
         style={{ width, height }}
       >
         {viewerContent}
@@ -915,7 +1274,7 @@ export function MarkdownViewer({
           className="fixed inset-0 z-9999 flex flex-col bg-background select-text cursor-auto"
           style={{ pointerEvents: "all" }}
         >
-          <div className={`flex h-full w-full flex-col overflow-hidden ${borderClass} bg-card shadow-sm`}>
+          <div className={`flex h-full w-full flex-col overflow-hidden ${borderClass} bg-white shadow-sm`}>
             {viewerContent}
           </div>
         </div>,
@@ -925,11 +1284,24 @@ export function MarkdownViewer({
   );
 }
 
-function getAuthorLabel(comment: MarkdownComment): string {
-  if (comment.author.type === "agent") {
-    return comment.author.name;
+function getAuthorLabel(author: MarkdownCommentAuthor): string {
+  if (author.type === "agent") {
+    return author.name;
   }
   return "User";
+}
+
+function getLatestCommentMessage(comment: MarkdownComment): MarkdownCommentMessage | null {
+  if (comment.messages.length === 0) return null;
+  return comment.messages[comment.messages.length - 1] ?? null;
+}
+
+function formatCommentSummary(comment: MarkdownComment): string {
+  const latestMessage = getLatestCommentMessage(comment);
+  if (!latestMessage) {
+    return "Comment";
+  }
+  return `${getAuthorLabel(latestMessage.author)} • ${formatDateTime(latestMessage.editedAt ?? latestMessage.createdAt)}`;
 }
 
 function formatDateTime(value: string): string {
@@ -1007,9 +1379,15 @@ function estimateCommentCardHeight(comment: MarkdownComment, cardWidth: number):
   const safeWidth = Math.max(160, cardWidth);
   const innerWidth = Math.max(120, safeWidth - 24);
   const charsPerLine = Math.max(16, Math.floor(innerWidth / 7));
-  const bodyLength = comment.body.trim().length;
-  const bodyLines = Math.max(1, Math.ceil(bodyLength / charsPerLine));
-  return 60 + bodyLines * 22;
+  const messages = comment.messages.length === 0 ? [{ body: "" }] : comment.messages;
+
+  let lines = 3;
+  for (const message of messages) {
+    const bodyLength = message.body.trim().length;
+    lines += Math.max(1, Math.ceil(bodyLength / charsPerLine));
+  }
+
+  return 36 + lines * 20 + Math.max(0, messages.length - 1) * 8;
 }
 
 function isTextInputTarget(target: EventTarget | null): boolean {
@@ -1072,6 +1450,17 @@ function makeCommentId(): string {
     return crypto.randomUUID();
   }
   return `comment-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function makeCommentMessageId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function makeMessageKey(commentId: string, messageId: string): string {
+  return `${commentId}:${messageId}`;
 }
 
 function getSelectionAnchor(root: HTMLElement): TextSelectionAnchor | null {

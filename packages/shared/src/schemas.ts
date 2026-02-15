@@ -304,10 +304,18 @@ const markdownCommentTargetSchema = z.discriminatedUnion("type", [
 const markdownCommentSchema = z
   .object({
     id: z.string().min(1),
-    target: markdownCommentTargetSchema,
     body: z.string(),
     author: markdownCommentAuthorSchema,
     createdAt: z.string().datetime(),
+    editedAt: z.string().datetime().nullable().optional(),
+  })
+  .strict();
+
+const markdownCommentThreadSchema = z
+  .object({
+    id: z.string().min(1),
+    target: markdownCommentTargetSchema,
+    messages: z.array(markdownCommentSchema),
     resolvedAt: z.string().datetime().nullable(),
   })
   .strict();
@@ -319,7 +327,7 @@ const markdownPropsSchema = z
     name: z.string().optional(),
     content: z.string().optional(),
     filePath: z.string().optional(),
-    comments: z.array(markdownCommentSchema).optional(),
+    comments: z.array(markdownCommentThreadSchema).optional(),
   })
   .strict();
 

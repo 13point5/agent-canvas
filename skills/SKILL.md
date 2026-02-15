@@ -87,6 +87,26 @@ agent-canvas shapes get --board <board-id>
 agent-canvas screenshot --board <board-id> --ids '["shape:abc","shape:def"]'
 ```
 
+### Markdown Comments
+
+```bash
+# Create a new markdown comment thread
+agent-canvas comments add \
+  --board <board-id> \
+  --shape <markdown-shape-id> \
+  --target '{"type":"text","start":10,"end":30,"quote":"selected text"}' \
+  --body "Please revise this paragraph" \
+  --author agent \
+  --agent "Codex"
+
+# Reply to an existing thread
+agent-canvas comments add \
+  --board <board-id> \
+  --shape <markdown-shape-id> \
+  --comment <thread-id> \
+  --body "Updated in latest commit"
+```
+
 ### Creating Shapes
 
 Pass a JSON array of shape objects. Each shape follows TLDraw's shape format.

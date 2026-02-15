@@ -3,6 +3,25 @@ import { MarkdownViewer } from "@/components/markdown/markdown-viewer";
 import type { MarkdownComment, MarkdownShape } from "./markdown-shape-props";
 import { markdownShapeProps } from "./markdown-shape-props";
 
+const FALLBACK_COMMENT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeCommentAuthor(author: unknown): { type: "user" } | { type: "agent"; name: string } {
+  if (isRecord(author) && author.type === "agent" && typeof author.name === "string" && author.name.trim().length > 0) {
+    return {
+      type: "agent",
+      name: author.name,
+    };
+  }
+
+  return {
+    type: "user",
+  };
+}
+
 export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
   static override type = "markdown" as const;
   static override props = markdownShapeProps;
@@ -25,6 +44,42 @@ export class MarkdownShapeUtil extends BaseBoxShapeUtil<MarkdownShape> {
           if (props.comments === undefined) {
             props.comments = [];
           }
+        },
+      },
+      {
+        id: "com.tldraw.shape.markdown/3",
+        up(props: Record<string, unknown>) {
+          if (!Array.isArray(props.comments)) {
+            props.comments = [];
+            return;
+          }
+
+          props.comments = props.comments.map((comment, index) => {
+            if (!isRecord(comment) || Array.isArray(comment.messages)) {
+              return comment;
+            }
+
+            const commentId = typeof comment.id === "string" && comment.id.length > 0 ? comment.id : `comment-${index}`;
+            const createdAt =
+              typeof comment.createdAt === "string" && comment.createdAt.length > 0
+                ? comment.createdAt
+                : FALLBACK_COMMENT_TIMESTAMP;
+
+            return {
+              id: commentId,
+              target: comment.target,
+              messages: [
+                {
+                  id: `${commentId}-message-0`,
+                  body: typeof comment.body === "string" ? comment.body : "",
+                  author: normalizeCommentAuthor(comment.author),
+                  createdAt,
+                  editedAt: null,
+                },
+              ],
+              resolvedAt: typeof comment.resolvedAt === "string" ? comment.resolvedAt : null,
+            };
+          });
         },
       },
     ],
