@@ -89,8 +89,27 @@ agent-canvas screenshot --board <board-id> --ids '["shape:abc","shape:def"]'
 
 ### Markdown Comments
 
+Markdown comments are thread-based and live on markdown shape props:
+
+- `props.comments[]` stores threads
+- each thread has `id`, `target`, `messages[]`, and `resolvedAt`
+- each message has `id`, `body`, `author`, `createdAt`, and optional `editedAt`
+
+Author identity:
+
+- user message: `{"type":"user"}` (CLI: `--author user`)
+- agent message: `{"type":"agent","name":"Codex"}` (CLI: `--author agent --agent "Codex"`)
+- if `--author agent` is used without `--agent`, CLI falls back to `AGENT_CANVAS_AGENT_NAME`, then `"Codex"`
+
+Thread targets for `--target`:
+
+- text range: `{"type":"text","start":10,"end":30,"quote":"selected text"}`
+- line anchor: `{"type":"line","line":12,"lineText":"actual line text"}`
+- diagram block: `{"type":"diagram","diagramId":"mermaid-1"}`
+- whole markdown shape: `{"type":"shape"}`
+
 ```bash
-# Create a new markdown comment thread
+# Create a new markdown comment thread (new thread requires --target)
 agent-canvas comments add \
   --board <board-id> \
   --shape <markdown-shape-id> \
@@ -99,13 +118,38 @@ agent-canvas comments add \
   --author agent \
   --agent "Codex"
 
-# Reply to an existing thread
+# Reply to an existing thread (append a message with --comment)
 agent-canvas comments add \
   --board <board-id> \
   --shape <markdown-shape-id> \
   --comment <thread-id> \
-  --body "Updated in latest commit"
+  --body "Updated in latest commit" \
+  --author user
+
+# Find unresolved thread IDs on one markdown shape
+agent-canvas shapes get \
+  --board <board-id> \
+  --ids '["<markdown-shape-id>"]' \
+  --full \
+  --json \
+  | jq -r '.shapes[0].props.comments[] | select(.resolvedAt == null) | .id'
+
+# Reply to the first unresolved thread as an agent
+THREAD_ID="$(agent-canvas shapes get --board <board-id> --ids '["<markdown-shape-id>"]' --full --json | jq -r '.shapes[0].props.comments[] | select(.resolvedAt == null) | .id' | head -n 1)"
+agent-canvas comments add \
+  --board <board-id> \
+  --shape <markdown-shape-id> \
+  --comment "$THREAD_ID" \
+  --body "Follow-up from Codex" \
+  --author agent \
+  --agent "Codex"
 ```
+
+Current CLI scope:
+
+- `agent-canvas comments add` supports creating threads and replying to threads
+- resolving/reopening threads and editing existing messages are supported in the markdown UI
+- if you need those state changes from CLI, update `props.comments` through `agent-canvas shapes update`
 
 ### Creating Shapes
 
