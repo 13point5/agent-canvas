@@ -269,7 +269,7 @@ function toYamlLikeString(value: unknown): string {
 program
   .command("open")
   .description("Launch the Agent Canvas web interface")
-  .option("-p, --port <number>", "Port to run the server on", "0")
+  .option("-p, --port <number>", "Port to run the server on (default: 3456, use 0 to auto-select)", "3456")
   .option("--headless", "Start server without opening browser (for agents)")
   .action(async (options: { port: string; headless?: boolean }) => {
     // Check if already running
@@ -293,28 +293,41 @@ program
     }
 
     // Get port
-    const requestedPort = parseInt(options.port, 10);
-    const port = requestedPort || 3456;
+    const requestedPort = Number.parseInt(options.port, 10);
+    const port = Number.isNaN(requestedPort) ? 3456 : Math.max(0, requestedPort);
 
-    // Spawn the server as a detached background process
     const serverScript = join(__dirname, "server.ts");
-    const child = spawn("bun", [serverScript, String(port), webDir], {
-      detached: true,
-      stdio: "ignore",
-    });
+    const startServer = async (targetPort: number) => {
+      const child = spawn("bun", [serverScript, String(targetPort), webDir], {
+        detached: true,
+        stdio: "ignore",
+      });
 
-    child.unref();
+      child.unref();
 
-    // Poll for lockfile (up to 2s)
-    let lockfile = null;
-    for (let i = 0; i < 20; i++) {
-      await new Promise((r) => setTimeout(r, 100));
-      lockfile = readLockfile();
-      if (lockfile) break;
+      // Poll for lockfile (up to 2s)
+      let lockfile = null;
+      for (let i = 0; i < 20; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        lockfile = readLockfile();
+        if (lockfile) break;
+      }
+
+      return lockfile;
+    };
+
+    let lockfile = await startServer(port);
+
+    // Keep default behavior centered on 3456, but avoid hard failure if it's occupied.
+    if (!lockfile && port === 3456) {
+      lockfile = await startServer(0);
+      if (lockfile) {
+        console.log("Port 3456 is in use. Started on an available port instead.");
+      }
     }
 
     if (!lockfile) {
-      console.error("Failed to start server. Check if the port is available.");
+      console.error("Failed to start server.");
       process.exit(1);
     }
 

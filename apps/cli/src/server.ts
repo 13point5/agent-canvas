@@ -11,7 +11,8 @@ const DEFAULT_PORT = 3456;
 type SocketData = { kind: "board" } | { kind: "terminal"; sessionId: string; cols: number; rows: number };
 
 // Parse arguments: port and webDir
-const port = parseInt(process.argv[2], 10) || DEFAULT_PORT;
+const parsedPort = Number.parseInt(process.argv[2] ?? "", 10);
+const port = Number.isNaN(parsedPort) ? DEFAULT_PORT : Math.max(0, parsedPort);
 const webDir = process.argv[3];
 
 if (!webDir) {

@@ -63,6 +63,9 @@ agent-canvas open
 # Start without opening a browser (for agents)
 agent-canvas open --headless
 
+# Optional: pick a specific port (default is 3456; if occupied, CLI falls back to an open port)
+agent-canvas open --port 3456
+
 # Check status
 agent-canvas status
 
@@ -115,6 +118,9 @@ bun run dev
 
 This starts the Hono server (with `--watch`) and Vite dev server concurrently. The web app is available at the URL printed in the terminal.
 
+`bun run dev` now auto-assigns non-conflicting server/web ports per worktree so you can run multiple worktrees in parallel.
+In this mode, the web app also connects directly to the selected server WebSocket URL to avoid Vite ws proxy reset noise.
+
 To run CLI commands against the dev server:
 
 ```bash
@@ -124,6 +130,8 @@ bun run cli -- shapes get --board <board-id> --json
 bun run cli -- shapes get --board <board-id> --ids '["shape:abc"]'
 bun run cli -- shapes get --board <board-id> --full --json > shapes.json
 ```
+
+The CLI resolves the server for the current worktree automatically. To target a different running instance explicitly, set `AGENT_CANVAS_URL`.
 
 ## Project Structure
 
