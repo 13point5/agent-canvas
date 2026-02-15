@@ -1,10 +1,12 @@
 import { Markdown as MarkdownIcon } from "@react-symbols/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { parseMarkdown } from "@/lib/parse-markdown";
 import type { MarkdownComment, MarkdownTextCommentTarget } from "@/tldraw-shapes/markdown/markdown-shape-props";
+import { DiagramsPanel } from "./diagrams-panel";
 import { MarkdownPanel } from "./markdown-panel";
 
 interface MarkdownViewerProps {
@@ -65,6 +67,9 @@ export function MarkdownViewer({
   const parsed = useMemo(() => parseMarkdown(content), [content]);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [pinnedDiagramIds, setPinnedDiagramIds] = useState<string[]>([]);
+  const [pinnedImageSources, setPinnedImageSources] = useState<string[]>([]);
+  const [showSidePanel, setShowSidePanel] = useState(false);
 
   const [pendingSelection, setPendingSelection] = useState<TextSelectionAnchor | null>(null);
   const [composerAnchor, setComposerAnchor] = useState<TextSelectionAnchor | null>(null);
@@ -175,6 +180,30 @@ export function MarkdownViewer({
     setContentRootEl(node);
   }, []);
 
+  const handlePinDiagram = useCallback((id: string) => {
+    setPinnedDiagramIds((prev) => {
+      if (prev.includes(id)) return prev;
+      return [...prev, id];
+    });
+    setShowSidePanel(true);
+  }, []);
+
+  const handlePinImage = useCallback((src: string) => {
+    setPinnedImageSources((prev) => {
+      if (prev.includes(src)) return prev;
+      return [...prev, src];
+    });
+    setShowSidePanel(true);
+  }, []);
+
+  const handleUnpinDiagram = useCallback((id: string) => {
+    setPinnedDiagramIds((prev) => prev.filter((value) => value !== id));
+  }, []);
+
+  const handleUnpinImage = useCallback((src: string) => {
+    setPinnedImageSources((prev) => prev.filter((value) => value !== src));
+  }, []);
+
   const openTextComments = useMemo(
     () =>
       comments.filter(
@@ -188,6 +217,11 @@ export function MarkdownViewer({
     if (!composerAnchor) return;
     commentInputRef.current?.focus();
   }, [composerAnchor]);
+
+  useEffect(() => {
+    if (pinnedDiagramIds.length > 0 || pinnedImageSources.length > 0) return;
+    setShowSidePanel(false);
+  }, [pinnedDiagramIds, pinnedImageSources]);
 
   // Capture text selections only after selection interaction completes.
   // Updating state on every `selectionchange` can re-render mid-drag and corrupt range start/end.
@@ -602,6 +636,8 @@ export function MarkdownViewer({
   ]);
 
   const openCommentCount = openTextComments.length;
+  const hasPinnedItems = pinnedDiagramIds.length > 0 || pinnedImageSources.length > 0;
+  const showPanel = showSidePanel && hasPinnedItems;
   const borderClass = isEditing ? "border border-chart-1" : "border border-border";
   const interactiveOverlayClass = isEditing ? "pointer-events-auto" : "pointer-events-none";
 
@@ -784,13 +820,62 @@ export function MarkdownViewer({
       filePath={filePath}
       parsed={parsed}
       mermaidBlocks={parsed.mermaidBlocks}
+      onPinDiagram={handlePinDiagram}
+      onPinImage={handlePinImage}
       onScrollContainerChange={handleScrollContainerChange}
       onContentRootChange={handleContentRootChange}
       overlay={floatingLayer}
     />
   );
 
-  const panelLayout = <div className="min-h-0 flex-1">{markdownPanel}</div>;
+  const panelLayout = (
+    <Group orientation="horizontal" className="min-h-0 flex-1" resizeTargetMinimumSize={{ fine: 12, coarse: 24 }}>
+      <Panel defaultSize={showPanel ? "70%" : "100%"} minSize={showPanel ? "45%" : "0%"}>
+        <div className="min-h-0 min-w-0 h-full">{markdownPanel}</div>
+      </Panel>
+      {showPanel && (
+        <>
+          <Separator className="relative w-px cursor-col-resize bg-border transition-colors hover:bg-chart-1" />
+          <Panel defaultSize="30%" minSize="220px" maxSize="55%">
+            <div className="h-full min-h-0 overflow-hidden">
+              <DiagramsPanel
+                pinnedDiagramIds={pinnedDiagramIds}
+                allBlocks={parsed.mermaidBlocks}
+                pinnedImageSources={pinnedImageSources}
+                onUnpinDiagram={handleUnpinDiagram}
+                onUnpinImage={handleUnpinImage}
+              />
+            </div>
+          </Panel>
+        </>
+      )}
+    </Group>
+  );
+
+  const sidePanelToggleButton = hasPinnedItems && (
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      title={showSidePanel ? "Hide side panel" : "Show side panel"}
+      onClick={() => setShowSidePanel((value) => !value)}
+      className={showSidePanel ? "bg-accent text-foreground" : "text-muted-foreground"}
+    >
+      <svg
+        aria-hidden="true"
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="2" y="2" width="12" height="12" rx="1" />
+        <line x1="10" y1="2" x2="10" y2="14" />
+      </svg>
+    </Button>
+  );
 
   const header = (
     <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-1.5 shrink-0">
@@ -805,6 +890,7 @@ export function MarkdownViewer({
       </div>
       <div className="flex items-center gap-1">
         {isEditing && <span className="inline-flex size-2 shrink-0 rounded-full bg-chart-1" />}
+        {sidePanelToggleButton}
         <Button
           variant="ghost"
           size="icon-xs"
