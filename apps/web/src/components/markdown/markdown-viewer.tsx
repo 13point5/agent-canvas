@@ -11,7 +11,12 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Markdown as MarkdownIcon } from "@react-symbols/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import type { Components } from "react-markdown";
+import ReactMarkdown from "react-markdown";
 import { Group, Panel, Separator } from "react-resizable-panels";
+import remarkGfm from "remark-gfm";
+import type { BundledLanguage } from "shiki";
+import { CodeBlock } from "@/components/ai-elements/code-block";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { parseMarkdown } from "@/lib/parse-markdown";
@@ -69,6 +74,117 @@ const COMMENT_BUTTON_TO_ICON_GAP = 2;
 const COMMENT_LINE_GROUP_TOLERANCE = 12;
 const SELECTION_CONTEXT_CHARS = 24;
 const COMMENT_INTERACTIVE_SELECTOR = '[data-comment-interactive="true"]';
+
+const remarkPlugins = [remarkGfm];
+
+// Custom components for rendering markdown in comments
+const commentMarkdownComponents: Components = {
+  p: ({ children, ...props }) => (
+    <p className="my-1 leading-relaxed" {...props}>
+      {children}
+    </p>
+  ),
+  code: ({ className, children, ...props }) => {
+    const match = /language-(\w+)/.exec(className ?? "");
+
+    if (!match) {
+      // Inline code
+      return (
+        <code className="rounded bg-background/90 px-1 py-0.5 font-mono text-xs" {...props}>
+          {children}
+        </code>
+      );
+    }
+
+    // Code block with Shiki syntax highlighting
+    const language = (match[1] || "text") as BundledLanguage;
+    const code = String(children).replace(/\n$/, "");
+
+    return (
+      <div className="my-2">
+        <CodeBlock code={code} language={language} className="text-xs shadow-sm" />
+      </div>
+    );
+  },
+  ul: ({ children, ...props }) => (
+    <ul className="my-1 ml-3 list-disc space-y-0.5 text-sm" {...props}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children, ...props }) => (
+    <ol className="my-1 ml-3 list-decimal space-y-0.5 text-sm" {...props}>
+      {children}
+    </ol>
+  ),
+  li: ({ children, ...props }) => (
+    <li className="text-sm" {...props}>
+      {children}
+    </li>
+  ),
+  blockquote: ({ children, ...props }) => (
+    <blockquote className="my-1 border-l-2 border-chart-1 pl-2 text-sm italic text-muted-foreground" {...props}>
+      {children}
+    </blockquote>
+  ),
+  a: ({ children, href, ...props }) => (
+    <a href={href} className="text-chart-1 hover:underline" target="_blank" rel="noopener noreferrer" {...props}>
+      {children}
+    </a>
+  ),
+  strong: ({ children, ...props }) => (
+    <strong className="font-semibold" {...props}>
+      {children}
+    </strong>
+  ),
+  em: ({ children, ...props }) => (
+    <em className="italic" {...props}>
+      {children}
+    </em>
+  ),
+  hr: () => <hr className="my-2 border-border/60" />,
+  h1: ({ children, ...props }) => (
+    <h1 className="my-1 text-base font-bold" {...props}>
+      {children}
+    </h1>
+  ),
+  h2: ({ children, ...props }) => (
+    <h2 className="my-1 text-sm font-bold" {...props}>
+      {children}
+    </h2>
+  ),
+  h3: ({ children, ...props }) => (
+    <h3 className="my-1 text-sm font-semibold" {...props}>
+      {children}
+    </h3>
+  ),
+  table: ({ children, ...props }) => (
+    <div className="my-2 overflow-auto">
+      <table className="w-full border-collapse text-xs" {...props}>
+        {children}
+      </table>
+    </div>
+  ),
+  th: ({ children, ...props }) => (
+    <th className="border border-border/60 bg-muted/30 px-2 py-1 text-left font-medium" {...props}>
+      {children}
+    </th>
+  ),
+  td: ({ children, ...props }) => (
+    <td className="border border-border/60 px-2 py-1" {...props}>
+      {children}
+    </td>
+  ),
+};
+
+function CommentMarkdown({ children }: { children: string }) {
+  return (
+    <div className="text-sm leading-relaxed">
+      <ReactMarkdown remarkPlugins={remarkPlugins} components={commentMarkdownComponents}>
+        {children}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 export function MarkdownViewer({
   name,
@@ -947,7 +1063,9 @@ export function MarkdownViewer({
                         </div>
                       </>
                     ) : (
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed">{message.body}</p>
+                      <div className="mt-1 break-words">
+                        <CommentMarkdown>{message.body}</CommentMarkdown>
+                      </div>
                     )}
                   </div>
                 );

@@ -7,7 +7,9 @@ import { useParams } from "react-router-dom";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import type { BundledLanguage } from "shiki";
 
+import { CodeBlock } from "@/components/ai-elements/code-block";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MermaidBlock, ParsedMarkdown } from "@/lib/parse-markdown";
@@ -100,12 +102,14 @@ export function MarkdownPanel({
         );
       }
 
+      // Code block with Shiki syntax highlighting
+      const language = (lang || "text") as BundledLanguage;
+      const code = String(children).replace(/\n$/, "");
+
       return (
-        <pre className="my-2 overflow-auto rounded-md border border-border bg-muted/30 p-3">
-          <code className={`font-mono text-sm ${className ?? ""}`} {...props}>
-            {children}
-          </code>
-        </pre>
+        <div className="my-2">
+          <CodeBlock code={code} language={language} showLineNumbers />
+        </div>
       );
     },
 
