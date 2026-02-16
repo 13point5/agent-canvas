@@ -6,7 +6,7 @@ import {
   ArtifactTitle,
 } from "@/components/ai-elements/artifact";
 import { FileTree, FileTreeFile, FileTreeFolder } from "@/components/ai-elements/file-tree";
-import { SchemaDisplay, SchemaDisplayExample } from "@/components/ai-elements/schema-display";
+import { SchemaDisplay } from "@/components/ai-elements/schema-display";
 import { Snippet, SnippetAddon, SnippetCopyButton, SnippetInput, SnippetText } from "@/components/ai-elements/snippet";
 import {
   StackTrace,
@@ -50,9 +50,13 @@ import {
 } from "@/components/ai-elements/test-results";
 import {
   WebPreview,
+  WebPreviewBackButton,
   WebPreviewBody,
   WebPreviewConsole,
+  WebPreviewForwardButton,
   WebPreviewNavigation,
+  WebPreviewOpenButton,
+  WebPreviewReloadButton,
   WebPreviewUrl,
 } from "@/components/ai-elements/web-preview";
 import type {
@@ -312,7 +316,7 @@ function asLogLevel(value: string): WebLogLevel {
 
 export function ArtifactShapePreview({ props }: { props: ArtifactShape["props"] }) {
   return (
-    <Artifact className="h-full w-full rounded-none border border-border shadow-sm">
+    <Artifact className="h-full w-full rounded-[8px] border border-border shadow-sm">
       <ArtifactHeader>
         <div className="min-w-0">
           <ArtifactTitle className="truncate">{props.name || "Artifact"}</ArtifactTitle>
@@ -335,7 +339,7 @@ export function FileTreeShapePreview({ props }: { props: FileTreeShape["props"] 
 
   return (
     <FileTree
-      className="h-full w-full rounded-none border border-border shadow-sm"
+      className="h-full w-full rounded-[8px] border border-border shadow-sm"
       defaultExpanded={new Set(expanded)}
       selectedPath={props.selectedPath || undefined}
     >
@@ -370,19 +374,15 @@ export function SchemaDisplayShapePreview({ props }: { props: SchemaDisplayShape
   }));
 
   return (
-    <div className="h-full w-full overflow-auto">
-      <SchemaDisplay
-        className="h-full rounded-none border border-border shadow-sm"
-        method={method}
-        path={path}
-        description={props.description || undefined}
-        parameters={parameters}
-        requestBody={requestFields}
-        responseBody={responseFields}
-      >
-        <SchemaDisplayExample>{`${method} ${path}`}</SchemaDisplayExample>
-      </SchemaDisplay>
-    </div>
+    <SchemaDisplay
+      className="h-full w-full overflow-auto rounded-[8px] border border-border shadow-sm"
+      method={method}
+      path={path}
+      description={props.description || undefined}
+      parameters={parameters}
+      requestBody={requestFields}
+      responseBody={responseFields}
+    />
   );
 }
 
@@ -402,7 +402,7 @@ export function SnippetShapePreview({ props }: { props: SnippetShape["props"] })
 
 export function StackTraceShapePreview({ props }: { props: StackTraceShape["props"] }) {
   return (
-    <StackTrace className="h-full w-full rounded-none border border-border shadow-sm" defaultOpen trace={props.trace}>
+    <StackTrace className="h-full w-full rounded-[8px] border border-border shadow-sm" defaultOpen trace={props.trace}>
       <StackTraceHeader>
         <StackTraceError>
           <StackTraceErrorType />
@@ -426,12 +426,12 @@ export function AiTerminalShapePreview({ props }: { props: AiTerminalShape["prop
   return (
     <AiElementsTerminal
       autoScroll={props.autoScroll}
-      className="h-full w-full rounded-none border border-emerald-500/50 bg-zinc-950 shadow-sm"
+      className="h-full w-full rounded-[8px] border border-border shadow-sm"
       isStreaming={props.isStreaming}
       output={output}
     >
-      <TerminalHeader className="border-emerald-500/40 bg-gradient-to-r from-emerald-950/90 via-cyan-950/50 to-zinc-950">
-        <TerminalTitle className="text-emerald-200">{props.name || "Terminal"}</TerminalTitle>
+      <TerminalHeader>
+        <TerminalTitle>{props.name || "Terminal"}</TerminalTitle>
         <div className="flex items-center gap-1">
           <TerminalStatus />
           <TerminalActions>
@@ -439,7 +439,7 @@ export function AiTerminalShapePreview({ props }: { props: AiTerminalShape["prop
           </TerminalActions>
         </div>
       </TerminalHeader>
-      <TerminalContent className="h-full max-h-none bg-zinc-950/80" />
+      <TerminalContent className="h-full max-h-none" />
     </AiElementsTerminal>
   );
 }
@@ -449,7 +449,7 @@ export function TestResultsShapePreview({ props }: { props: TestResultsShape["pr
   const derivedSummary = props.summary.total > 0 ? props.summary : deriveTestSummary(props.tests);
 
   return (
-    <TestResults className="h-full w-full rounded-none border border-border shadow-sm" summary={derivedSummary}>
+    <TestResults className="h-full w-full rounded-[8px] border border-border shadow-sm" summary={derivedSummary}>
       <TestResultsHeader>
         <TestResultsSummary />
         <TestResultsDuration />
@@ -510,11 +510,15 @@ export function WebPreviewShapePreview({ props }: { props: WebPreviewShape["prop
   const logs = parseWebPreviewLogs(props.logs);
 
   return (
-    <WebPreview className="h-full w-full rounded-none border border-sky-500/40 shadow-sm" defaultUrl={props.url}>
+    <WebPreview className="h-full w-full rounded-[8px] border border-border shadow-sm" defaultUrl={props.url}>
       <WebPreviewNavigation>
+        <WebPreviewBackButton />
+        <WebPreviewForwardButton />
+        <WebPreviewReloadButton />
         <WebPreviewUrl />
+        <WebPreviewOpenButton />
       </WebPreviewNavigation>
-      <WebPreviewBody src={props.url} />
+      <WebPreviewBody />
       <WebPreviewConsole logs={logs} />
     </WebPreview>
   );

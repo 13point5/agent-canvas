@@ -170,6 +170,18 @@ function summarizeShape(shape: unknown, maxChars: number): Record<string, unknow
     summary.type = shape.type;
   }
 
+  if (typeof shape.parentId === "string") {
+    summary.parentId = shape.parentId;
+  }
+
+  if (typeof shape.x === "number") {
+    summary.x = shape.x;
+  }
+
+  if (typeof shape.y === "number") {
+    summary.y = shape.y;
+  }
+
   const props = summarizeShapeProps(shape.props, maxChars);
   if (props) {
     summary.props = props;

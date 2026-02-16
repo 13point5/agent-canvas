@@ -16,6 +16,7 @@ import {
   createShapeId,
   type Editor,
   getSnapshot,
+  type TLParentId,
   type TLShape,
   type TLShapeId,
   toRichText,
@@ -86,7 +87,21 @@ export function useWebSocket() {
       const { requestId, boardId } = request;
       try {
         const editor = await useEditorStore.getState().loadBoard(boardId);
-        const shapes = editor.getCurrentPageShapesInReadingOrder();
+        const collectShapesRecursively = (parentId: TLParentId): TLShape[] => {
+          const childIds = editor.getSortedChildIdsForParent(parentId);
+          const result: TLShape[] = [];
+
+          for (const childId of childIds) {
+            const child = editor.getShape(childId);
+            if (!child) continue;
+            result.push(child);
+            result.push(...collectShapesRecursively(child.id as TLParentId));
+          }
+
+          return result;
+        };
+
+        const shapes = collectShapesRecursively(editor.getCurrentPageId());
 
         const response: GetShapesResponse = {
           type: "get-shapes:response",
@@ -149,6 +164,7 @@ export function useWebSocket() {
           realId: string;
           isArrow: boolean;
           isImage: boolean;
+          isFrame: boolean;
         }> = [];
 
         for (const rawShape of inputShapes) {
@@ -161,6 +177,7 @@ export function useWebSocket() {
 
           const isArrow = shape.type === "arrow" && (shape.fromId !== undefined || shape.toId !== undefined);
           const isImage = shape.type === "image";
+          const isFrame = shape.type === "frame";
 
           if (isArrow) {
             arrowMeta.push({
@@ -174,14 +191,20 @@ export function useWebSocket() {
             });
           }
 
-          shapesWithIds.push({ input: shape, realId, isArrow, isImage });
+          shapesWithIds.push({ input: shape, realId, isArrow, isImage, isFrame });
         }
 
         // Step b: Prepare shapes for TLDraw
         const preparedShapes: Record<string, unknown>[] = [];
 
-        // Non-arrow shapes first (including images), then arrows (so targets exist when bindings are created)
-        const sorted = [...shapesWithIds.filter((s) => !s.isArrow), ...shapesWithIds.filter((s) => s.isArrow)];
+        // Frames first, then other non-arrow shapes, then arrows
+        // so parent frames and arrow targets exist when needed.
+        const nonArrows = shapesWithIds.filter((s) => !s.isArrow);
+        const sorted = [
+          ...nonArrows.filter((s) => s.isFrame),
+          ...nonArrows.filter((s) => !s.isFrame),
+          ...shapesWithIds.filter((s) => s.isArrow),
+        ];
 
         for (const { input, realId, isArrow, isImage } of sorted) {
           // Strip custom fields
@@ -193,6 +216,11 @@ export function useWebSocket() {
           delete stripped.y1;
           delete stripped.x2;
           delete stripped.y2;
+
+          // Resolve parentId references passed via tempId.
+          if (typeof stripped.parentId === "string" && idMap[stripped.parentId]) {
+            stripped.parentId = idMap[stripped.parentId];
+          }
 
           // Convert props.text (string) → props.richText for convenience
           const props = stripped.props as Record<string, unknown> | undefined;
@@ -206,6 +234,7 @@ export function useWebSocket() {
             const imgProps = input.props as Record<string, unknown> | undefined;
             const w = (imgProps?.w as number) ?? 400;
             const h = (imgProps?.h as number) ?? 300;
+            const resolvedParentId = typeof stripped.parentId === "string" ? stripped.parentId : undefined;
 
             editor.createAssets([
               {
@@ -234,6 +263,7 @@ export function useWebSocket() {
               id: realId,
               x: input.x as number,
               y: input.y as number,
+              ...(resolvedParentId ? { parentId: resolvedParentId } : {}),
               props: { assetId, w, h },
             });
           } else if (isArrow) {
