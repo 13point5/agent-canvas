@@ -56,7 +56,6 @@ import {
 import { useBoardPersistence } from "@/hooks/api/use-board-persistence";
 import { cn } from "@/lib/utils";
 import { aiElementsOverrides } from "@/tldraw-config/ai-elements-overrides";
-import { BoardChatPromptHud } from "@/tldraw-config/chat-hud";
 import { codeDiffOverrides } from "@/tldraw-config/code-diff-overrides";
 import { htmlOverrides } from "@/tldraw-config/html-overrides";
 import { HtmlDialogOverlay } from "@/tldraw-config/html-toolbar";
@@ -222,7 +221,6 @@ function CombinedDialogOverlay() {
   return (
     <>
       <SelectionIdsToolbar />
-      <BoardChatPromptHud />
       <MarkdownDialogOverlay />
       <HtmlDialogOverlay />
       <MinimalMinimap />
