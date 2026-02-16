@@ -14,6 +14,106 @@ Agent Canvas lets you create and manipulate shapes on a TLDraw whiteboard from t
 2. If not running, start it: `agent-canvas open` (use `--headless` to skip opening the browser)
 3. Board must be open in a browser tab
 
+## Shape Selection Guide
+
+**Always use the most specific shape type for your content.** Do not fall back to `text` or `markdown` shapes for content that has a dedicated shape type, unless the user explicitly asks for plain text/markdown.
+
+### Built-in TLDraw Shapes
+
+**`geo`** — Geometric primitives for diagrams and flowcharts
+- Use for rectangles, ellipses, diamonds, stars, clouds, and other geometric shapes
+- Use as labeled nodes in flowcharts and architecture diagrams
+- Use for visual containers, callout boxes, and status indicators with color fills
+
+**`text`** — Standalone text labels
+- Use for headings, titles, and section labels on the board
+- Use for short annotations and callouts near other shapes
+- Use for any freeform text that doesn't belong inside a shape
+
+**`arrow`** — Connectors between shapes
+- Use to show relationships, data flow, or sequence between shapes
+- Use in flowcharts, architecture diagrams, and dependency graphs
+- Use to link evidence shapes together (e.g., stack trace → code diff → fix)
+
+**`note`** — Sticky notes
+- Use for quick observations, reminders, and commentary
+- Use for status annotations (e.g., "TODO", "Blocked", "Done")
+- Use for lightweight feedback that doesn't need a full markdown shape
+
+**`frame`** — Grouping container
+- Use to visually group related shapes into a named section
+- Use to organize board into logical areas (e.g., "Investigation", "Fix", "Validation")
+- Use with `parentId` on child shapes to nest content
+
+**`image`** — Images from local files
+- Use for UI screenshots captured during testing or debugging
+- Use for architecture diagrams exported from other tools
+- Use for any visual evidence (error screenshots, design mockups, charts)
+
+### Document Shapes
+
+**`markdown`** — Rich markdown content
+- Use for long-form explanations, summaries, and documentation
+- Use for incident write-ups, root cause analyses, and decision records
+- Use for any narrative content that benefits from markdown formatting (headers, lists, bold, code blocks)
+- Supports threaded comments for collaborative review
+
+**`html`** — Interactive HTML in a sandboxed iframe
+- Use for interactive prototypes and UI demos
+- Use for data visualizations with embedded JavaScript (charts, graphs)
+- Use for any rich content that needs interactivity beyond static markdown
+
+### Development Tool Shapes
+
+**`code-diff`** — Side-by-side code comparison
+- Use for showing code changes in PR reviews (old vs new content)
+- Use for before/after comparisons of bug fixes
+- Use for any focused code hunk comparison — prefer multiple small diffs over one large dump
+- Do NOT use `markdown` with code fences for diffs — always use `code-diff`
+
+### AI Element Shapes — Use These Over Generic Shapes
+
+**`ai-terminal`** — Terminal output and log transcripts
+- **Use whenever you receive logs from ANY source**: MCP servers, shell commands, build output, deployment logs, CI pipelines
+- Use for streaming output snapshots at key milestones
+- Use for command execution transcripts you want to persist on the board
+- Do NOT use `text`, `markdown`, or `snippet` to display logs — always use `ai-terminal`
+
+**`snippet`** — Single commands or one-liner code
+- Use for exact shell commands the user should run (e.g., `vercel deploy --prebuilt`)
+- Use for one-line code examples, config values, or CLI invocations
+- Use for quick-reference commands in a workflow
+- Do NOT use `text` or `markdown` with inline code for commands — use `snippet`
+
+**`file-tree`** — File and folder structure
+- Use when showing which files were touched, investigated, or are relevant
+- Use for project structure overviews and change scope visualization
+- Use for workspace context in debugging and code review workflows
+- Do NOT use `text` or `markdown` with indented file lists — always use `file-tree`
+
+**`schema-display`** — API endpoint documentation
+- Use for documenting REST API contracts (method, path, parameters, request/response)
+- Use for showing expected payload structures during integration work
+- Use for API review and comparison of endpoint signatures
+- Do NOT use `markdown` tables for API docs — always use `schema-display`
+
+**`stack-trace`** — Error stack traces
+- Use whenever you encounter an error with a stack trace from any source
+- Use for runtime exceptions, build errors, and test failures with traces
+- Use for parsed error output with clickable frame display
+- Do NOT use `text`, `markdown`, or `ai-terminal` for stack traces — always use `stack-trace`
+
+**`test-results`** — Test suite outcomes
+- **Use whenever you receive test results from ANY source**: test runners, CI pipelines, MCP tools, or manual test output
+- Use for pass/fail/skip summaries with per-test details
+- Use for CI validation results and regression test reports
+- Do NOT use `text`, `markdown`, or `ai-terminal` for test results — always use `test-results`
+
+**`web-preview`** — Embedded web page with console logs
+- Use for previewing deployed URLs (staging, preview deployments)
+- Use for showing live web app state alongside console output
+- Use when you have a URL to display with optional browser console logs
+
 ## Commands
 
 ### Board Management
@@ -605,22 +705,18 @@ These shapes are optimized for agent-run workflows where the board becomes a liv
 
 ### Shape Types
 
-- `artifact` — compact card for milestones, decisions, and deployment notes
 - `file-tree` — workspace/file context for investigations and change scope
 - `schema-display` — API contracts and payload expectations
 - `snippet` — exact command or one-line code snippets
 - `stack-trace` — parsed error stacks with clickable frame display
-- `ai-terminal` — terminal/log transcript card (separate from live `terminal`)
+- `ai-terminal` — terminal/log transcript card
 - `test-results` — summarized + grouped test outcomes
 - `web-preview` — embedded preview URL with console log panel
-
-`terminal` still represents the live interactive shell. Use `ai-terminal` when you want a persistent log artifact on the board.
 
 ### Minimal Props By Shape
 
 Use these minimal payloads when creating one shape at a time:
 
-- `artifact`: `name`, `content`
 - `file-tree`: `entries` (array of `{ path, type }`)
 - `schema-display`: `method`, `path` (plus `parameters` / `requestFields` / `responseFields` for useful output)
 - `snippet`: `code` (`language` optional, defaults apply)
@@ -639,18 +735,8 @@ Common formatting rules:
 ```bash
 agent-canvas shapes create --board <board-id> --shapes '[
   {
-    "type": "artifact",
-    "x": 80,
-    "y": 80,
-    "props": {
-      "name": "Deploy Story",
-      "description": "Incident #8421",
-      "content": "Reproduced, patched, redeployed, and validated."
-    }
-  },
-  {
     "type": "file-tree",
-    "x": 680,
+    "x": 80,
     "y": 80,
     "props": {
       "name": "Touched Files",
@@ -764,23 +850,22 @@ Use these patterns for high-signal, demo-friendly workflows where the board show
 5. Stream release/deploy output into `ai-terminal`.
 6. Add `web-preview` of the fresh deployment.
 7. Add `test-results` from CI/targeted suites.
-8. Add an `artifact` card summarizing root cause and final status.
+8. Add a `markdown` shape summarizing root cause and final status.
 
 ### 2) Vercel Preview Verification Board
 
 1. Use CLI/MCP to create a preview deployment.
 2. Show deployment command in `snippet`.
 3. Show deployment API contract in `schema-display`.
-4. Add live shell `terminal` for interactive debugging.
-5. Add non-interactive `ai-terminal` snapshots at key milestones.
+4. Add `ai-terminal` snapshots at key milestones.
 6. Capture UI screenshots with `agent-canvas screenshot` and place as `image` shapes.
 7. Connect all evidence with `arrow` shapes to tell the story.
 
 ### 3) Incident Timeline (Ops Whiteboard)
 
-1. Use one `artifact` per phase: detect, mitigate, validate, close.
+1. Use one `markdown` shape per phase: detect, mitigate, validate, close.
 2. Attach `stack-trace` + `ai-terminal` under each phase.
-3. Add `web-preview` or `html` artifact for reproducer dashboards.
+3. Add `web-preview` or `html` shape for reproducer dashboards.
 4. Add `test-results` after each mitigation attempt.
 5. Keep a final markdown summary with unresolved follow-ups.
 
@@ -790,7 +875,7 @@ Use these patterns for high-signal, demo-friendly workflows where the board show
 2. Agent B patches (`code-diff`, `snippet` commands).
 3. Agent C deploys (`ai-terminal`, `web-preview`).
 4. Agent D validates (`test-results`, screenshots as `image`).
-5. Merge all outputs into one narrative with `artifact` checkpoints.
+5. Merge all outputs into one narrative with `markdown` summaries.
 
 This makes the board a replayable proof of work, not just a static diagram.
 
