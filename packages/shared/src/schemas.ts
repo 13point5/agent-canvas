@@ -117,6 +117,7 @@ const geoShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: geoPropsSchema,
   })
   .strict();
@@ -143,6 +144,7 @@ const textShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: textPropsSchema,
   })
   .strict();
@@ -177,6 +179,7 @@ const arrowShapeSchema = z
     x: z.number().optional(),
     y: z.number().optional(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     fromId: z.string().optional(),
     toId: z.string().optional(),
     x1: z.number().optional(),
@@ -212,6 +215,7 @@ const noteShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: notePropsSchema,
   })
   .strict();
@@ -233,6 +237,7 @@ const frameShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: framePropsSchema,
   })
   .strict();
@@ -252,6 +257,7 @@ const imageShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     src: z.string(),
     props: imagePropsSchema.optional(),
   })
@@ -342,6 +348,7 @@ export const markdownShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: markdownPropsSchema,
   })
   .strict();
@@ -364,6 +371,7 @@ export const htmlShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: htmlPropsSchema,
   })
   .strict();
@@ -392,6 +400,7 @@ export const codeDiffShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: codeDiffPropsSchema.optional(),
   })
   .strict();
@@ -412,6 +421,7 @@ export const terminalShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: terminalPropsSchema.optional(),
   })
   .strict();
@@ -566,6 +576,7 @@ export const artifactShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: artifactPropsSchema.optional(),
   })
   .strict();
@@ -576,6 +587,7 @@ export const fileTreeShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: fileTreePropsSchema.optional(),
   })
   .strict();
@@ -586,6 +598,7 @@ export const schemaDisplayShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: schemaDisplayPropsSchema.optional(),
   })
   .strict();
@@ -596,6 +609,7 @@ export const snippetShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: snippetPropsSchema.optional(),
   })
   .strict();
@@ -606,6 +620,7 @@ export const stackTraceShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: stackTracePropsSchema.optional(),
   })
   .strict();
@@ -616,6 +631,7 @@ export const aiTerminalShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: aiTerminalPropsSchema.optional(),
   })
   .strict();
@@ -626,6 +642,7 @@ export const testResultsShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: testResultsPropsSchema.optional(),
   })
   .strict();
@@ -636,6 +653,7 @@ export const webPreviewShapeSchema = z
     x: z.number(),
     y: z.number(),
     tempId: z.string().optional(),
+    parentId: z.string().optional(),
     props: webPreviewPropsSchema.optional(),
   })
   .strict();
@@ -677,6 +695,7 @@ const geoUpdateSchema = z
     type: z.literal("geo"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: geoPropsSchema.partial().optional(),
   })
   .strict();
@@ -687,6 +706,7 @@ const textUpdateSchema = z
     type: z.literal("text"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: textPropsSchema.partial().optional(),
   })
   .strict();
@@ -697,6 +717,7 @@ const arrowUpdateSchema = z
     type: z.literal("arrow"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: arrowPropsSchema.partial().optional(),
   })
   .strict();
@@ -707,6 +728,7 @@ const noteUpdateSchema = z
     type: z.literal("note"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: notePropsSchema.partial().optional(),
   })
   .strict();
@@ -717,6 +739,7 @@ const frameUpdateSchema = z
     type: z.literal("frame"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: framePropsSchema.partial().optional(),
   })
   .strict();
@@ -727,6 +750,7 @@ const imageUpdateSchema = z
     type: z.literal("image"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: imagePropsSchema.partial().optional(),
   })
   .strict();
@@ -737,6 +761,7 @@ const markdownUpdateSchema = z
     type: z.literal("markdown"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: markdownPropsSchema.partial().optional(),
   })
   .strict();
@@ -747,6 +772,7 @@ const htmlUpdateSchema = z
     type: z.literal("html"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: htmlPropsSchema.partial().optional(),
   })
   .strict();
@@ -757,6 +783,7 @@ const codeDiffUpdateSchema = z
     type: z.literal("code-diff"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: codeDiffPropsSchema.partial().optional(),
   })
   .strict();
@@ -767,6 +794,7 @@ const terminalUpdateSchema = z
     type: z.literal("terminal"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: terminalPropsSchema.partial().optional(),
   })
   .strict();
@@ -777,6 +805,7 @@ const artifactUpdateSchema = z
     type: z.literal("artifact"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: artifactPropsSchema.partial().optional(),
   })
   .strict();
@@ -787,6 +816,7 @@ const fileTreeUpdateSchema = z
     type: z.literal("file-tree"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: fileTreePropsSchema.partial().optional(),
   })
   .strict();
@@ -797,6 +827,7 @@ const schemaDisplayUpdateSchema = z
     type: z.literal("schema-display"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: schemaDisplayPropsSchema.partial().optional(),
   })
   .strict();
@@ -807,6 +838,7 @@ const snippetUpdateSchema = z
     type: z.literal("snippet"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: snippetPropsSchema.partial().optional(),
   })
   .strict();
@@ -817,6 +849,7 @@ const stackTraceUpdateSchema = z
     type: z.literal("stack-trace"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: stackTracePropsSchema.partial().optional(),
   })
   .strict();
@@ -827,6 +860,7 @@ const aiTerminalUpdateSchema = z
     type: z.literal("ai-terminal"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: aiTerminalPropsSchema.partial().optional(),
   })
   .strict();
@@ -837,6 +871,7 @@ const testResultsUpdateSchema = z
     type: z.literal("test-results"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: testResultsPropsSchema.partial().optional(),
   })
   .strict();
@@ -847,6 +882,7 @@ const webPreviewUpdateSchema = z
     type: z.literal("web-preview"),
     x: z.number().optional(),
     y: z.number().optional(),
+    parentId: z.string().optional(),
     props: webPreviewPropsSchema.partial().optional(),
   })
   .strict();

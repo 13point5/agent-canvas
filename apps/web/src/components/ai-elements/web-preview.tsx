@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ExternalLinkIcon, RotateCwIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,12 @@ export interface WebPreviewContextValue {
   setUrl: (url: string) => void;
   consoleOpen: boolean;
   setConsoleOpen: (open: boolean) => void;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  goBack: () => void;
+  goForward: () => void;
+  reload: () => void;
+  reloadToken: number;
 }
 
 const WebPreviewContext = createContext<WebPreviewContextValue | null>(null);
@@ -32,25 +38,85 @@ export type WebPreviewProps = ComponentProps<"div"> & {
 };
 
 export const WebPreview = ({ className, children, defaultUrl = "", onUrlChange, ...props }: WebPreviewProps) => {
-  const [url, setUrl] = useState(defaultUrl);
+  const normalizedDefaultUrl = defaultUrl.trim();
+  const [url, setUrl] = useState(normalizedDefaultUrl);
   const [consoleOpen, setConsoleOpen] = useState(false);
+  const [history, setHistory] = useState<string[]>(() => (normalizedDefaultUrl ? [normalizedDefaultUrl] : []));
+  const [historyIndex, setHistoryIndex] = useState<number>(() => (normalizedDefaultUrl ? 0 : -1));
+  const [reloadToken, setReloadToken] = useState(0);
 
   const handleUrlChange = useCallback(
     (newUrl: string) => {
-      setUrl(newUrl);
-      onUrlChange?.(newUrl);
+      const normalizedUrl = newUrl.trim();
+      setUrl(normalizedUrl);
+      setHistory((previousHistory) => {
+        if (!normalizedUrl) {
+          setHistoryIndex(-1);
+          return [];
+        }
+
+        const currentUrl =
+          historyIndex >= 0 && historyIndex < previousHistory.length ? (previousHistory[historyIndex] ?? "") : "";
+        if (normalizedUrl === currentUrl) {
+          return previousHistory;
+        }
+
+        const nextHistory = previousHistory.slice(0, Math.max(0, historyIndex + 1));
+        nextHistory.push(normalizedUrl);
+        setHistoryIndex(nextHistory.length - 1);
+        return nextHistory;
+      });
+      onUrlChange?.(normalizedUrl);
     },
-    [onUrlChange],
+    [historyIndex, onUrlChange],
   );
+
+  const handleGoBack = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const nextIndex = historyIndex - 1;
+    const nextUrl = history[nextIndex] ?? "";
+    setHistoryIndex(nextIndex);
+    setUrl(nextUrl);
+    onUrlChange?.(nextUrl);
+  }, [history, historyIndex, onUrlChange]);
+
+  const handleGoForward = useCallback(() => {
+    if (historyIndex < 0 || historyIndex >= history.length - 1) return;
+    const nextIndex = historyIndex + 1;
+    const nextUrl = history[nextIndex] ?? "";
+    setHistoryIndex(nextIndex);
+    setUrl(nextUrl);
+    onUrlChange?.(nextUrl);
+  }, [history, historyIndex, onUrlChange]);
+
+  const handleReload = useCallback(() => {
+    setReloadToken((previous) => previous + 1);
+  }, []);
 
   const contextValue = useMemo<WebPreviewContextValue>(
     () => ({
+      canGoBack: historyIndex > 0,
+      canGoForward: historyIndex >= 0 && historyIndex < history.length - 1,
       consoleOpen,
+      goBack: handleGoBack,
+      goForward: handleGoForward,
+      reload: handleReload,
+      reloadToken,
       setConsoleOpen,
       setUrl: handleUrlChange,
       url,
     }),
-    [consoleOpen, handleUrlChange, url],
+    [
+      consoleOpen,
+      handleGoBack,
+      handleGoForward,
+      handleReload,
+      handleUrlChange,
+      history,
+      historyIndex,
+      reloadToken,
+      url,
+    ],
   );
 
   return (
@@ -102,6 +168,59 @@ export const WebPreviewNavigationButton = ({
   </TooltipProvider>
 );
 
+export type WebPreviewBackButtonProps = Omit<WebPreviewNavigationButtonProps, "onClick" | "disabled" | "tooltip">;
+
+export const WebPreviewBackButton = ({ children, ...props }: WebPreviewBackButtonProps) => {
+  const { canGoBack, goBack } = useWebPreview();
+
+  return (
+    <WebPreviewNavigationButton disabled={!canGoBack} onClick={goBack} tooltip="Back" {...props}>
+      {children ?? <ChevronLeftIcon className="size-4" />}
+    </WebPreviewNavigationButton>
+  );
+};
+
+export type WebPreviewForwardButtonProps = Omit<WebPreviewNavigationButtonProps, "onClick" | "disabled" | "tooltip">;
+
+export const WebPreviewForwardButton = ({ children, ...props }: WebPreviewForwardButtonProps) => {
+  const { canGoForward, goForward } = useWebPreview();
+
+  return (
+    <WebPreviewNavigationButton disabled={!canGoForward} onClick={goForward} tooltip="Forward" {...props}>
+      {children ?? <ChevronRightIcon className="size-4" />}
+    </WebPreviewNavigationButton>
+  );
+};
+
+export type WebPreviewReloadButtonProps = Omit<WebPreviewNavigationButtonProps, "onClick" | "tooltip">;
+
+export const WebPreviewReloadButton = ({ children, ...props }: WebPreviewReloadButtonProps) => {
+  const { reload } = useWebPreview();
+
+  return (
+    <WebPreviewNavigationButton onClick={reload} tooltip="Reload" {...props}>
+      {children ?? <RotateCwIcon className="size-4" />}
+    </WebPreviewNavigationButton>
+  );
+};
+
+export type WebPreviewOpenButtonProps = Omit<WebPreviewNavigationButtonProps, "onClick" | "disabled" | "tooltip">;
+
+export const WebPreviewOpenButton = ({ children, ...props }: WebPreviewOpenButtonProps) => {
+  const { url } = useWebPreview();
+
+  const handleOpen = useCallback(() => {
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, [url]);
+
+  return (
+    <WebPreviewNavigationButton disabled={!url} onClick={handleOpen} tooltip="Open in new tab" {...props}>
+      {children ?? <ExternalLinkIcon className="size-4" />}
+    </WebPreviewNavigationButton>
+  );
+};
+
 export type WebPreviewUrlProps = ComponentProps<typeof Input>;
 
 export const WebPreviewUrl = ({ value, onChange, onKeyDown, ...props }: WebPreviewUrlProps) => {
@@ -148,15 +267,17 @@ export type WebPreviewBodyProps = ComponentProps<"iframe"> & {
 };
 
 export const WebPreviewBody = ({ className, loading, src, ...props }: WebPreviewBodyProps) => {
-  const { url } = useWebPreview();
+  const { url, reloadToken } = useWebPreview();
+  const resolvedSrc = (src ?? url) || undefined;
 
   return (
     <div className="flex-1">
       <iframe
         className={cn("size-full", className)}
+        key={`${resolvedSrc ?? "empty"}:${reloadToken}`}
         // oxlint-disable-next-line eslint-plugin-react(iframe-missing-sandbox)
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        src={(src ?? url) || undefined}
+        src={resolvedSrc}
         title="Preview"
         {...props}
       />

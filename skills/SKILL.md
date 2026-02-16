@@ -159,6 +159,42 @@ Pass a JSON array of shape objects. Each shape follows TLDraw's shape format.
 agent-canvas shapes create --board <board-id> --shapes '<json-array>'
 ```
 
+### Creating Shapes Inside Frames (`parentId`)
+
+To nest shapes in a frame, set `parentId` on each child shape to the frame shape ID.
+
+When creating everything in one request, use `tempId` on the frame and reference that value from child `parentId`.
+
+```bash
+agent-canvas shapes create --board <board-id> --shapes '[
+  {
+    "type": "frame",
+    "tempId": "story-frame",
+    "x": 40,
+    "y": 40,
+    "props": { "w": 1600, "h": 1000, "name": "Story" }
+  },
+  {
+    "type": "markdown",
+    "x": 60,
+    "y": 60,
+    "parentId": "story-frame",
+    "props": { "w": 400, "h": 240, "name": "Ticket", "content": "# LIN-428" }
+  },
+  {
+    "type": "snippet",
+    "x": 500,
+    "y": 60,
+    "parentId": "story-frame",
+    "props": { "code": "vercel deploy --prebuilt --yes" }
+  }
+]'
+```
+
+Notes:
+- Child `x` / `y` are relative to the frame when `parentId` is set.
+- `parentId` is supported on create and update payloads.
+
 ## Text in Shapes
 
 Use `"text"` in `props` for plain text. The browser auto-converts it to TLDraw's `richText` format.
@@ -579,6 +615,24 @@ These shapes are optimized for agent-run workflows where the board becomes a liv
 - `web-preview` — embedded preview URL with console log panel
 
 `terminal` still represents the live interactive shell. Use `ai-terminal` when you want a persistent log artifact on the board.
+
+### Minimal Props By Shape
+
+Use these minimal payloads when creating one shape at a time:
+
+- `artifact`: `name`, `content`
+- `file-tree`: `entries` (array of `{ path, type }`)
+- `schema-display`: `method`, `path` (plus `parameters` / `requestFields` / `responseFields` for useful output)
+- `snippet`: `code` (`language` optional, defaults apply)
+- `stack-trace`: `trace`
+- `ai-terminal`: `output`
+- `test-results`: `summary` + `tests`
+- `web-preview`: `url` (`logs` optional)
+
+Common formatting rules:
+
+- Use escaped `\\n` for line breaks in `trace` / `output`.
+- For frame nesting, set `parentId` on child shapes (or use a frame `tempId` in the same create payload).
 
 ### Quick Multi-Shape Example
 
