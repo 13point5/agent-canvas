@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readLockfile, removeLockfile } from "@agent-canvas/server";
+import { DEFAULT_INSTANCE_ID, getInstanceId, readLockfile, removeLockfile } from "@agent-canvas/server";
 import { Command } from "commander";
 import open from "open";
 import {
@@ -22,6 +22,11 @@ import {
 } from "./api-client";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Detect if running from built CLI (dist/) or dev mode (src/)
+// Built CLI should use global instance, dev mode should use git-based isolation
+const isBuiltCLI = __dirname.includes("/dist");
+const cliInstanceId = isBuiltCLI ? DEFAULT_INSTANCE_ID : getInstanceId();
 
 // Load package.json for version
 const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
@@ -603,7 +608,7 @@ program
   .option("--headless", "Start server without opening browser (for agents)")
   .action(async (options: { port: string; headless?: boolean }) => {
     // Check if already running
-    const existing = readLockfile();
+    const existing = readLockfile(cliInstanceId);
     if (existing) {
       console.log(`Agent Canvas is already running at ${existing.url}`);
       if (!options.headless) {
@@ -626,11 +631,19 @@ program
     const requestedPort = Number.parseInt(options.port, 10);
     const port = Number.isNaN(requestedPort) ? 3456 : Math.max(0, requestedPort);
 
-    const serverScript = join(__dirname, "server.ts");
+    // In built version, __dirname points to dist/ and we have server.js
+    // In dev, we're in src/ and we have server.ts
+    const serverScript = existsSync(join(__dirname, "server.js"))
+      ? join(__dirname, "server.js")
+      : join(__dirname, "server.ts");
     const startServer = async (targetPort: number) => {
       const child = spawn("bun", [serverScript, String(targetPort), webDir], {
         detached: true,
         stdio: "ignore",
+        env: {
+          ...process.env,
+          AGENT_CANVAS_CLI_INSTANCE: cliInstanceId,
+        },
       });
 
       child.unref();
@@ -677,7 +690,7 @@ program
   .description("Check if the Agent Canvas server is running")
   .option("--json", "Output machine-readable JSON")
   .action(async (options: { json?: boolean }) => {
-    const lockfile = readLockfile();
+    const lockfile = readLockfile(cliInstanceId);
 
     if (!lockfile) {
       if (options.json) {
@@ -730,7 +743,7 @@ program
   .description("Stop the Agent Canvas server")
   .option("-f, --force", "Force kill if graceful shutdown fails")
   .action(async (options: { force?: boolean }) => {
-    const lockfile = readLockfile();
+    const lockfile = readLockfile(cliInstanceId);
 
     if (!lockfile) {
       console.log("Agent Canvas server is not running.");
@@ -750,7 +763,7 @@ program
     };
 
     if (!isRunning()) {
-      removeLockfile();
+      removeLockfile(cliInstanceId);
       console.log("Agent Canvas server was not running (stale lockfile cleaned up).");
       return;
     }
@@ -759,7 +772,7 @@ program
     try {
       process.kill(pid, "SIGTERM");
     } catch {
-      removeLockfile();
+      removeLockfile(cliInstanceId);
       console.log("Agent Canvas server stopped.");
       return;
     }
@@ -768,7 +781,7 @@ program
     for (let i = 0; i < 30; i++) {
       await new Promise((r) => setTimeout(r, 100));
       if (!isRunning()) {
-        removeLockfile();
+        removeLockfile(cliInstanceId);
         console.log("Agent Canvas server stopped.");
         return;
       }
@@ -778,7 +791,7 @@ program
     if (options.force) {
       try {
         process.kill(pid, "SIGKILL");
-        removeLockfile();
+        removeLockfile(cliInstanceId);
         console.log("Agent Canvas server force killed.");
         return;
       } catch {
@@ -790,7 +803,7 @@ program
     if (isRunning()) {
       console.log(`Server (PID ${pid}) did not stop. Try: agent-canvas close --force`);
     } else {
-      removeLockfile();
+      removeLockfile(cliInstanceId);
       console.log("Agent Canvas server stopped.");
     }
   });

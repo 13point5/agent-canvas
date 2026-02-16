@@ -5,9 +5,19 @@
  * This script is spawned by the `open` command and runs detached.
  */
 
-import { createApp, removeLockfile, websocketHandler, writeLockfile } from "@agent-canvas/server";
+import {
+  createApp,
+  DEFAULT_INSTANCE_ID,
+  getInstanceId,
+  removeLockfile,
+  websocketHandler,
+  writeLockfile,
+} from "@agent-canvas/server";
 
 const DEFAULT_PORT = 3456;
+
+// Use instance ID passed from parent CLI process, or fall back to git-based isolation
+const serverInstanceId = process.env.AGENT_CANVAS_CLI_INSTANCE || getInstanceId();
 type SocketData =
   | { kind: "board" }
   | {
@@ -80,11 +90,11 @@ const server = Bun.serve<SocketData>({
 const actualPort = server.port ?? port;
 const url = `http://localhost:${actualPort}`;
 
-writeLockfile({ pid: process.pid, port: actualPort, url });
+writeLockfile({ pid: process.pid, port: actualPort, url }, serverInstanceId);
 
 // Handle graceful shutdown
 const cleanup = () => {
-  removeLockfile();
+  removeLockfile(serverInstanceId);
   server.stop();
   process.exit(0);
 };

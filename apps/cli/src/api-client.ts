@@ -1,4 +1,4 @@
-import { readLockfile } from "@agent-canvas/server";
+import { DEFAULT_INSTANCE_ID, getInstanceId, readLockfile } from "@agent-canvas/server";
 import type {
   BoardMetadata,
   CreateShapesApiResponse,
@@ -39,8 +39,14 @@ export function getServerUrl(): string {
     return envUrl;
   }
 
+  // Determine instance ID based on how we're running
+  // If running from built CLI, use global. Otherwise use git-based isolation.
+  const callerPath = new Error().stack?.split("\n")[2] || "";
+  const isBuiltCLI = callerPath.includes("/dist/");
+  const instanceId = isBuiltCLI ? DEFAULT_INSTANCE_ID : getInstanceId();
+
   // Read lockfile (written by both production and dev servers)
-  const lockfile = readLockfile();
+  const lockfile = readLockfile(instanceId);
   if (lockfile) {
     return lockfile.url;
   }
