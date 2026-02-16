@@ -39,7 +39,7 @@ export const TestResults = ({ summary, className, children, ...props }: TestResu
 
   return (
     <TestResultsContext.Provider value={contextValue}>
-      <div className={cn("rounded-lg border bg-background", className)} {...props}>
+      <div className={cn("flex flex-col overflow-hidden rounded-lg border bg-background", className)} {...props}>
         {children ??
           (summary && (
             <TestResultsHeader>
@@ -152,7 +152,7 @@ export const TestResultsProgress = ({ className, children, ...props }: TestResul
 export type TestResultsContentProps = HTMLAttributes<HTMLDivElement>;
 
 export const TestResultsContent = ({ className, children, ...props }: TestResultsContentProps) => (
-  <div className={cn("space-y-2 p-4", className)} {...props}>
+  <div className={cn("min-h-0 flex-1 space-y-2 overflow-auto p-4 scrollbar-thin", className)} {...props}>
     {children}
   </div>
 );
@@ -349,7 +349,10 @@ export const TestErrorMessage = ({ className, children, ...props }: TestErrorMes
 export type TestErrorStackProps = HTMLAttributes<HTMLPreElement>;
 
 export const TestErrorStack = ({ className, children, ...props }: TestErrorStackProps) => (
-  <pre className={cn("mt-2 overflow-auto font-mono text-red-600 text-xs dark:text-red-400", className)} {...props}>
+  <pre
+    className={cn("mt-2 overflow-auto font-mono text-red-600 text-xs scrollbar-thin dark:text-red-400", className)}
+    {...props}
+  >
     {children}
   </pre>
 );

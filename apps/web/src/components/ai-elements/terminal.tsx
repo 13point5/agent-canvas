@@ -203,7 +203,7 @@ export const TerminalContent = ({ className, children, ...props }: TerminalConte
 
   return (
     <div
-      className={cn("max-h-96 overflow-auto p-4 font-mono text-sm leading-relaxed", className)}
+      className={cn("max-h-96 overflow-auto p-4 font-mono text-sm leading-relaxed scrollbar-dark", className)}
       ref={containerRef}
       {...props}
     >

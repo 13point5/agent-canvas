@@ -176,7 +176,7 @@ export const StackTrace = memo(
       <StackTraceContext.Provider value={contextValue}>
         <div
           className={cn(
-            "not-prose w-full overflow-hidden rounded-lg border bg-background font-mono text-sm",
+            "not-prose flex w-full flex-col overflow-hidden rounded-lg border bg-background font-mono text-sm",
             className,
           )}
           {...props}
@@ -332,7 +332,7 @@ export const StackTraceContent = memo(({ className, maxHeight = 400, children, .
     <Collapsible open={isOpen}>
       <CollapsibleContent
         className={cn(
-          "overflow-auto border-t bg-muted/30",
+          "overflow-auto border-t bg-muted/30 scrollbar-thin",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=open]:animate-in",
           className,
         )}

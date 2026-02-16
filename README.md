@@ -47,11 +47,12 @@ Run this from the agent-canvas repo (where you just ran `build:link`):
 CANVAS_DIR=$PWD
 
 # Option 1: Symlink the skill directory (stays in sync with updates)
-mkdir -p .claude/skills
-ln -s "$CANVAS_DIR/skills" .claude/skills/agent-canvas
+mkdir -p ~/.claude/skills
+ln -s "$CANVAS_DIR/skills" ~/.claude/skills/agent-canvas
 
 # Option 2: Copy the skill directory
-cp -r "$CANVAS_DIR/skills" .claude/skills/agent-canvas
+mkdir -p ~/.claude/skills
+cp -r "$CANVAS_DIR/skills" ~/.claude/skills/agent-canvas
 ```
 
 Now use the CLI:

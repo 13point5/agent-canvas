@@ -65,8 +65,12 @@ export const FileTree = ({
 
   return (
     <FileTreeContext.Provider value={contextValue}>
-      <div className={cn("rounded-lg border bg-background font-mono text-sm", className)} role="tree" {...props}>
-        <div className="p-2">{children}</div>
+      <div
+        className={cn("flex flex-col overflow-hidden rounded-lg border bg-background font-mono text-sm", className)}
+        role="tree"
+        {...props}
+      >
+        <div className="flex-1 overflow-auto p-2 scrollbar-thin">{children}</div>
       </div>
     </FileTreeContext.Provider>
   );

@@ -133,3 +133,21 @@
   border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
+
+/* Thin scrollbar for shape content areas */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.6 0 0 / 30%) transparent;
+}
+.scrollbar-thin:hover {
+  scrollbar-color: oklch(0.6 0 0 / 50%) transparent;
+}
+
+/* Dark scrollbar for dark-themed containers (e.g. terminal) */
+.scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.8 0 0 / 25%) transparent;
+}
+.scrollbar-dark:hover {
+  scrollbar-color: oklch(0.8 0 0 / 45%) transparent;
+}

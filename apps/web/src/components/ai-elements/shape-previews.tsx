@@ -375,7 +375,7 @@ export function SchemaDisplayShapePreview({ props }: { props: SchemaDisplayShape
 
   return (
     <SchemaDisplay
-      className="h-full w-full overflow-auto rounded-[8px] border border-border shadow-sm"
+      className="h-full w-full overflow-auto rounded-[8px] border border-border shadow-sm scrollbar-thin"
       method={method}
       path={path}
       description={props.description || undefined}
@@ -413,7 +413,7 @@ export function StackTraceShapePreview({ props }: { props: StackTraceShape["prop
           <StackTraceExpandButton />
         </StackTraceActions>
       </StackTraceHeader>
-      <StackTraceContent className="h-full">
+      <StackTraceContent className="min-h-0 flex-1" maxHeight={undefined}>
         <StackTraceFrames showInternalFrames={props.showInternalFrames} />
       </StackTraceContent>
     </StackTrace>
@@ -454,7 +454,7 @@ export function TestResultsShapePreview({ props }: { props: TestResultsShape["pr
         <TestResultsSummary />
         <TestResultsDuration />
       </TestResultsHeader>
-      <TestResultsContent className="space-y-3 overflow-auto">
+      <TestResultsContent className="space-y-3">
         <TestResultsProgress />
         {suites.map(({ suite, tests }) => {
           const passed = tests.filter((testCase) => asTestStatus(testCase.status) === "passed").length;
