@@ -1,0 +1,51 @@
+{
+  "attempt": {
+    "name": "c_d6_ff12",
+    "d_model": 6,
+    "d_ff": 12,
+    "lr": 0.002,
+    "epochs": 12,
+    "batch_size": 256
+  },
+  "params": 450,
+  "best_val_seq_acc": 1.0,
+  "best_val_tok_acc": 1.0,
+  "last": {
+    "epoch": 3,
+    "train_loss": 0.02569377002120018,
+    "train_tok_acc": 1.0,
+    "train_seq_acc": 1.0,
+    "val_tok_acc": 1.0,
+    "val_seq_acc": 1.0,
+    "params": 450
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.46145783922672273,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 450
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.08462496052384376,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 450
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.02569377002120018,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 450
+    }
+  ]
+}

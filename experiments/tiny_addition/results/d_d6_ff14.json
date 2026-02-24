@@ -1,0 +1,51 @@
+{
+  "attempt": {
+    "name": "d_d6_ff14",
+    "d_model": 6,
+    "d_ff": 14,
+    "lr": 0.0015,
+    "epochs": 12,
+    "batch_size": 256
+  },
+  "params": 476,
+  "best_val_seq_acc": 1.0,
+  "best_val_tok_acc": 1.0,
+  "last": {
+    "epoch": 3,
+    "train_loss": 0.046074521765112876,
+    "train_tok_acc": 1.0,
+    "train_seq_acc": 1.0,
+    "val_tok_acc": 1.0,
+    "val_seq_acc": 1.0,
+    "params": 476
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.513022044968605,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 476
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.1309229235649109,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 476
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.046074521765112876,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 476
+    }
+  ]
+}

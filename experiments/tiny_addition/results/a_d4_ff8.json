@@ -1,0 +1,51 @@
+{
+  "attempt": {
+    "name": "a_d4_ff8",
+    "d_model": 4,
+    "d_ff": 8,
+    "lr": 0.002,
+    "epochs": 12,
+    "batch_size": 256
+  },
+  "params": 236,
+  "best_val_seq_acc": 1.0,
+  "best_val_tok_acc": 1.0,
+  "last": {
+    "epoch": 3,
+    "train_loss": 0.1542488115310669,
+    "train_tok_acc": 1.0,
+    "train_seq_acc": 1.0,
+    "val_tok_acc": 1.0,
+    "val_seq_acc": 1.0,
+    "params": 236
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.98952931432724,
+      "train_tok_acc": 0.929443359375,
+      "train_seq_acc": 0.43994140625,
+      "val_tok_acc": 0.9304375,
+      "val_seq_acc": 0.45175,
+      "params": 236
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.3979386114835739,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 236
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.1542488115310669,
+      "train_tok_acc": 1.0,
+      "train_seq_acc": 1.0,
+      "val_tok_acc": 1.0,
+      "val_seq_acc": 1.0,
+      "params": 236
+    }
+  ]
+}
