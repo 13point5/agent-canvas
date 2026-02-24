@@ -1,0 +1,53 @@
+[
+  {
+    "attempt": 1,
+    "name": "tiny_6x6",
+    "type": "learned",
+    "params": 366,
+    "config": {
+      "name": "tiny_6x6",
+      "model_type": "learned",
+      "d_model": 6,
+      "ff_hidden": 6,
+      "steps": 500,
+      "lr": 0.002,
+      "batch": 256
+    },
+    "val_token_acc": 0.1481534090909091,
+    "val_exact_acc": 0.0
+  },
+  {
+    "attempt": 2,
+    "name": "tiny_7x6",
+    "type": "learned",
+    "params": 454,
+    "config": {
+      "name": "tiny_7x6",
+      "model_type": "learned",
+      "d_model": 7,
+      "ff_hidden": 6,
+      "steps": 700,
+      "lr": 0.002,
+      "batch": 256
+    },
+    "val_token_acc": 0.14431818181818182,
+    "val_exact_acc": 0.0
+  },
+  {
+    "attempt": 3,
+    "name": "algo_4x4",
+    "type": "algorithmic",
+    "params": 196,
+    "config": {
+      "name": "algo_4x4",
+      "model_type": "algorithmic",
+      "d_model": 4,
+      "ff_hidden": 4,
+      "steps": 200,
+      "lr": 0.003,
+      "batch": 256
+    },
+    "val_token_acc": 1.0,
+    "val_exact_acc": 1.0
+  }
+]
