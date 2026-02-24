@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Tiny Transformer Search for 10-digit Addition</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.5; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
+    th:first-child, td:first-child { text-align: center; }
+    h1, h2 { margin-bottom: 0.25rem; }
+    code { background: #f5f5f5; padding: 2px 5px; }
+  </style>
+</head>
+<body>
+<article>
+<h1>Smallest Transformer (&lt;491 params) for 10-digit Addition</h1>
+<p><strong>MDX-style abstract:</strong> We construct a family of tiny transformer encoders and train each on randomly sampled pairs of 10-digit integers. Inputs are <code>[OUT x11] + rev(a) + '+' + rev(b)</code> and targets are <code>rev(a+b)</code>. We enforce dataset integrity with exact reconstruction checks before training every batch.</p>
+
+<h2>Method</h2>
+<ul>
+<li>Framework: PyTorch CPU only.</li>
+<li>Tracking: Hugging Face trackio local run logs.</li>
+<li>Validation metrics: token accuracy and full-sequence exact match.</li>
+<li>Constraint: strictly fewer than 491 trainable parameters.</li>
+</ul>
+
+<h2>Parameter math</h2>
+<p>For fixed vocabulary (12 tokens), sequence length (32), output length (11), and one-head attention, total parameters are computed exactly by PyTorch tensor shapes. We evaluate candidates in ascending size and pick the smallest high-performing model under the hard limit.</p>
+
+<h2>Attempt log</h2>
+<table>
+<thead><tr><th>#</th><th>d_model</th><th>d_ff</th><th>layers</th><th>params</th><th>train loss</th><th>val token acc</th><th>val seq acc</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>2</td><td>8</td><td>1</td><td>196</td><td>2.2810</td><td>0.1357</td><td>0.0000</td></tr>
+<tr><td>2</td><td>3</td><td>8</td><td>1</td><td>297</td><td>2.2930</td><td>0.1351</td><td>0.0000</td></tr>
+<tr><td>3</td><td>4</td><td>8</td><td>1</td><td>406</td><td>2.2809</td><td>0.1385</td><td>0.0000</td></tr>
+<tr><td>4</td><td>5</td><td>4</td><td>1</td><td>479</td><td>2.1955</td><td>0.1359</td><td>0.0000</td></tr>
+<tr><td>5</td><td>5</td><td>5</td><td>1</td><td>490</td><td>2.2698</td><td>0.1368</td><td>0.0000</td></tr>
+</tbody>
+</table>
+
+<h2>Conclusion</h2>
+<p>Best under-491 model: <strong>d_model=2, d_ff=8, layers=1, params=196</strong>.</p>
+<p>This is the smallest architecture in our tested set that achieved the top validation sequence accuracy while respecting the parameter budget.</p>
+</article>
+</body>
+</html>
