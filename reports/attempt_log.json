@@ -1,0 +1,47 @@
+[
+  {
+    "d_model": 2,
+    "d_ff": 8,
+    "n_layers": 1,
+    "params": 196,
+    "train_loss": 2.280998468399048,
+    "val_token_acc": 0.1357244317730268,
+    "val_seq_acc": 0.0
+  },
+  {
+    "d_model": 3,
+    "d_ff": 8,
+    "n_layers": 1,
+    "params": 297,
+    "train_loss": 2.292975902557373,
+    "val_token_acc": 0.1350852260986964,
+    "val_seq_acc": 0.0
+  },
+  {
+    "d_model": 4,
+    "d_ff": 8,
+    "n_layers": 1,
+    "params": 406,
+    "train_loss": 2.2808573246002197,
+    "val_token_acc": 0.13847656200329464,
+    "val_seq_acc": 0.0
+  },
+  {
+    "d_model": 5,
+    "d_ff": 4,
+    "n_layers": 1,
+    "params": 479,
+    "train_loss": 2.195490837097168,
+    "val_token_acc": 0.135896069308122,
+    "val_seq_acc": 0.0
+  },
+  {
+    "d_model": 5,
+    "d_ff": 5,
+    "n_layers": 1,
+    "params": 490,
+    "train_loss": 2.2697808742523193,
+    "val_token_acc": 0.13675425946712494,
+    "val_seq_acc": 0.0
+  }
+]
