@@ -1,0 +1,38 @@
+[
+  {
+    "name": "a1",
+    "d": 2,
+    "lr": 0.03,
+    "steps": 800,
+    "params": 102,
+    "column_acc": 0.06499999761581421,
+    "full_10digit_acc": 0.0
+  },
+  {
+    "name": "a2",
+    "d": 3,
+    "lr": 0.03,
+    "steps": 1000,
+    "params": 159,
+    "column_acc": 0.4449999928474426,
+    "full_10digit_acc": 0.002
+  },
+  {
+    "name": "a3",
+    "d": 4,
+    "lr": 0.02,
+    "steps": 1000,
+    "params": 224,
+    "column_acc": 0.5350000262260437,
+    "full_10digit_acc": 0.002
+  },
+  {
+    "name": "a4",
+    "d": 5,
+    "lr": 0.02,
+    "steps": 1200,
+    "params": 297,
+    "column_acc": 0.574999988079071,
+    "full_10digit_acc": 0.002
+  }
+]
