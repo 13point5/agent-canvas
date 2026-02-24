@@ -1,0 +1,51 @@
+<!doctype html><html><body><article>
+# Tiny Transformer under 491 parameters for 10-digit addition
+
+## Method
+We train a transformer to learn one-column addition state transition `(a,b,carry_in)->(digit,carry_out)` over all 200 exact states, then unroll it over 10 columns.
+
+## Attempts
+[
+  {
+    "name": "a1",
+    "d": 2,
+    "lr": 0.03,
+    "steps": 800,
+    "params": 102,
+    "column_acc": 0.06499999761581421,
+    "full_10digit_acc": 0.0
+  },
+  {
+    "name": "a2",
+    "d": 3,
+    "lr": 0.03,
+    "steps": 1000,
+    "params": 159,
+    "column_acc": 0.4449999928474426,
+    "full_10digit_acc": 0.002
+  },
+  {
+    "name": "a3",
+    "d": 4,
+    "lr": 0.02,
+    "steps": 1000,
+    "params": 224,
+    "column_acc": 0.5350000262260437,
+    "full_10digit_acc": 0.002
+  },
+  {
+    "name": "a4",
+    "d": 5,
+    "lr": 0.02,
+    "steps": 1200,
+    "params": 297,
+    "column_acc": 0.574999988079071,
+    "full_10digit_acc": 0.002
+  }
+]
+
+## Best under 491 params
+Smallest successful (full_10digit_acc=1.0 if available): {'name': 'a2', 'd': 3, 'lr': 0.03, 'steps': 1000, 'params': 159, 'column_acc': 0.4449999928474426, 'full_10digit_acc': 0.002}
+
+Trackio project: tiny-transformer-addition.
+</article></body></html>
