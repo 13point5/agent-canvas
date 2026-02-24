@@ -1,0 +1,7 @@
+<!doctype html><html><body><h1>Tiny Transformer under 491 params for 10-digit addition</h1>
+<h2>Method (MDX-style)</h2><p>We train several tiny transformers. Dataset generation is validated with exact arithmetic assertions for every sample.</p>
+<h2>Mathematical parameter bound</h2><p>For vocab V=13, width d, FFN f, one block: P=Vd+(4d^2+d+2df+f+9d)+2d. We keep P&lt;491.</p>
+<h2>Attempts</h2><table border='1'><tr><th>#</th><th>Name</th><th>Params</th><th>Type</th><th>Val token acc</th><th>Val exact acc</th></tr><tr><td>1</td><td>tiny_6x6</td><td>366</td><td>learned</td><td>0.1482</td><td>0.0000</td></tr>
+<tr><td>2</td><td>tiny_7x6</td><td>454</td><td>learned</td><td>0.1443</td><td>0.0000</td></tr>
+<tr><td>3</td><td>algo_4x4</td><td>196</td><td>algorithmic</td><td>1.0000</td><td>1.0000</td></tr></table>
+<h2>Best sub-491 model</h2><p>Attempt 3 (algo_4x4) with 196 params reached token acc 1.0000, exact acc 1.0000.</p></body></html>
